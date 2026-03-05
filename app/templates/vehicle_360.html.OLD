@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vehicle.license_plate or 'Автомобиль' }} | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="flex items-center gap-4">
+        <a href="/garage" class="muted-text hover:text-gold">← Назад</a>
+        <h1 class="gold-text">{{ vehicle.license_plate or 'Автомобиль' }}</h1>
+    </div>
+    <p class="muted-text">{{ vehicle.brand or '' }} {{ vehicle.model or '' }}</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Vehicle Info -->
+    <div class="card md:col-span-2">
+        <h2 class="text-xl gold-text mb-4">Информация об автомобиле</h2>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <span class="muted-text">Гос. номер:</span>
+                <div class="gold-text text-lg">{{ vehicle.license_plate or '—' }}</div>
+            </div>
+            <div>
+                <span class="muted-text">Статус:</span>
+                <div>
+                    {% if vehicle.status == 'working' %}
+                    <span class="badge badge-success">В рейсе</span>
+                    {% elif vehicle.status == 'service' %}
+                    <span class="badge badge-warning">Ремонт</span>
+                    {% else %}
+                    <span class="badge">{{ vehicle.status or '—' }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <span class="muted-text">Парк:</span>
+                <div>{{ vehicle.park_name or '—' }}</div>
+            </div>
+            <div>
+                <span class="muted-text">VIN:</span>
+                <div>{{ vehicle.vin or '—' }}</div>
+            </div>
+            <div>
+                <span class="muted-text">Год выпуска:</span>
+                <div>{{ vehicle.year or '—' }}</div>
+            </div>
+            <div>
+                <span class="muted-text">Цвет:</span>
+                <div>{{ vehicle.color or '—' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finance -->
+    <div class="card">
+        <h2 class="text-xl gold-text mb-4">Финансы</h2>
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                <span class="muted-text">Доход:</span>
+                <span class="text-green-400">{{ finance.income | default('—') }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Расходы:</span>
+                <span class="text-red-400">{{ finance.repair_cost | default('—') }}</span>
+            </div>
+            <div class="flex justify-between border-t border-gray-600 pt-2">
+                <span class="muted-text">Прибыль:</span>
+                <span class="gold-text font-bold">{{ finance.profit | default('—') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status History -->
+<div class="card mt-6">
+    <h2 class="text-xl gold-text mb-4">История статусов</h2>
+    {% if status_history and status_history|length > 0 %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                    <th>Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in status_history %}
+                <tr>
+                    <td>{{ entry.changed_at.strftime('%d.%m.%Y %H:%M') if entry.changed_at else '—' }}</td>
+                    <td>{{ get_status_text(entry.status) if get_status_text else entry.status }}</td>
+                    <td>{{ entry.comment or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Нет истории</h3>
+        <p>История статусов отсутствует</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

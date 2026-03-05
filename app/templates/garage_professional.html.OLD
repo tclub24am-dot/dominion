@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}ГАРАЖ {{ park }} | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🚗 ГАРАЖ {{ park }}</h1>
+    <p class="muted-text">Управление автопарком</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="card text-center">
+        <div class="text-3xl gold-text">{{ stats.cars or 0 }}</div>
+        <div class="muted-text">Всего машин</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-green-400">{{ stats.active or 0 }}</div>
+        <div class="muted-text">В рейсе</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-yellow-400">{{ stats.service or 0 }}</div>
+        <div class="muted-text">В ремонте</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-blue-400">{{ stats.drivers or 0 }}</div>
+        <div class="muted-text">Водителей</div>
+    </div>
+</div>
+
+<!-- Vehicles Table -->
+<div class="card">
+    <h2 class="text-xl gold-text mb-4">Список автомобилей</h2>
+    {% if vehicles and vehicles|length > 0 %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Гос. номер</th>
+                    <th>Марка</th>
+                    <th>Статус</th>
+                    <th>Водитель</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vehicle in vehicles %}
+                <tr>
+                    <td class="gold-text font-bold">{{ vehicle.license_plate or '—' }}</td>
+                    <td>{{ vehicle.brand or '—' }} {{ vehicle.model or '' }}</td>
+                    <td>
+                        {% if vehicle.status == 'working' %}
+                        <span class="badge badge-success">В рейсе</span>
+                        {% elif vehicle.status == 'service' %}
+                        <span class="badge badge-warning">Ремонт</span>
+                        {% else %}
+                        <span class="badge badge-danger">{{ vehicle.status or 'Неизвестно' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ vehicle.driver.full_name if vehicle.driver else '—' }}</td>
+                    <td>
+                        <a href="/garage/{{ vehicle.id }}" class="btn-gold text-sm">Детали</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Автомобили не найдены или данные ещё не загружены</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

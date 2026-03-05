@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Реестр Исполнители • S-GLOBAL DOMINION</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{
+            --bg:#0D0C0B;--panel:rgba(13,12,11,0.82);--glass:rgba(16,14,12,0.72);
+            --border:rgba(212,175,55,0.35);--text:#f4efe0;--muted:#b6a77a;
+            --accent:#D4AF37;--accent-2:#FFD700;--danger:#ff6b6b;--success:#23c981;
+        }
+        *{box-sizing:border-box;}
+        body{
+            margin:0;background:radial-gradient(circle at 50% 45%, rgba(212,175,55,0.14), rgba(13,12,11,0.96) 65%), var(--bg);
+            color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh;
+        }
+        .wrap{padding:24px 28px;}
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.18em;font-size:16px;margin-bottom:14px;}
+        .sub{font-size:11px;color:var(--muted);letter-spacing:0.08em;margin-bottom:14px;}
+        .banner{background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.35);padding:10px 12px;border-radius:12px;font-size:12px;margin-bottom:14px;}
+        .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+        .search{flex:1;min-width:220px;}
+        .search input{
+            width:100%;background:transparent;border:1px solid var(--border);color:var(--text);
+            border-radius:12px;padding:8px 12px;font-size:12px;
+        }
+        .search input::placeholder{color:var(--muted);}
+
+        /* ─── ПЕРЕКЛЮЧЕНИЕ ПАРКОВ (вкладки PRO / GO) ─── */
+        .park-tabs{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--accent);border-radius:12px;overflow:hidden;}
+        .park-btn{
+            background:transparent;border:none;color:var(--muted);
+            padding:8px 18px;font-size:12px;letter-spacing:0.08em;cursor:pointer;
+            font-family:'Montserrat',sans-serif;font-weight:600;
+            transition:all 0.2s;border-right:1px solid rgba(212,175,55,0.2);
+        }
+        .park-btn:last-child{border-right:none;}
+        .park-btn:hover{background:rgba(212,175,55,0.08);}
+        .park-btn.active{
+            background:linear-gradient(135deg, rgba(212,175,55,0.2), rgba(255,215,0,0.15));
+            color:#FFD700;box-shadow:inset 0 0 12px rgba(212,175,55,0.15);
+        }
+
+        /* ─── КНОПКИ ДЕЙСТВИЙ ─── */
+        .btn-primary{
+            background:#f7f4ee;color:#0a0a0f;border:1px solid var(--accent);
+            border-radius:12px;padding:10px 14px;font-size:12px;letter-spacing:0.08em;cursor:pointer;
+            font-weight:600;font-family:'Montserrat',sans-serif;
+        }
+        .btn-primary:hover{background:var(--accent-2);color:#0a0a0f;}
+        .btn-accent{
+            background:linear-gradient(135deg,#D4AF37,#FFD700);color:#0a0a0f;border:none;
+            border-radius:12px;padding:10px 14px;font-size:12px;letter-spacing:0.08em;cursor:pointer;
+            font-weight:700;font-family:'Montserrat',sans-serif;
+        }
+        .btn-accent:hover{filter:brightness(1.1);}
+
+        /* ─── ТРОЙНЫЕ СЧЁТЧИКИ (v200.11) ─── */
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;}
+        .stat{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden;}
+        .stat::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px;}
+        .stat.total::after{background:var(--accent);}
+        .stat.active30::after{background:var(--success);}
+        .stat.daily::after{background:#5b9aff;}
+        .stat .label{font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;}
+        .stat .value{font-size:28px;margin-top:6px;font-family:'Orbitron',sans-serif;font-weight:700;}
+        .stat.total .value{color:var(--accent-2);}
+        .stat.active30 .value{color:var(--success);}
+        .stat.daily .value{color:#5b9aff;}
+        .stat .hint{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:0.04em;}
+
+        .park-stats{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+        .park-stat{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 14px;text-align:center;}
+        .park-stat .ps-label{font-size:10px;color:var(--muted);letter-spacing:0.08em;}
+        .park-stat .ps-value{font-size:16px;font-family:'Orbitron',sans-serif;color:var(--accent-2);margin-top:2px;}
+
+        /* ─── ТАБЛИЦА ─── */
+        .table-wrap{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:6px;overflow-x:auto;}
+        table{width:100%;border-collapse:collapse;font-size:13px;}
+        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(212,175,55,0.12);}
+        th{font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;font-weight:600;}
+        tr:hover{background:rgba(212,175,55,0.06);}
+        .pill{display:inline-block;border:1px solid var(--border);padding:4px 10px;border-radius:999px;font-size:10px;letter-spacing:0.06em;font-weight:600;}
+        .link{color:var(--accent-2);text-decoration:none;font-weight:600;}
+        .link:hover{text-decoration:underline;}
+        .balance{font-variant-numeric:tabular-nums;font-weight:600;}
+        .balance-neg{color:var(--danger);}
+        .status{display:inline-flex;align-items:center;gap:6px;font-size:11px;}
+        .status.working{color:var(--success);}
+        .status.not_working{color:var(--muted);}
+        .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+        .dot.working{background:var(--success);}
+        .dot.not_working{background:var(--muted);}
+
+        /* ─── ГОСНОМЕР: 22px Bold, Кириллица ─── */
+        .plate{
+            font-size:22px;font-weight:800;letter-spacing:0.08em;
+            color:var(--text);font-family:'Montserrat',sans-serif;
+            text-transform:uppercase;
+        }
+        .plate.empty{font-size:13px;font-weight:400;color:var(--muted);letter-spacing:0;}
+
+        /* ─── МОДАЛКА ─── */
+        .modal{position:fixed;inset:0;background:rgba(6,6,6,0.75);display:none;align-items:center;justify-content:center;z-index:30;}
+        .modal.active{display:flex;}
+        .modal-card{
+            width:min(820px,95vw);background:rgba(16,14,12,0.92);border:1px solid rgba(212,175,55,0.4);
+            border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,0.5);backdrop-filter:blur(12px);
+        }
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+        .modal-title{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:0.12em;}
+        .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:6px 10px;cursor:pointer;}
+        .modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+        .field{display:flex;flex-direction:column;gap:4px;}
+        .field label{font-size:10px;color:var(--muted);letter-spacing:0.06em;}
+        .field input,.field select{
+            background:transparent;border:1px solid rgba(212,175,55,0.35);color:var(--text);
+            border-radius:10px;padding:6px 8px;font-size:12px;
+        }
+        .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}
+        .modal-status{margin-top:8px;font-size:11px;color:var(--muted);}
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="title">РЕЕСТР ИСПОЛНИТЕЛИ</div>
+        <div class="sub">S-GLOBAL FLEET • ПРОТОКОЛ VERSHINA v200.11 • WORKING STATUS</div>
+
+        {% if yandex_failed %}
+        <div class="banner">⚠️ Яндекс API недоступен — показаны локальные данные.</div>
+        {% endif %}
+
+        <!-- ─── ТРОЙНЫЕ СЧЁТЧИКИ ─── -->
+        <div class="stats">
+            <div class="stat total">
+                <div class="label">Всего</div>
+                <div class="value">{{ total_working }}</div>
+                <div class="hint">Все водители со статусом working</div>
+            </div>
+            <div class="stat active30">
+                <div class="label">Активные 30д</div>
+                <div class="value">{{ active_30d }}</div>
+                <div class="hint">Сделали заказ за последний месяц</div>
+            </div>
+            <div class="stat daily">
+                <div class="label">Дневная активность</div>
+                <div class="value">{{ daily_active }}</div>
+                <div class="hint">Статус «Выполнен» за текущие сутки</div>
+            </div>
+        </div>
+
+        <!-- ─── ПАРКОВЫЕ СЧЁТЧИКИ ─── -->
+        <div class="park-stats">
+            {% for park in parks %}
+            <div class="park-stat">
+                <div class="ps-label">{{ park }}</div>
+                <div class="ps-value">{{ park_counts.get(park, 0) }}</div>
+            </div>
+            {% endfor %}
+            <div class="park-stat">
+                <div class="ps-label">ПОКАЗАНО</div>
+                <div class="ps-value" id="visibleCount">{{ drivers | length }}</div>
+            </div>
+        </div>
+
+        <!-- ─── УПРАВЛЕНИЕ ─── -->
+        <div class="controls">
+            <div class="search">
+                <input id="searchInput" placeholder="🔍 Поиск: ФИО, телефон, госномер">
+            </div>
+            <div class="park-tabs" id="parkTabs">
+                <button class="park-btn active" data-park="ALL">ВСЕ</button>
+                <button class="park-btn" data-park="PRO">PRO</button>
+                <button class="park-btn" data-park="GO">GO</button>
+                {% for park in parks %}
+                    {% if park not in ['PRO', 'GO'] %}
+                    <button class="park-btn" data-park="{{ park }}">{{ park }}</button>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <button class="btn-accent" id="openDriverModal">+ Добавить водителя</button>
+            <button class="btn-primary" id="openCarModal">➕ Новый авто</button>
+        </div>
+
+        <!-- ─── ТАБЛИЦА ВОДИТЕЛЕЙ ─── -->
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Пилот</th>
+                        <th>Телефон</th>
+                        <th>Парк</th>
+                        <th>Госномер</th>
+                        <th>Баланс</th>
+                        <th>Активность</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="driversBody">
+                    {% for d in drivers %}
+                    <tr class="driver-row"
+                        data-park="{{ d.park_name }}"
+                        data-name="{{ d.full_name | lower }}"
+                        data-phone="{{ d.phone }}"
+                        data-car="{{ d.vehicle_plate or '' }}">
+                        <td>
+                            <div style="font-weight:600;">{{ d.full_name }}</div>
+                            {% set ws = d.work_status|default('not_working') %}
+                            <div class="status {{ ws }}">
+                                <span class="dot {{ ws }}"></span>
+                                {{ 'Работает' if ws == 'working' else 'Не активен' }}
+                            </div>
+                        </td>
+                        <td>{{ d.phone }}</td>
+                        <td><span class="pill">{{ d.park_name }}</span></td>
+                        <td>
+                            {% if d.vehicle_plate %}
+                                <span class="plate">{{ d.vehicle_plate }}</span>
+                            {% else %}
+                                <span class="plate empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set bal = d.balance %}
+                            <span class="balance {{ 'balance-neg' if bal < 0 else '' }}">
+                                {{ "%.0f"|format(bal) }} ₽
+                            </span>
+                        </td>
+                        <td style="font-size:12px;color:var(--muted);">{{ d.last_active_at[:10] if d.last_active_at else "—" }}</td>
+                        <td><a class="link" href="/fleet/driver/{{ d.id }}">Профиль →</a></td>
+                    </tr>
+                    {% endfor %}
+                    {% if not drivers %}
+                    <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted);">Нет активных пилотов</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ─── МОДАЛКА: Добавить водителя ─── -->
+    <div class="modal" id="driverModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">ДОБАВИТЬ ВОДИТЕЛЯ (YANDEX V1)</div>
+                <button class="btn-ghost" id="closeDriverModal">✕</button>
+            </div>
+            <div class="modal-grid">
+                <div class="field">
+                    <label>Парк</label>
+                    <select id="driverPark">
+                        <option value="PRO">PRO</option>
+                        <option value="GO">GO</option>
+                        <option value="PLUS">PLUS</option>
+                        <option value="EXPRESS">EXPRESS</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Тип занятости</label>
+                    <select id="driverEmployment">
+                        <option value="selfemployed">selfemployed</option>
+                        <option value="park_employee">park_employee</option>
+                        <option value="individual_entrepreneur">individual_entrepreneur</option>
+                    </select>
+                </div>
+                <div class="field"><label>Фамилия</label><input id="driverLastName"></div>
+                <div class="field"><label>Имя</label><input id="driverFirstName"></div>
+                <div class="field"><label>Отчество</label><input id="driverMiddleName"></div>
+                <div class="field"><label>Телефон</label><input id="driverPhone" placeholder="+7..."></div>
+                <div class="field"><label>Дата рождения (YYYY-MM-DD)</label><input id="driverBirthDate"></div>
+                <div class="field"><label>Стаж с (YYYY-MM-DD)</label><input id="driverExperienceSince"></div>
+                <div class="field"><label>Номер ВУ</label><input id="driverLicenseNumber"></div>
+                <div class="field"><label>ВУ выдан (YYYY-MM-DD)</label><input id="driverLicenseIssue"></div>
+                <div class="field"><label>ВУ до (YYYY-MM-DD)</label><input id="driverLicenseExpiry"></div>
+                <div class="field"><label>Страна ВУ</label><input id="driverLicenseCountry" value="rus"></div>
+                <div class="field"><label>Email</label><input id="driverEmail"></div>
+                <div class="field"><label>Адрес</label><input id="driverAddress"></div>
+                <div class="field"><label>ИНН</label><input id="driverTaxId"></div>
+                <div class="field"><label>car_id (опционально)</label><input id="driverCarId"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="cancelDriverCreate">Отмена</button>
+                <button class="btn-accent" id="submitDriverCreate">Добавить водителя</button>
+            </div>
+            <div class="modal-status" id="driverModalStatus">Заполните обязательные поля</div>
+        </div>
+    </div>
+
+    <!-- ─── МОДАЛКА: Новый авто ─── -->
+    <div class="modal" id="carModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">➕ НОВЫЙ АВТОМОБИЛЬ</div>
+                <button class="btn-ghost" id="closeCarModal">✕</button>
+            </div>
+            <div class="modal-grid">
+                <div class="field">
+                    <label>Парк</label>
+                    <select id="carPark">
+                        <option value="PRO">PRO</option>
+                        <option value="GO">GO</option>
+                        <option value="PLUS">PLUS</option>
+                        <option value="EXPRESS">EXPRESS</option>
+                    </select>
+                </div>
+                <div class="field"><label>Госномер</label><input id="carPlate" placeholder="А123БВ790" style="font-size:18px;font-weight:700;"></div>
+                <div class="field"><label>VIN (17 знаков)</label><input id="carVin" maxlength="17"></div>
+                <div class="field"><label>Марка</label><input id="carBrand" placeholder="Kia"></div>
+                <div class="field"><label>Модель</label><input id="carModel" placeholder="Rio"></div>
+                <div class="field"><label>Год</label><input id="carYear" type="number" placeholder="2024"></div>
+                <div class="field"><label>Цвет</label><input id="carColor" placeholder="Белый"></div>
+                <div class="field"><label>Номер СТС</label><input id="carSts"></div>
+                <div class="field">
+                    <label>Тип владения</label>
+                    <select id="carOwnership">
+                        <option value="sublease">Парковый (субаренда)</option>
+                        <option value="connected">Подключение</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="cancelCarCreate">Отмена</button>
+                <button class="btn-accent" id="submitCarCreate">Создать авто</button>
+            </div>
+            <div class="modal-status" id="carModalStatus">Заполните обязательные поля</div>
+        </div>
+    </div>
+
+    <script>
+        /* ─── ФИЛЬТРАЦИЯ ─── */
+        const searchInput = document.getElementById('searchInput');
+        const parkTabs = document.getElementById('parkTabs');
+        const rows = Array.from(document.querySelectorAll('.driver-row'));
+        const visibleCount = document.getElementById('visibleCount');
+        let currentPark = 'ALL';
+
+        function applyFilters(){
+            const term = (searchInput.value || '').trim().toLowerCase();
+            let visible = 0;
+            rows.forEach(row => {
+                const park = row.dataset.park || 'PRO';
+                const name = row.dataset.name || '';
+                const phone = row.dataset.phone || '';
+                const car = row.dataset.car || '';
+                const matchPark = currentPark === 'ALL' || park === currentPark;
+                const matchText = !term || name.includes(term) || phone.includes(term) || car.toLowerCase().includes(term);
+                if (matchPark && matchText) {
+                    row.style.display = '';
+                    visible += 1;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            if (visibleCount) visibleCount.textContent = String(visible);
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (parkTabs) {
+            parkTabs.querySelectorAll('.park-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    parkTabs.querySelectorAll('.park-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPark = btn.dataset.park || 'ALL';
+                    applyFilters();
+                });
+            });
+        }
+        applyFilters();
+
+        /* ─── МОДАЛКА: Водитель ─── */
+        const driverModal = document.getElementById('driverModal');
+        document.getElementById('openDriverModal').onclick = () => driverModal.classList.add('active');
+        document.getElementById('closeDriverModal').onclick = () => driverModal.classList.remove('active');
+        document.getElementById('cancelDriverCreate').onclick = () => driverModal.classList.remove('active');
+
+        function val(id){ const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+        document.getElementById('submitDriverCreate').onclick = async () => {
+            const statusEl = document.getElementById('driverModalStatus');
+            const payload = {
+                park_name: val('driverPark'), employment_type: val('driverEmployment'),
+                first_name: val('driverFirstName'), last_name: val('driverLastName'),
+                middle_name: val('driverMiddleName') || null, phone: val('driverPhone'),
+                birth_date: val('driverBirthDate'), driver_license_experience_since: val('driverExperienceSince'),
+                license_number: val('driverLicenseNumber'), license_issue_date: val('driverLicenseIssue'),
+                license_expiry_date: val('driverLicenseExpiry'), license_country: val('driverLicenseCountry') || 'rus',
+                email: val('driverEmail') || null, address: val('driverAddress') || null,
+                tax_identification_number: val('driverTaxId') || null, profession: 'taxi/driver',
+                car_id: val('driverCarId') || null
+            };
+            const required = [payload.park_name, payload.first_name, payload.last_name, payload.phone,
+                payload.birth_date, payload.driver_license_experience_since, payload.license_number,
+                payload.license_issue_date, payload.license_expiry_date];
+            if (required.some(v => !v)) { statusEl.textContent = 'Заполните все обязательные поля'; return; }
+            statusEl.textContent = 'Отправка в Яндекс V1...';
+            try {
+                const res = await fetch('/api/v1/fleet/drivers/add', {
+                    method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { statusEl.textContent = data.detail || 'Ошибка создания'; return; }
+                statusEl.textContent = 'Водитель создан. Обновление...';
+                setTimeout(() => window.location.reload(), 800);
+            } catch (err) { statusEl.textContent = 'Сбой сети или API'; }
+        };
+
+        /* ─── МОДАЛКА: Авто ─── */
+        const carModal = document.getElementById('carModal');
+        document.getElementById('openCarModal').onclick = () => carModal.classList.add('active');
+        document.getElementById('closeCarModal').onclick = () => carModal.classList.remove('active');
+        document.getElementById('cancelCarCreate').onclick = () => carModal.classList.remove('active');
+
+        document.getElementById('submitCarCreate').onclick = async () => {
+            const statusEl = document.getElementById('carModalStatus');
+            const payload = {
+                park_name: val('carPark'), license_plate: val('carPlate'), vin: val('carVin'),
+                brand: val('carBrand'), model: val('carModel'), year: parseInt(val('carYear')) || 2024,
+                color: val('carColor'), sts_number: val('carSts'), ownership_type: val('carOwnership'),
+                callsign: null
+            };
+            const required = [payload.license_plate, payload.vin, payload.brand, payload.model, payload.color, payload.sts_number];
+            if (required.some(v => !v)) { statusEl.textContent = 'Заполните все обязательные поля'; return; }
+            statusEl.textContent = 'Создание авто...';
+            try {
+                const res = await fetch('/api/v1/fleet/vehicles/add', {
+                    method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { statusEl.textContent = data.detail || 'Ошибка создания'; return; }
+                statusEl.textContent = 'Авто создан. Обновление...';
+                setTimeout(() => window.location.reload(), 800);
+            } catch (err) { statusEl.textContent = 'Сбой сети или API'; }
+        };
+    </script>
+    <script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</body>
+</html>

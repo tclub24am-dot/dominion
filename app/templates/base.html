@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}S-GLOBAL DOMINION{% endblock %}</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Local Fonts - Offline Mode -->
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg: #0D0C0B;
+            --panel: rgba(13, 12, 11, 0.85);
+            --glass: rgba(8, 8, 8, 0.55);
+            --border: rgba(212, 175, 55, 0.55);
+            --text: #f4efe0;
+            --muted: #b6a77a;
+            --accent: #D4AF37;
+            --accent-2: #FFD700;
+            --success: #D4AF37;
+            --warning: #FFD700;
+            --danger: #8B6508;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(circle at 50% 45%, rgba(212,175,55,0.14), rgba(13,12,11,0.96) 65%), var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1rem; }
+        .glass-panel {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        .gold-text { color: var(--accent); }
+        .muted-text { color: var(--muted); }
+        .btn-gold {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #1A1A1A;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+        }
+        .nav-link {
+            color: var(--muted);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover { color: var(--accent); }
+        h1, h2, h3 { font-family: 'Cinzel', serif; }
+        .page-header {
+            padding: 2rem 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-success { background: rgba(212, 175, 55, 0.2); color: var(--accent); }
+        .badge-warning { background: rgba(255, 215, 0, 0.2); color: var(--warning); }
+        .badge-danger { background: rgba(139, 101, 8, 0.2); color: var(--danger); }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+        }
+        .empty-state h3 { color: var(--accent); margin-bottom: 1rem; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="glass-panel" style="position: sticky; top: 0; z-index: 100; margin-bottom: 1rem;">
+        <div class="container flex items-center justify-between py-3">
+            <a href="/" class="flex items-center gap-2">
+                <img src="/static/assets/logo.png" alt="S-GLOBAL" class="h-8">
+                <span class="gold-text font-bold" style="font-family: 'Orbitron', sans-serif;">DOMINION</span>
+            </a>
+            <div class="flex items-center gap-4">
+                {% if current_user %}
+                <span class="muted-text">{{ current_user.full_name or current_user.username }}</span>
+                <a href="/logout" class="nav-link">Выход</a>
+                {% else %}
+                <a href="/login" class="btn-gold">Вход</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-panel mt-8 py-4">
+        <div class="container text-center muted-text text-sm">
+            <p>S-GLOBAL DOMINION &copy; 2026 | ВЕРШИНА v200.11</p>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

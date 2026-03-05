@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Dashboard</h1>
+    <p class="muted-text">Панель управления</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Quick Stats -->
+    <div class="card">
+        <h3 class="gold-text mb-4">Флот</h3>
+        <div class="space-y-2">
+            <div class="flex justify-between">
+                <span class="muted-text">Активных машин:</span>
+                <span class="gold-text">—</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Водителей:</span>
+                <span class="gold-text">—</span>
+            </div>
+        </div>
+        <a href="/fleet" class="btn-gold mt-4 inline-block">Перейти →</a>
+    </div>
+
+    <div class="card">
+        <h3 class="gold-text mb-4">Казна</h3>
+        <div class="space-y-2">
+            <div class="flex justify-between">
+                <span class="muted-text">Баланс:</span>
+                <span class="gold-text">—</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Транзакций:</span>
+                <span class="gold-text">—</span>
+            </div>
+        </div>
+        <a href="/kazna" class="btn-gold mt-4 inline-block">Перейти →</a>
+    </div>
+
+    <div class="card">
+        <h3 class="gold-text mb-4">Аналитика</h3>
+        <div class="space-y-2">
+            <div class="flex justify-between">
+                <span class="muted-text">Отчётов:</span>
+                <span class="gold-text">—</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Метрик:</span>
+                <span class="gold-text">—</span>
+            </div>
+        </div>
+        <a href="/analytics" class="btn-gold mt-4 inline-block">Перейти →</a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card mt-6">
+    <h2 class="text-xl gold-text mb-4">Последняя активность</h2>
+    <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Активность появится после начала работы системы</p>
+    </div>
+</div>
+{% endblock %}

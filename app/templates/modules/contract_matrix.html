@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Матрица Условий • T-CLUB24</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{--bg:#0b0b12;--panel:#121528;--border:rgba(212,175,55,0.6);--text:#f7f4ee;--muted:#9aa5ce;}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;}
+        .wrap{padding:24px 28px;}
+        h1{font-size:16px;letter-spacing:0.2em;}
+        table{width:100%;border-collapse:collapse;margin-top:14px;background:var(--panel);border:1px solid var(--border);}
+        th,td{padding:10px 12px;border-bottom:1px solid rgba(212,175,55,0.2);font-size:12px;}
+        th{text-align:left;color:var(--muted);}
+        input{width:100%;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 8px;font-size:12px;}
+        button{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:10px;padding:6px 10px;font-size:11px;}
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>МАТРИЦА УСЛОВИЙ</h1>
+        <table id="matrixTable">
+            <thead>
+                <tr>
+                    <th>Парк</th>
+                    <th>Аренда партнеру</th>
+                    <th>Субаренда водителю</th>
+                    <th>Комиссия</th>
+                    <th>Льготная ставка</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        const tableBody = document.querySelector('#matrixTable tbody');
+        function renderRows(defaults){
+            tableBody.innerHTML = '';
+            Object.keys(defaults).forEach(park => {
+                const row = defaults[park];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${park}</td>
+                    <td><input type="number" step="1" min="0" data-field="partner_daily_rent" value="${row.partner_daily_rent ?? 0}"></td>
+                    <td><input type="number" step="1" min="0" data-field="driver_daily_rent" value="${row.driver_daily_rent ?? 0}"></td>
+                    <td><input type="number" step="0.001" min="0" max="1" data-field="commission_rate" value="${row.commission_rate ?? 0}"></td>
+                    <td><input type="number" step="1" min="0" data-field="day_off_rate" value="${row.day_off_rate ?? 0}"></td>
+                    <td><button data-park="${park}">Сохранить</button></td>
+                `;
+                tr.querySelector('button').onclick = () => saveRow(park, tr);
+                tableBody.appendChild(tr);
+            });
+        }
+        function saveRow(park, row){
+            const payload = { park };
+            row.querySelectorAll('input').forEach(input => {
+                payload[input.dataset.field] = Number(input.value || 0);
+            });
+            fetch('/api/v1/fleet/contract-terms/defaults', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            }).then(() => refresh());
+        }
+        function refresh(){
+            fetch('/api/v1/fleet/contract-terms/defaults')
+                .then(r => r.json())
+                .then(data => renderRows(data.defaults || {}));
+        }
+        refresh();
+    </script>
+</body>
+<script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</html>

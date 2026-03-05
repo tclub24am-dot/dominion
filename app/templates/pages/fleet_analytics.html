@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Аналитика флота | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📊 Аналитика флота</h1>
+    <p class="muted-text">Метрики и показатели</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="card text-center">
+        <div class="text-3xl gold-text">—</div>
+        <div class="muted-text">Машин в рейсе</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-green-400">—</div>
+        <div class="muted-text">Выручка</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-blue-400">—</div>
+        <div class="muted-text">Поездок</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-yellow-400">—</div>
+        <div class="muted-text">Средний чек</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="text-xl gold-text mb-4">Детальная аналитика</h2>
+    <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Данные аналитики появятся после начала работы системы</p>
+    </div>
+</div>
+{% endblock %}

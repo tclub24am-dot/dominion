@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Debug | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔧 Admin Debug</h1>
+    <p class="muted-text">Техническая панель отладки</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- System Info -->
+    <div class="card">
+        <h2 class="text-xl gold-text mb-4">Системная информация</h2>
+        <div class="space-y-2">
+            <div class="flex justify-between">
+                <span class="muted-text">Версия:</span>
+                <span>v200.11</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Python:</span>
+                <span>3.11+</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">FastAPI:</span>
+                <span>Active</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Database:</span>
+                <span class="text-green-400">Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Info -->
+    <div class="card">
+        <h2 class="text-xl gold-text mb-4">Текущий пользователь</h2>
+        {% if current_user %}
+        <div class="space-y-2">
+            <div class="flex justify-between">
+                <span class="muted-text">Username:</span>
+                <span>{{ current_user.username }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Role:</span>
+                <span>{{ current_user.role }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Park:</span>
+                <span>{{ current_user.park_name or '—' }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="muted-text">Active:</span>
+                <span class="text-green-400">{{ current_user.is_active }}</span>
+            </div>
+        </div>
+        {% else %}
+        <p class="muted-text">Не авторизован</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-6">
+    <h2 class="text-xl gold-text mb-4">Быстрые действия</h2>
+    <div class="flex flex-wrap gap-4">
+        <button class="btn-gold" onclick="location.reload()">Обновить страницу</button>
+        <button class="btn-gold" onclick="fetch('/health').then(r => r.json()).then(d => alert(JSON.stringify(d)))">Check Health</button>
+        <a href="/api/v1/nexus/widget/test" class="btn-gold">Test Widget</a>
+    </div>
+</div>
+
+<!-- Environment -->
+<div class="card mt-6">
+    <h2 class="text-xl gold-text mb-4">Переменные окружения</h2>
+    <div class="empty-state">
+        <p class="muted-text">Информация скрыта для безопасности</p>
+    </div>
+</div>
+{% endblock %}

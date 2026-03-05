@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Периодические Списания • S-GLOBAL DOMINION</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{
+            --bg:#0D0C0B;--glass:rgba(16,14,12,0.72);--border:rgba(212,175,55,0.35);
+            --text:#f4efe0;--muted:#b6a77a;--accent:#D4AF37;--accent-2:#FFD700;
+            --success:#23c981;--danger:#ff6b6b;--warn:#ffb347;
+            --ivory:#f7f4ee;--obsidian:#0D0C0B;
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:radial-gradient(ellipse at 50% 20%, rgba(212,175,55,0.08), rgba(13,12,11,0.98) 70%), var(--bg);
+             color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh;padding-bottom:64px;}
+
+        /* ── HEADER ── */
+        .pc-header{padding:20px 28px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+        .pc-header .back{color:var(--accent);text-decoration:none;font-size:12px;display:inline-flex;align-items:center;gap:6px;opacity:0.8;transition:opacity 0.2s;}
+        .pc-header .back:hover{opacity:1;}
+        .pc-title{font-family:'Orbitron',sans-serif;font-size:18px;letter-spacing:0.14em;color:var(--accent-2);}
+        .pc-sub{font-size:11px;color:var(--muted);padding:4px 28px 12px;}
+
+        /* ── SUMMARY STRIP ── */
+        .pc-summary{padding:0 28px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+        .ps-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+        .ps-card .ps-label{font-size:9px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;}
+        .ps-card .ps-value{font-family:'Orbitron',sans-serif;font-size:16px;color:var(--accent-2);}
+        .ps-card .ps-value.green{color:var(--success);}
+        .ps-card .ps-value.red{color:var(--danger);}
+        .ps-card .ps-value.warn{color:var(--warn);}
+
+        /* ── TOOLBAR ── */
+        .pc-toolbar{padding:0 28px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+        .pc-toolbar .search-input{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 14px;font-size:12px;width:260px;font-family:inherit;}
+        .pc-toolbar .search-input:focus{border-color:var(--accent);outline:none;}
+        .pc-toolbar select{background:#0D0C0B;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:12px;font-family:inherit;}
+        .pc-toolbar .action-btn{background:linear-gradient(135deg,#D4AF37,#B8860B);color:#0D0C0B;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.04em;transition:all 0.2s;}
+        .pc-toolbar .action-btn:hover{box-shadow:0 4px 16px rgba(212,175,55,0.4);transform:translateY(-1px);}
+        .pc-toolbar .action-btn.danger{background:linear-gradient(135deg,#ff6b6b,#cc4444);}
+        .pc-toolbar .action-btn.secondary{background:transparent;border:1px solid var(--border);color:var(--accent);font-weight:500;}
+        .pc-toolbar .action-btn.secondary:hover{border-color:var(--accent);background:rgba(212,175,55,0.1);}
+
+        /* ── TABLE ── */
+        .pc-table-wrap{padding:0 28px;overflow:auto;}
+        .pc-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--glass);border:1px solid var(--border);border-radius:14px;overflow:hidden;font-size:12px;min-width:900px;}
+        .pc-table thead th{padding:12px 14px;text-align:left;font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;border-bottom:2px solid var(--border);background:rgba(13,12,11,0.8);position:sticky;top:0;z-index:2;}
+        .pc-table tbody tr{transition:background 0.15s;}
+        .pc-table tbody tr:hover{background:rgba(212,175,55,0.06);}
+        .pc-table tbody td{padding:10px 14px;border-bottom:1px solid rgba(212,175,55,0.08);vertical-align:middle;}
+        .pc-table .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:600;letter-spacing:0.03em;}
+        .status-badge.active{background:rgba(35,201,129,0.15);color:var(--success);border:1px solid rgba(35,201,129,0.4);}
+        .status-badge.repair{background:rgba(255,165,0,0.15);color:#ffa500;border:1px solid rgba(255,165,0,0.4);}
+        .status-badge.day_off{background:rgba(100,149,237,0.15);color:#6495ed;border:1px solid rgba(100,149,237,0.4);}
+        .status-badge.idle{background:rgba(128,128,128,0.15);color:#888;border:1px solid rgba(128,128,128,0.4);}
+        .status-badge.no_driver{background:rgba(255,183,71,0.15);color:var(--warn);border:1px solid rgba(255,183,71,0.4);}
+        .status-badge.terminated{background:rgba(255,107,107,0.15);color:var(--danger);border:1px solid rgba(255,107,107,0.4);}
+        .pc-table .plate-link{color:var(--accent-2);text-decoration:none;font-weight:600;}
+        .pc-table .plate-link:hover{text-decoration:underline;}
+        .rent-amount{font-variant-numeric:tabular-nums;font-weight:600;}
+        .edit-btn{background:transparent;border:1px solid var(--border);color:var(--accent);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:10px;transition:all 0.2s;}
+        .edit-btn:hover{background:rgba(212,175,55,0.15);border-color:var(--accent);}
+
+        /* ── EDIT MODAL ── */
+        .edit-modal{position:fixed;inset:0;background:rgba(6,8,12,0.85);display:none;align-items:center;justify-content:center;z-index:2500;backdrop-filter:blur(8px);}
+        .edit-modal.active{display:flex;}
+        .edit-inner{background:rgba(18,21,40,0.95);border:1px solid var(--accent);border-radius:16px;padding:28px;width:480px;max-width:95vw;box-shadow:0 16px 50px rgba(0,0,0,0.5);}
+        .edit-inner h3{font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:0.1em;color:var(--accent-2);margin-bottom:16px;}
+        .edit-inner .form-row{margin-bottom:12px;}
+        .edit-inner label{display:block;font-size:10px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;}
+        .edit-inner input[type="number"],.edit-inner input[type="text"]{width:100%;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px;font-family:inherit;}
+        .edit-inner input:focus{border-color:var(--accent);outline:none;}
+        .edit-inner .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+        .edit-inner .toggle-row input[type="checkbox"]{accent-color:var(--accent);width:18px;height:18px;}
+        .edit-inner .toggle-label{font-size:12px;color:var(--text);}
+        .edit-inner .form-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end;}
+        .edit-inner .form-actions button{border-radius:8px;padding:10px 20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:0.04em;}
+        .btn-save{background:linear-gradient(135deg,#D4AF37,#B8860B);color:#0D0C0B;border:none;}
+        .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);}
+
+        /* ── DEDUCTION STATUS ── */
+        .deduction-panel{padding:12px 28px;margin-bottom:8px;}
+        .deduction-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+        .deduction-info{font-size:12px;}
+        .deduction-info strong{color:var(--accent-2);font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:0.06em;}
+        .deduction-info .time{color:var(--muted);font-size:11px;margin-top:2px;}
+
+        /* ── LOADING ── */
+        .pc-loading{text-align:center;padding:60px;color:var(--muted);font-size:13px;}
+        .pc-loading .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+
+        @media(max-width:768px){
+            .pc-header,.pc-sub,.pc-summary,.pc-toolbar,.pc-table-wrap,.deduction-panel{padding-left:14px;padding-right:14px;}
+            .pc-title{font-size:14px;}
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="pc-header">
+        <a class="back" href="/fleet">← Командная башня</a>
+        <div class="pc-title">ПЕРИОДИЧЕСКИЕ СПИСАНИЯ</div>
+    </div>
+    <div class="pc-sub">Матрица Законов — настройка суточных тарифов, автосписания аренды, статусы бортов</div>
+
+    <!-- DEDUCTION ENGINE -->
+    <div class="deduction-panel">
+        <div class="deduction-card">
+            <div class="deduction-info">
+                <strong>ДВИГАТЕЛЬ ЖАТВЫ</strong>
+                <div class="time">Автосписание: ежедневно в 00:00 · Следующий цикл: сегодня в полночь</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button class="action-btn" id="triggerDeduction">⚡ ЗАПУСТИТЬ СЕЙЧАС</button>
+                <a href="/fleet/calendar" class="action-btn secondary">📅 КАЛЕНДАРЬ</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="pc-summary" id="pcSummary">
+        <div class="ps-card"><div class="ps-label">ВСЕГО ПРАВИЛ</div><div class="ps-value" id="psTotal">—</div></div>
+        <div class="ps-card"><div class="ps-label">АКТИВНЫЕ</div><div class="ps-value green" id="psActive">—</div></div>
+        <div class="ps-card"><div class="ps-label">РЕМОНТ</div><div class="ps-value warn" id="psRepair">—</div></div>
+        <div class="ps-card"><div class="ps-label">ПРОСТОЙ</div><div class="ps-value" id="psIdle">—</div></div>
+        <div class="ps-card"><div class="ps-label">БЕЗ ВОДИТЕЛЯ</div><div class="ps-value red" id="psNoDriver">—</div></div>
+        <div class="ps-card"><div class="ps-label">СУММА СУТОК</div><div class="ps-value green" id="psDailyTotal">—</div></div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="pc-toolbar">
+        <input type="text" class="search-input" id="pcSearch" placeholder="Поиск: госномер, водитель...">
+        <select id="pcStatusFilter">
+            <option value="all">Все статусы</option>
+            <option value="active">Активные</option>
+            <option value="repair">Ремонт</option>
+            <option value="day_off">Выходной</option>
+            <option value="idle">Простой</option>
+            <option value="no_driver">Без водителя</option>
+            <option value="terminated">Прекращено</option>
+        </select>
+        <button class="action-btn secondary" id="bulkEditBtn">✏️ Массовое редактирование</button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="pc-table-wrap">
+        <div class="pc-loading" id="pcLoading">
+            <div class="spinner"></div>
+            Загрузка данных...
+        </div>
+        <table class="pc-table" id="pcTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>СТАТУС</th>
+                    <th>БОРТ</th>
+                    <th>МАРКА / МОДЕЛЬ</th>
+                    <th>ВОДИТЕЛЬ</th>
+                    <th>ПАРК</th>
+                    <th>АРЕНДА (СУТКИ)</th>
+                    <th>ПАРТНЁРУ</th>
+                    <th>КОМИССИЯ</th>
+                    <th>ВЫХОДНОЙ</th>
+                    <th>ДЕЙСТВИЕ</th>
+                </tr>
+            </thead>
+            <tbody id="pcBody"></tbody>
+        </table>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div class="edit-modal" id="editModal">
+        <div class="edit-inner" id="editInner">
+            <h3 id="editTitle">РЕДАКТИРОВАНИЕ ТАРИФА</h3>
+            <div class="form-row">
+                <label>Суточная аренда водителя (₽)</label>
+                <input type="number" id="edDriverRent" step="50" min="0">
+            </div>
+            <div class="form-row">
+                <label>Суточная ставка партнёру (₽)</label>
+                <input type="number" id="edPartnerRent" step="50" min="0">
+            </div>
+            <div class="form-row">
+                <label>Комиссия парка (%)</label>
+                <input type="number" id="edCommission" step="0.1" min="0" max="100">
+            </div>
+            <div class="form-row">
+                <label>Ставка выходного дня (₽)</label>
+                <input type="number" id="edDayOffRate" step="50" min="0">
+            </div>
+            <div class="toggle-row">
+                <input type="checkbox" id="edIsRepair">
+                <label class="toggle-label" for="edIsRepair">🔧 Борт на ремонте (списание приостановлено)</label>
+            </div>
+            <div class="toggle-row">
+                <input type="checkbox" id="edIsDayOff">
+                <label class="toggle-label" for="edIsDayOff">☀ Выходной день (льготная ставка)</label>
+            </div>
+            <div class="toggle-row">
+                <input type="checkbox" id="edIsIdle">
+                <label class="toggle-label" for="edIsIdle">— Простой (без списания)</label>
+            </div>
+            <input type="hidden" id="edVehicleId">
+            <div class="form-actions">
+                <button class="btn-cancel" id="editCancel">ОТМЕНА</button>
+                <button class="btn-save" id="editSave">СОХРАНИТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BULK MODAL -->
+    <div class="edit-modal" id="bulkModal">
+        <div class="edit-inner">
+            <h3>МАССОВОЕ ОБНОВЛЕНИЕ</h3>
+            <div class="pc-sub" style="padding:0;margin-bottom:12px;">Обновить тариф для всех отмеченных бортов</div>
+            <div class="form-row">
+                <label>Суточная аренда водителя (₽)</label>
+                <input type="number" id="bulkDriverRent" step="50" min="0" placeholder="Оставьте пустым, чтобы не менять">
+            </div>
+            <div class="form-row">
+                <label>Суточная ставка партнёру (₽)</label>
+                <input type="number" id="bulkPartnerRent" step="50" min="0" placeholder="Оставьте пустым, чтобы не менять">
+            </div>
+            <div class="form-actions">
+                <button class="btn-cancel" id="bulkCancel">ОТМЕНА</button>
+                <button class="btn-save" id="bulkSave">ПРИМЕНИТЬ КО ВСЕМ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        'use strict';
+
+        let allCharges = [];
+        const fmt = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits: 0});
+
+        const statusLabels = {
+            active:     { text: 'Активно',    cls: 'active',    icon: '✓' },
+            repair:     { text: 'Ремонт',     cls: 'repair',    icon: '🔧' },
+            day_off:    { text: 'Выходной',   cls: 'day_off',   icon: '☀' },
+            idle:       { text: 'Простой',    cls: 'idle',      icon: '—' },
+            no_driver:  { text: 'Без водителя', cls: 'no_driver', icon: '⚠' },
+            terminated: { text: 'Прекращено', cls: 'terminated', icon: '✗' },
+        };
+
+        /* ── LOAD DATA ── */
+        async function loadCharges() {
+            document.getElementById('pcLoading').style.display = 'block';
+            document.getElementById('pcTable').style.display = 'none';
+            try {
+                const res = await fetch('/api/v1/fleet/periodic-charges-data', { credentials: 'include' });
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+                allCharges = data.charges || [];
+                renderTable(allCharges);
+                renderSummary(allCharges);
+            } catch (e) {
+                document.getElementById('pcBody').innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--danger);padding:40px;">Ошибка: ${e.message}</td></tr>`;
+                document.getElementById('pcTable').style.display = 'table';
+            } finally {
+                document.getElementById('pcLoading').style.display = 'none';
+            }
+        }
+
+        /* ── RENDER TABLE ── */
+        function renderTable(charges) {
+            const tbody = document.getElementById('pcBody');
+            if (!charges.length) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:40px;">Нет данных</td></tr>';
+                document.getElementById('pcTable').style.display = 'table';
+                return;
+            }
+
+            tbody.innerHTML = charges.map(c => {
+                const st = statusLabels[c.status] || statusLabels.terminated;
+                return `<tr data-id="${c.id}" data-vehicle-plate="${c.vehicle_plate}" data-driver="${c.driver_name}">
+                    <td><span class="status-badge ${st.cls}">${st.icon} ${st.text}</span></td>
+                    <td><a href="/fleet/vehicle/${c.id}" class="plate-link">${c.vehicle_plate}</a></td>
+                    <td style="color:var(--muted);">${c.vehicle_info}</td>
+                    <td>${c.driver_name}</td>
+                    <td style="color:var(--muted);font-size:10px;">${c.park_name}</td>
+                    <td class="rent-amount" style="color:var(--success);">${c.driver_rent > 0 ? fmt(c.driver_rent) + ' ₽' : '—'}</td>
+                    <td class="rent-amount">${c.partner_rent > 0 ? fmt(c.partner_rent) + ' ₽' : '—'}</td>
+                    <td>${c.commission_rate > 0 ? c.commission_rate + '%' : '—'}</td>
+                    <td>${c.day_off_rate > 0 ? fmt(c.day_off_rate) + ' ₽' : '—'}</td>
+                    <td><button class="edit-btn" onclick="window._editCharge(${JSON.stringify(c).replace(/"/g, '&quot;')})">✏️ Изменить</button></td>
+                </tr>`;
+            }).join('');
+            document.getElementById('pcTable').style.display = 'table';
+        }
+
+        /* ── RENDER SUMMARY ── */
+        function renderSummary(charges) {
+            const active = charges.filter(c => c.status === 'active');
+            const repair = charges.filter(c => c.status === 'repair');
+            const idle = charges.filter(c => c.status === 'idle');
+            const noDriver = charges.filter(c => c.status === 'no_driver');
+            const dailyTotal = active.reduce((s, c) => s + (c.driver_rent || 0), 0);
+
+            document.getElementById('psTotal').textContent = charges.length;
+            document.getElementById('psActive').textContent = active.length;
+            document.getElementById('psRepair').textContent = repair.length;
+            document.getElementById('psIdle').textContent = idle.length;
+            document.getElementById('psNoDriver').textContent = noDriver.length;
+            document.getElementById('psDailyTotal').textContent = fmt(dailyTotal) + ' ₽';
+        }
+
+        /* ── SEARCH & FILTER ── */
+        document.getElementById('pcSearch').addEventListener('input', applyFilters);
+        document.getElementById('pcStatusFilter').addEventListener('change', applyFilters);
+
+        function applyFilters() {
+            const query = (document.getElementById('pcSearch').value || '').toLowerCase();
+            const status = document.getElementById('pcStatusFilter').value;
+            const filtered = allCharges.filter(c => {
+                if (status !== 'all' && c.status !== status) return false;
+                if (query && !(c.vehicle_plate || '').toLowerCase().includes(query) &&
+                    !(c.driver_name || '').toLowerCase().includes(query) &&
+                    !(c.vehicle_info || '').toLowerCase().includes(query)) return false;
+                return true;
+            });
+            renderTable(filtered);
+        }
+
+        /* ── EDIT MODAL ── */
+        const editModal = document.getElementById('editModal');
+        const editCancel = document.getElementById('editCancel');
+        const editSave = document.getElementById('editSave');
+
+        window._editCharge = function(c) {
+            document.getElementById('editTitle').textContent = `ТАРИФ: ${c.vehicle_plate} ${c.vehicle_info}`;
+            document.getElementById('edDriverRent').value = c.driver_rent || 0;
+            document.getElementById('edPartnerRent').value = c.partner_rent || 0;
+            document.getElementById('edCommission').value = c.commission_rate || 0;
+            document.getElementById('edDayOffRate').value = c.day_off_rate || 0;
+            document.getElementById('edIsRepair').checked = c.is_repair || false;
+            document.getElementById('edIsDayOff').checked = c.is_day_off || false;
+            document.getElementById('edIsIdle').checked = c.is_idle || false;
+            // id = vehicle_id (Единый Источник Истины)
+            document.getElementById('edVehicleId').value = c.id;
+            editModal.classList.add('active');
+        };
+
+        editCancel.onclick = () => editModal.classList.remove('active');
+        editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.remove('active'); });
+
+        editSave.onclick = async () => {
+            const vid = parseInt(document.getElementById('edVehicleId').value);
+            const payload = {
+                vehicle_id: vid,
+                driver_daily_rent: parseFloat(document.getElementById('edDriverRent').value) || 0,
+                partner_daily_rent: parseFloat(document.getElementById('edPartnerRent').value) || 0,
+                commission_rate: (parseFloat(document.getElementById('edCommission').value) || 0) / 100,
+                day_off_rate: parseFloat(document.getElementById('edDayOffRate').value) || 0,
+                is_repair: document.getElementById('edIsRepair').checked,
+                is_day_off: document.getElementById('edIsDayOff').checked,
+                is_idle: document.getElementById('edIsIdle').checked,
+            };
+            try {
+                editSave.textContent = 'СОХРАНЯЮ...';
+                const res = await fetch('/api/v1/fleet/tariff/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    editModal.classList.remove('active');
+                    loadCharges(); // Reload
+                } else {
+                    alert(data.error || 'Ошибка сохранения');
+                }
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
+            } finally {
+                editSave.textContent = 'СОХРАНИТЬ';
+            }
+        };
+
+        /* ── BULK MODAL ── */
+        const bulkModal = document.getElementById('bulkModal');
+        document.getElementById('bulkEditBtn').onclick = () => bulkModal.classList.add('active');
+        document.getElementById('bulkCancel').onclick = () => bulkModal.classList.remove('active');
+        bulkModal.addEventListener('click', e => { if (e.target === bulkModal) bulkModal.classList.remove('active'); });
+
+        document.getElementById('bulkSave').onclick = async () => {
+            const dr = document.getElementById('bulkDriverRent').value;
+            const pr = document.getElementById('bulkPartnerRent').value;
+            if (!dr && !pr) { alert('Укажите хотя бы одно значение'); return; }
+
+            const vehicleIds = allCharges.filter(c => c.status === 'active').map(c => c.id);
+            if (!vehicleIds.length) { alert('Нет активных правил для обновления'); return; }
+
+            const payload = { vehicle_ids: vehicleIds };
+            if (dr) payload.driver_daily_rent = parseFloat(dr);
+            if (pr) payload.partner_daily_rent = parseFloat(pr);
+
+            try {
+                const btn = document.getElementById('bulkSave');
+                btn.textContent = 'ПРИМЕНЯЮ...';
+                const res = await fetch('/api/v1/fleet/tariff/bulk-update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    bulkModal.classList.remove('active');
+                    loadCharges();
+                } else {
+                    alert(data.error || 'Ошибка');
+                }
+                btn.textContent = 'ПРИМЕНИТЬ КО ВСЕМ';
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
+            }
+        };
+
+        /* ── TRIGGER DEDUCTION ── */
+        document.getElementById('triggerDeduction').onclick = async function() {
+            if (!confirm('Запустить цикл суточных списаний СЕЙЧАС?')) return;
+            this.textContent = '⏳ ВЫПОЛНЯЮ...';
+            this.disabled = true;
+            try {
+                const res = await fetch('/api/v1/fleet/tariff/trigger-deduction', {
+                    method: 'POST',
+                    credentials: 'include',
+                });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    alert(`Списание завершено!\n\nОбработано: ${data.processed}\nСписано: ${data.deducted}\nАлерты: ${data.alerts}`);
+                    loadCharges();
+                } else {
+                    alert(data.error || 'Ошибка запуска');
+                }
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
+            } finally {
+                this.textContent = '⚡ ЗАПУСТИТЬ СЕЙЧАС';
+                this.disabled = false;
+            }
+        };
+
+        /* ── ESC CLOSES MODALS ── */
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                editModal.classList.remove('active');
+                bulkModal.classList.remove('active');
+            }
+        });
+
+        /* ── INIT ── */
+        loadCharges();
+
+    })();
+    </script>
+    <script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</body>
+</html>

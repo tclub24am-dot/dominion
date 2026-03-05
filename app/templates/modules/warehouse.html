@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse & Service</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{--bg:#0b0b12;--glass:rgba(255,255,255,0.04);--border:rgba(225,78,202,0.35);--text:#e8eaf6;--muted:#9aa5ce;--accent:#1d8cf8;--danger:#fd5d93;--warn:#ff8d72;}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;}
+        .wrap{padding:24px;}
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.2em;margin-bottom:12px;}
+        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+        .card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:12px;}
+        .kpi{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--accent);margin-top:6px;}
+        table{width:100%;border-collapse:collapse;margin-top:16px;}
+        th,td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;}
+        .badge{padding:3px 8px;border-radius:999px;font-size:10px;border:1px solid rgba(255,255,255,0.1);}
+        .critical{color:var(--danger);border-color:var(--danger);}
+        .low{color:var(--warn);border-color:var(--warn);}
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="title">АВТОСЕРВИС И СКЛАД</div>
+        <div class="stats">
+            <div class="card"><div class="muted">Дефицит</div><div class="kpi">CRITICAL</div></div>
+            <div class="card"><div class="muted">Ремонт</div><div class="kpi">IN PROGRESS</div></div>
+            <div class="card"><div class="muted">Заказы</div><div class="kpi">LIVE</div></div>
+            <div class="card"><div class="muted">Очередь</div><div class="kpi">ACTIVE</div></div>
+        </div>
+        <table>
+            <thead><tr><th>Позиция</th><th>Остаток</th><th>Статус</th></tr></thead>
+            <tbody>
+                <tr><td>Тормозные колодки</td><td>3</td><td><span class="badge critical">Критично</span></td></tr>
+                <tr><td>Масло 5W‑30</td><td>8</td><td><span class="badge low">Низкий</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+<script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</html>

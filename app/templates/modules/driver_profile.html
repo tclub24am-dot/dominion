@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ driver.full_name }} • Профиль водителя • S-GLOBAL DOMINION</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{--bg:#0D0C0B;--panel:rgba(13,12,11,0.95);--border:rgba(212,175,55,0.2);--text:#f4efe0;--muted:#9a8e6e;--accent:#D4AF37;--accent-2:#FFD700;--danger:#ff4444;--success:#23c981;--info:#5b9aff;--warn:#ffb347;--secondary:#6c757d;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh;padding-bottom:40px;font-size:15px;}
+        .page-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 20%, rgba(212,175,55,0.05) 0%, transparent 60%);pointer-events:none;z-index:0;}
+        .wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px 24px;}
+        .back{display:inline-flex;align-items:center;gap:6px;color:var(--accent);text-decoration:none;font-size:13px;opacity:0.7;transition:opacity 0.2s;margin-bottom:16px;}
+        .back:hover{opacity:1;}
+
+        /* Profile header — Yandex-style */
+        .profile-header{display:flex;gap:20px;align-items:center;margin-bottom:24px;padding:20px 24px;background:var(--panel);border-radius:16px;border:1px solid var(--border);}
+        .avatar-large{width:72px;height:72px;border-radius:50%;background:rgba(212,175,55,0.12);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--accent);border:2px solid var(--accent);flex-shrink:0;}
+        .profile-info{flex:1;min-width:0;}
+        .profile-name{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;letter-spacing:0.1em;background:linear-gradient(135deg,#D4AF37,#FFD700,#f4efe0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;}
+        .profile-phone{font-size:13px;color:var(--muted);margin-top:3px;}
+        .profile-badges{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+        .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;}
+        .badge.status-online{background:rgba(35,201,129,0.15);color:var(--success);border:1px solid rgba(35,201,129,0.3);}
+        .badge.status-offline{background:rgba(108,117,125,0.15);color:var(--secondary);border:1px solid rgba(108,117,125,0.3);}
+        .badge.status-busy{background:rgba(35,201,129,0.15);color:var(--success);border:1px solid rgba(35,201,129,0.3);}
+        .badge.status-fired{background:rgba(255,68,68,0.15);color:var(--danger);border:1px solid rgba(255,68,68,0.3);}
+        .badge.status-blocked{background:rgba(255,68,68,0.15);color:var(--danger);border:1px solid rgba(255,68,68,0.3);}
+        .badge.park{background:rgba(212,175,55,0.12);color:var(--accent);border:1px solid rgba(212,175,55,0.3);}
+
+        /* ─── ИНФО-ПАНЕЛЬ: 4 блока в ряд (стиль Яндекс.Диспетчерской) ─── */
+        .info-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+        @media(max-width:900px){.info-strip{grid-template-columns:repeat(2,1fr);}}
+        @media(max-width:520px){.info-strip{grid-template-columns:1fr;}}
+        .info-block{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 18px;position:relative;}
+        .info-block .ib-label{font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;font-weight:500;margin-bottom:4px;}
+        .info-block .ib-value{font-size:15px;font-weight:700;}
+        .info-block .ib-hint{font-size:11px;color:var(--muted);margin-top:3px;}
+        .info-block .ib-value.big{font-size:24px;font-variant-numeric:tabular-nums;}
+        .info-block .ib-value.balance-neg{color:var(--danger);}
+        .info-block .ib-value.balance-pos{color:var(--success);}
+        .info-block .ib-value.balance-zero{color:var(--text);}
+        .info-block .ib-value.rating-good{color:var(--success);}
+        .info-block .ib-value.rating-warn{color:var(--warn);}
+        .info-block .ib-value.rating-bad{color:var(--danger);}
+        .info-block .ib-value.no-data{color:var(--muted);font-style:italic;font-size:13px;font-weight:400;}
+
+        /* Cards grid */
+        .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+        @media(max-width:768px){.cards{grid-template-columns:1fr;}}
+        .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;}
+        .card-title{font-size:13px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+        .field{margin-bottom:12px;}
+        .field-label{font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;}
+        .field-value{font-size:15px;margin-top:3px;font-weight:500;}
+        .field-value.highlight{color:var(--accent-2);font-weight:700;}
+        .field-value.danger{color:var(--danger);font-weight:700;}
+        .field-value.warn{color:var(--warn);font-weight:600;}
+        .field-value.muted{color:var(--muted);}
+        .field-value.awaiting{color:var(--muted);font-style:italic;font-size:13px;}
+
+        /* ─── ГОСНОМЕР: 22px Bold, Кириллица ─── */
+        .plate-display{
+            font-size:22px;font-weight:800;letter-spacing:0.1em;
+            color:var(--accent-2);font-family:'Montserrat',sans-serif;
+            text-transform:uppercase;
+        }
+
+        /* Transactions table */
+        .tx-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:24px;}
+        table{width:100%;border-collapse:collapse;font-size:13px;}
+        th{padding:10px 12px;text-align:left;font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid rgba(212,175,55,0.1);font-weight:600;}
+        td{padding:10px 12px;border-bottom:1px solid rgba(212,175,55,0.04);}
+        tr:hover td{background:rgba(212,175,55,0.03);}
+        .tx-positive{color:var(--success);font-weight:600;}
+        .tx-negative{color:var(--danger);font-weight:600;}
+    </style>
+</head>
+<body>
+    <div class="page-bg"></div>
+    <div class="wrap">
+        <a class="back" href="/fleet/drivers">← Реестр Исполнители</a>
+
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="avatar-large">
+                {% set initials = driver.full_name.split() %}
+                {% if initials|length >= 2 %}
+                    {{ initials[0][0] }}{{ initials[1][0] }}
+                {% else %}
+                    {{ (driver.full_name or '?')[0] }}
+                {% endif %}
+            </div>
+            <div class="profile-info">
+                <div class="profile-name">{{ driver.full_name }}</div>
+                <div class="profile-phone">{{ driver.username if driver.username and not driver.username.startswith('driver_') else '—' }}</div>
+                <div class="profile-badges">
+                    {% set ws = (driver.work_status or 'not_working')|lower %}
+                    {% set rs = (driver.realtime_status or 'offline')|lower %}
+                    {% if ws == 'working' and rs == 'busy' %}
+                        <span class="badge status-busy">🟢 На заказе</span>
+                    {% elif ws == 'working' %}
+                        <span class="badge status-online">🟢 Онлайн</span>
+                    {% elif ws == 'fired' %}
+                        <span class="badge status-fired">🔴 Уволен</span>
+                    {% elif ws == 'blocked' %}
+                        <span class="badge status-blocked">🔴 Заблокирован</span>
+                    {% else %}
+                        <span class="badge status-offline">⚫ Офлайн</span>
+                    {% endif %}
+                    <span class="badge park">{{ driver.park_name or 'PRO' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ ИНФО-ПАНЕЛЬ: 4 блока в ряд (стиль Яндекс.Диспетчерской) ═══ -->
+        {% set ws = (driver.work_status or 'not_working')|lower %}
+        {% set rs = (driver.realtime_status or 'offline')|lower %}
+        {% set bal = driver.driver_balance or 0 %}
+        {% set rat = driver.yandex_rating or 0 %}
+        {% set priority_info = (yandex_profile.get('priority', {}) or {}) if yandex_profile else {} %}
+        {% set priority_score = priority_info.get('score') or priority_info.get('priority_score') or priority_info.get('value') %}
+        {% set priority_title = priority_info.get('title') or priority_info.get('priority_title') or priority_info.get('name') %}
+        <div class="info-strip">
+            <!-- 1. Статус -->
+            <div class="info-block">
+                <div class="ib-label">Статус</div>
+                {% if ws == 'working' and rs == 'busy' %}
+                    <div class="ib-value" style="color:var(--success)">🟢 На заказе</div>
+                {% elif ws == 'working' %}
+                    <div class="ib-value" style="color:var(--success)">🟢 Работает</div>
+                {% elif ws == 'fired' %}
+                    <div class="ib-value" style="color:var(--danger)">🔴 Уволен</div>
+                {% elif ws == 'blocked' %}
+                    <div class="ib-value" style="color:var(--danger)">🔴 Заблокирован</div>
+                {% else %}
+                    <div class="ib-value" style="color:var(--secondary)">⚫ Офлайн</div>
+                {% endif %}
+                <div class="ib-hint">Яндекс.Флот • {{ driver.yandex_work_status or ws }}</div>
+            </div>
+
+            <!-- 2. Баланс -->
+            <div class="info-block">
+                <div class="ib-label">Состояние счёта</div>
+                <div class="ib-value big {{ 'balance-neg' if bal < 0 else 'balance-pos' if bal > 0 else 'balance-zero' }}">
+                    {{ "{:,.2f}".format(bal).replace(",", " ") }} ₽
+                </div>
+                <div class="ib-hint">Лимит {{ "{:,.0f}".format(driver.balance_limit or 5) }} ₽</div>
+            </div>
+
+            <!-- 3. Рейтинг -->
+            <div class="info-block">
+                <div class="ib-label">Рейтинг</div>
+                {% if rat > 0 %}
+                    <div class="ib-value big {{ 'rating-good' if rat >= 4.8 else 'rating-warn' if rat >= 4.5 else 'rating-bad' }}">
+                        ⭐ {{ "%.2f"|format(rat) }}
+                    </div>
+                {% else %}
+                    <div class="ib-value no-data">Нет данных</div>
+                {% endif %}
+            </div>
+
+            <!-- 4. Приоритет -->
+            <div class="info-block">
+                <div class="ib-label">Приоритет</div>
+                {% if priority_score %}
+                    <div class="ib-value big" style="color:var(--accent-2)">{{ priority_score }} баллов</div>
+                    {% if priority_title %}
+                        <div class="ib-hint">{{ priority_title }}</div>
+                    {% endif %}
+                {% else %}
+                    <div class="ib-value no-data">Нет данных</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="cards">
+            <!-- Личные данные -->
+            <div class="card">
+                <div class="card-title">👤 Личные данные</div>
+                <div class="field">
+                    <div class="field-label">ФИО</div>
+                    <div class="field-value">{{ driver.full_name }}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Дата рождения</div>
+                    <div class="field-value {{ 'awaiting' if not driver.birth_date else '' }}">
+                        {{ driver.birth_date.strftime('%d.%m.%Y') if driver.birth_date else 'Нет данных' }}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Телефон</div>
+                    <div class="field-value">{{ driver.username if driver.username and not driver.username.startswith('driver_') else 'Нет данных' }}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Рейтинг Яндекс</div>
+                    {% set rat = driver.yandex_rating or 0 %}
+                    <div class="field-value {{ 'highlight' if rat >= 4.8 else 'warn' if rat >= 4.5 else 'danger' if rat > 0 else 'muted' }}">
+                        {% if rat > 0 %}
+                            ⭐ {{ "%.2f"|format(rat) }}
+                        {% else %}
+                            Нет данных
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Дата принятия в парк</div>
+                    <div class="field-value {{ 'awaiting' if not driver.hire_date else '' }}">
+                        {{ driver.hire_date.strftime('%d.%m.%Y') if driver.hire_date else 'Нет данных' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Водительское удостоверение -->
+            <div class="card">
+                <div class="card-title">🪪 Водительское удостоверение</div>
+                <div class="field">
+                    <div class="field-label">Серия и номер ВУ</div>
+                    <div class="field-value {{ 'awaiting' if not driver.license_number else 'highlight' }}">
+                        {{ driver.license_number or 'Нет данных' }}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Дата выдачи</div>
+                    <div class="field-value {{ 'awaiting' if not driver.license_issue_date else '' }}">
+                        {{ driver.license_issue_date.strftime('%d.%m.%Y') if driver.license_issue_date else 'Нет данных' }}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Срок окончания</div>
+                    {% if driver.license_expiry_date %}
+                        {% set days_left = (driver.license_expiry_date - today).days if today else 999 %}
+                        <div class="field-value {{ 'danger' if days_left < 0 else 'warn' if days_left < 90 else '' }}">
+                            {{ driver.license_expiry_date.strftime('%d.%m.%Y') }}
+                            {% if days_left < 0 %} ⚠️ ИСТЁК{% elif days_left < 90 %} ⏰ {{ days_left }} дн.{% endif %}
+                        </div>
+                    {% else %}
+                        <div class="field-value awaiting">Нет данных</div>
+                    {% endif %}
+                </div>
+                <div class="field">
+                    <div class="field-label">Страна выдачи</div>
+                    <div class="field-value {{ 'awaiting' if not driver.license_country else '' }}">
+                        {{ driver.license_country|upper if driver.license_country else 'Нет данных' }}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Водительский стаж</div>
+                    {% if driver.driving_experience_from %}
+                        {% set exp_years = ((today - driver.driving_experience_from).days / 365.25)|int if today else 0 %}
+                        <div class="field-value">с {{ driver.driving_experience_from.strftime('%d.%m.%Y') }} <span style="color:var(--accent);">({{ exp_years }} лет)</span></div>
+                    {% else %}
+                        <div class="field-value awaiting">Нет данных</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Текущий автомобиль -->
+            <div class="card">
+                <div class="card-title">🚗 Текущий автомобиль</div>
+                {% if vehicle %}
+                <div class="field">
+                    <div class="field-label">Госномер</div>
+                    <div class="plate-display">{{ vehicle.license_plate }}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Марка / Модель</div>
+                    <div class="field-value">{{ vehicle.brand }} {{ vehicle.model }}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">VIN</div>
+                    <div class="field-value" style="font-family:monospace;font-size:13px;">{{ vehicle.vin or '—' }}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Тип</div>
+                    <div class="field-value">{{ 'Парковый (субаренда)' if vehicle.is_park_car else 'Подключение' }}</div>
+                </div>
+                {% elif driver.yandex_current_car %}
+                    {% set yc = driver.yandex_current_car %}
+                    {% if yc.car_number or yc.number %}
+                    <div class="field">
+                        <div class="field-label">Госномер (из Яндекса)</div>
+                        <div class="plate-display">{{ yc.car_number or yc.number }}</div>
+                    </div>
+                    <div class="field-value muted" style="font-size:12px;margin-top:6px;">Авто не привязано в базе</div>
+                    {% else %}
+                    <div class="field-value muted" style="padding:20px 0;">Автомобиль не привязан</div>
+                    {% endif %}
+                {% else %}
+                <div class="field-value muted" style="padding:20px 0;">Автомобиль не привязан</div>
+                {% endif %}
+            </div>
+
+            <!-- Яндекс ID -->
+            <div class="card">
+                <div class="card-title">🔗 Яндекс.Диспетчерская</div>
+                <div class="field">
+                    <div class="field-label">Driver Profile ID</div>
+                    <div class="field-value" style="font-family:monospace;font-size:12px;word-break:break-all;">{{ driver.yandex_driver_id or '—' }}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Contractor Profile ID</div>
+                    <div class="field-value" style="font-family:monospace;font-size:12px;word-break:break-all;">{{ driver.yandex_contractor_id or '—' }}</div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Последняя синхронизация</div>
+                    <div class="field-value {{ 'awaiting' if not driver.yandex_last_sync_at else '' }}">
+                        {{ driver.yandex_last_sync_at.strftime('%d.%m.%Y %H:%M') if driver.yandex_last_sync_at else 'Не синхронизирован' }}
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="field-label">Work Status (API)</div>
+                    <div class="field-value">{{ driver.yandex_work_status or driver.work_status or '—' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── ПОСЛЕДНИЕ ТРАНЗАКЦИИ ─── -->
+        <div class="tx-card">
+            <div class="card-title">💰 Последние транзакции</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Категория</th>
+                        <th>Сумма</th>
+                        <th>Описание</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td style="color:var(--muted);white-space:nowrap;">{{ tx.date.strftime('%d.%m.%Y %H:%M') if tx.date else '—' }}</td>
+                        <td>{{ tx.category or '—' }}</td>
+                        <td class="{{ 'tx-positive' if tx.amount > 0 else 'tx-negative' }}">
+                            {{ "{:,.2f}".format(tx.amount).replace(",", " ") }} ₽
+                        </td>
+                        <td style="color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            {{ tx.description or '—' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not transactions and financial_logs %}
+                        {% for log in financial_logs %}
+                        <tr>
+                            <td style="color:var(--muted);white-space:nowrap;">{{ log.created_at.strftime('%d.%m.%Y %H:%M') if log.created_at else '—' }}</td>
+                            <td>{{ log.entry_type or '—' }}</td>
+                            <td class="{{ 'tx-positive' if (log.amount or 0) > 0 else 'tx-negative' }}">
+                                {{ "{:,.2f}".format(log.amount or 0).replace(",", " ") }} ₽
+                            </td>
+                            <td style="color:var(--muted);">{{ log.note or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    {% if not transactions and not financial_logs %}
+                    <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:30px;">Нет транзакций. Запустите синхронизацию.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Создание заказ-наряда | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔧 Создание заказ-наряда</h1>
+    <p class="muted-text">Автосервис и ремонт</p>
+</div>
+
+<div class="card">
+    <form class="space-y-6">
+        <!-- Vehicle Selection -->
+        <div>
+            <label class="block muted-text mb-2">Автомобиль</label>
+            <select class="w-full bg-transparent border border-gray-600 rounded-lg p-3 text-white">
+                <option value="">Выберите автомобиль...</option>
+            </select>
+        </div>
+
+        <!-- Driver Selection -->
+        <div>
+            <label class="block muted-text mb-2">Водитель</label>
+            <select class="w-full bg-transparent border border-gray-600 rounded-lg p-3 text-white">
+                <option value="">Выберите водителя...</option>
+            </select>
+        </div>
+
+        <!-- Service Type -->
+        <div>
+            <label class="block muted-text mb-2">Тип работ</label>
+            <select class="w-full bg-transparent border border-gray-600 rounded-lg p-3 text-white">
+                <option value="">Выберите тип...</option>
+                <option value="maintenance">Плановое ТО</option>
+                <option value="repair">Ремонт</option>
+                <option value="diagnostics">Диагностика</option>
+                <option value="body">Кузовные работы</option>
+            </select>
+        </div>
+
+        <!-- Description -->
+        <div>
+            <label class="block muted-text mb-2">Описание работ</label>
+            <textarea class="w-full bg-transparent border border-gray-600 rounded-lg p-3 text-white" rows="4" placeholder="Опишите необходимые работы..."></textarea>
+        </div>
+
+        <!-- Estimated Cost -->
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block muted-text mb-2">Ориентировочная стоимость</label>
+                <input type="number" class="w-full bg-transparent border border-gray-600 rounded-lg p-3 text-white" placeholder="0">
+            </div>
+            <div>
+                <label class="block muted-text mb-2">Приоритет</label>
+                <select class="w-full bg-transparent border border-gray-600 rounded-lg p-3 text-white">
+                    <option value="normal">Обычный</option>
+                    <option value="high">Высокий</option>
+                    <option value="urgent">Срочный</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex gap-4">
+            <button type="submit" class="btn-gold">Создать заказ-наряд</button>
+            <a href="/warehouse" class="nav-link">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

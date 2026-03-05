@@ -1,0 +1,56 @@
+# === PYTHON ===
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# === ENVIRONMENT & SECRETS ===
+.env
+*.env.*
+!.env.example
+
+# === LOGS & TEMP ===
+*.log
+*.tmp
+*.bak
+*.swp
+*.pid
+*.seed
+*.cover
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === ARCHIVES ===
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# === NODE / FRONTEND ===
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/node_modules/
+
+# === IDE ===
+.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# === DEBUG ===
+DEBUG_PROFILE.json
+
+# === DOCKER ===
+*.override.yml
