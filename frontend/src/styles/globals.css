@@ -38,6 +38,19 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Dark theme body (default) */
+  .dark body {
+    background-color: #080810;
+    color: #e8e8f0;
+  }
+
+  /* Ivory theme body */
+  .theme-ivory body {
+    background-color: #f5f0e8;
+    color: #1a1a2e;
   }
 
   /* Scrollbar styling — Dark */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /**
@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion'
  */
 export default function IntroSequence({ onComplete }) {
   const [phase, setPhase] = useState(0) // 0=black, 1=title, 2=quote, 3=glitch, 4=victory, 5=exit
+  const skipTimerRef = useRef(null)
 
   useEffect(() => {
     const timers = [
@@ -23,13 +24,17 @@ export default function IntroSequence({ onComplete }) {
       setTimeout(() => setPhase(5), 14500),  // 14.5s → начать выход
       setTimeout(() => onComplete(), 15500), // 15.5s → завершить
     ]
-    return () => timers.forEach(clearTimeout)
+    return () => {
+      timers.forEach(clearTimeout)
+      if (skipTimerRef.current) clearTimeout(skipTimerRef.current)
+    }
   }, [onComplete])
 
-  // Пропуск по клику
+  // Пропуск по клику (guard от двойного нажатия)
   const handleSkip = useCallback(() => {
+    if (skipTimerRef.current) return
     setPhase(5)
-    setTimeout(() => onComplete(), 600)
+    skipTimerRef.current = setTimeout(() => onComplete(), 600)
   }, [onComplete])
 
   return (

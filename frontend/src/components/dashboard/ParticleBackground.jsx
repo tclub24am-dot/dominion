@@ -33,6 +33,7 @@ export default function ParticleBackground({ theme = 'dark', count = 40 }) {
             top: `${p.y}%`,
             width: p.size,
             height: p.size,
+            willChange: 'transform, opacity',
             backgroundColor: isDark
               ? `rgba(212, 168, 67, ${p.opacity})`
               : `rgba(184, 134, 11, ${p.opacity * 0.5})`,

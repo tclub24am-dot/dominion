@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import IntroSequence from './components/intro/IntroSequence'
 import Dashboard from './pages/Dashboard'
 
@@ -19,28 +19,24 @@ export default function App() {
     if (shown) setIntroComplete(true)
   }, [])
 
-  const handleIntroComplete = () => {
+  const handleIntroComplete = useCallback(() => {
     sessionStorage.setItem('dominion_intro_shown', '1')
     setIntroComplete(true)
-  }
+  }, [])
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'ivory' : 'dark')
   }
 
-  // Применяем тему к html элементу
+  // Применяем тему к html элементу (стили body управляются через CSS-классы)
   useEffect(() => {
     const html = document.documentElement
     if (theme === 'dark') {
       html.classList.add('dark')
       html.classList.remove('theme-ivory')
-      document.body.style.backgroundColor = '#080810'
-      document.body.style.color = '#e8e8f0'
     } else {
       html.classList.remove('dark')
       html.classList.add('theme-ivory')
-      document.body.style.backgroundColor = '#f5f0e8'
-      document.body.style.color = '#1a1a2e'
     }
   }, [theme])
 
