@@ -64,14 +64,14 @@ jobs:
             -p ${{ secrets.SERVER_PORT }} \
             -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "mkdir -p /root/dominion/frontend/dist"
+            "mkdir -p /var/www/dominion/frontend/dist"
 
       - name: 📂 Rsync dist to server
         run: |
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no" \
             frontend-dist/ \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/root/dominion/frontend/dist/
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/dominion/frontend/dist/
 
       - name: 🔐 Activate frontend via SSH
         run: |
@@ -80,7 +80,7 @@ jobs:
             -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "set -e
-             chmod -R 755 /root/dominion/frontend/dist
+             chown -R www-data:www-data /var/www/dominion && chmod -R 755 /var/www/dominion
              systemctl reload nginx || systemctl restart nginx
              echo '✅ Дизайн Доминиона доставлен и активирован.'"
 
@@ -94,7 +94,7 @@ jobs:
 #
 # Job 2 (deploy):
 #   - Скачивает артефакт
-#   - Rsync frontend/dist/ → /root/dominion/frontend/dist/
+#   - Rsync frontend/dist/ → /var/www/dominion/frontend/dist/
 #   - Устанавливает права доступа для Nginx
 #   - Перезагружает Nginx
 #
