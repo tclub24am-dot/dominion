@@ -45,6 +45,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: 📥 Checkout repository (for nginx config)
+        uses: actions/checkout@v4
+
       - name: 📥 Download frontend artifact
         uses: actions/download-artifact@v4
         with:
@@ -73,7 +76,14 @@ jobs:
             frontend-dist/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/dominion/frontend/dist/
 
-      - name: 🔐 Activate frontend via SSH
+      - name: 📤 Rsync Nginx config to server
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no" \
+            nginx/s-global.conf \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/dominion/nginx/s-global.conf
+
+      - name: Activate frontend via SSH
         run: |
           ssh -i ~/.ssh/id_rsa \
             -p ${{ secrets.SERVER_PORT }} \
@@ -81,11 +91,23 @@ jobs:
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
             "set -e
              chown -R www-data:www-data /var/www/dominion && chmod -R 755 /var/www/dominion
-             systemctl reload nginx || systemctl restart nginx
-             echo '✅ Дизайн Доминиона доставлен и активирован.'"
+             echo '✅ Дизайн Доминиона доставлен.'"
+
+      - name: 🔗 Link and Reload Nginx
+        run: |
+          ssh -i ~/.ssh/id_rsa \
+            -p ${{ secrets.SERVER_PORT }} \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "set -e
+             mkdir -p /etc/nginx/sites-enabled
+             ln -sf /var/www/dominion/nginx/s-global.conf /etc/nginx/sites-enabled/s-global.conf &&
+             nginx -t &&
+             systemctl reload nginx &&
+             echo '✅ Nginx конфиг активирован из репозитория. Цитадель освещена.'"
 
 # ============================================================
-# 📋 АРХИТЕКТУРА ДЕПЛОЯ (VERSHINA v200.11):
+# 📋 АРХИТЕКТУРА ДЕПЛОЯ (VERSHINA v200.25 — ФИНАЛЬНАЯ ГЕРМЕТИЗАЦИЯ):
 #
 # Job 1 (build):
 #   - Собирает фронтенд в GitHub Actions (Node.js 20)
@@ -93,10 +115,14 @@ jobs:
 #   - Загружает dist/ как артефакт
 #
 # Job 2 (deploy):
-#   - Скачивает артефакт
+#   - Checkout репозитория (для nginx/s-global.conf)
+#   - Скачивает артефакт frontend-dist
 #   - Rsync frontend/dist/ → /var/www/dominion/frontend/dist/
-#   - Устанавливает права доступа для Nginx
-#   - Перезагружает Nginx
+#   - Rsync nginx/s-global.conf → /var/www/dominion/nginx/s-global.conf
+#   - Устанавливает права доступа для Nginx (chown www-data)
+#   - Создаёт симлинк: sites-enabled/s-global.conf → /var/www/dominion/nginx/s-global.conf
+#   - nginx -t (проверка конфига)
+#   - systemctl reload nginx (активация без даунтайма)
 #
 # Секреты (GitHub Secrets):
 #   SSH_PRIVATE_KEY = (приватный SSH ключ)
