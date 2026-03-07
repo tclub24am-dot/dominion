@@ -19,13 +19,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: 📦 Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: 🔨 Build frontend SPA
-        working-directory: frontend
-        run: npm run build
+      - name: 📦 Install & Build frontend
+        run: cd frontend && npm ci && npm run build
 
       - name: ✅ Verify build output
         run: |
@@ -56,55 +51,48 @@ jobs:
           name: frontend-dist
           path: frontend-dist
 
-      - name: 📂 Copy dist to server via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: "frontend-dist/*"
-          target: "/root/dominion/frontend/dist/"
-          strip_components: 1
-          overwrite: true
-          rm: true
+      - name: 🔑 Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 📂 Rsync dist to server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no" \
+            frontend-dist/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/dominion/frontend/dist/
 
       - name: 🔐 Activate frontend via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          command_timeout: 5m
-          script: |
-            set -e
-
-            # 1. Снимаем защиту с папок, чтобы Nginx всё видел
-            chmod 755 /root
-            chmod -R 755 /root/dominion/frontend/dist
-
-            # 2. Перезагружаем Nginx (без Docker, напрямую)
-            systemctl reload nginx || systemctl restart nginx
-
-            # 3. Проверка
-            echo "✅ Дизайн Доминиона доставлен и активирован."
+        run: |
+          ssh -i ~/.ssh/id_rsa \
+            -p ${{ secrets.SERVER_PORT }} \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "set -e
+             chmod -R 755 /var/www/dominion/frontend/dist
+             systemctl reload nginx || systemctl restart nginx
+             echo '✅ Дизайн Доминиона доставлен и активирован.'"
 
 # ============================================================
-# 📋 АРХИТЕКТУРА ДЕПЛОЯ (ЧИСТЫЙ ПУТЬ v59.0):
+# 📋 АРХИТЕКТУРА ДЕПЛОЯ (VERSHINA v200.11):
 #
 # Job 1 (build):
 #   - Собирает фронтенд в GitHub Actions (Node.js 20)
+#   - cd frontend && npm ci && npm run build
 #   - Загружает dist/ как артефакт
 #
 # Job 2 (deploy):
 #   - Скачивает артефакт
-#   - Копирует dist/ на сервер через SCP
+#   - Rsync frontend/dist/ → /var/www/dominion/frontend/dist/
 #   - Устанавливает права доступа для Nginx
-#   - Перезагружает Nginx (без Docker)
+#   - Перезагружает Nginx
 #
-# Секреты (уже настроены):
-#   SERVER_HOST    = 89.169.39.111
-#   SERVER_USER    = root
+# Секреты (GitHub Secrets):
 #   SSH_PRIVATE_KEY = (приватный SSH ключ)
+#   SERVER_USER     = (пользователь на сервере)
+#   SERVER_HOST     = 89.169.39.111
+#   SERVER_PORT     = (SSH порт, обычно 22)
 # ============================================================
