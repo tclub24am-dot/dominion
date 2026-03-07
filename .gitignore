@@ -52,5 +52,8 @@ frontend/node_modules/
 # === DEBUG ===
 DEBUG_PROFILE.json
 
+# === SCREENSHOTS & BINARY ASSETS ===
+screenshots/
+
 # === DOCKER ===
 *.override.yml

@@ -1,0 +1,48 @@
+name: 🚀 Deploy to s-global.space
+
+on:
+  push:
+    branches: [master, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔐 Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            cd /root/dominion
+            echo "📥 Pulling latest changes..."
+            git pull origin master
+            
+            echo "📦 Installing frontend dependencies..."
+            cd frontend
+            npm install --production=false
+            npm run build
+            cd ..
+            
+            echo "🐳 Restarting Docker containers..."
+            docker-compose down
+            docker-compose up -d --build
+            
+            echo "✅ Deploy complete: $(date)"
+
+# ============================================================
+# 📋 ИНСТРУКЦИЯ ДЛЯ МАСТЕРА:
+# 
+# Добавь следующие Secrets в GitHub репозиторий:
+# Settings → Secrets and variables → Actions → New repository secret
+#
+# 1. SERVER_HOST    = 89.169.39.111  (или s-global.space)
+# 2. SERVER_USER    = root           (или ваш SSH-пользователь)
+# 3. SSH_PRIVATE_KEY = (содержимое файла ~/.ssh/id_rsa)
+# 4. SERVER_PORT    = 22             (опционально, если нестандартный)
+#
+# После добавления секретов, каждый `git push origin master`
+# автоматически обновит сервер s-global.space.
+# ============================================================

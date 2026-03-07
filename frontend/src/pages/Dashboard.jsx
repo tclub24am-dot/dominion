@@ -10,13 +10,18 @@ import SectorCard from '../components/dashboard/SectorCard'
 import BottomDrawer from '../components/dashboard/BottomDrawer'
 import MessengerBubble from '../components/dashboard/MessengerBubble'
 import ParticleBackground from '../components/dashboard/ParticleBackground'
+import WorldMapBackground from '../components/dashboard/WorldMapBackground'
+import ScanLinesOverlay from '../components/dashboard/ScanLinesOverlay'
 
 /**
- * S-GLOBAL DOMINION — Main Dashboard v5.0
- * =========================================
+ * S-GLOBAL DOMINION — Main Dashboard v7.0 (Level 5++)
+ * =====================================================
  * 12 секторов империи в glassmorphism-сетке
- * Верхняя панель HQ | Нижний drawer | 3D Messenger
- * Две темы: Dark (золото/неон) и Ivory (слоновая кость)
+ * Фон: ВЕЛИЧЕСТВЕННАЯ контурная карта мира с неоновыми границами
+ * Эффект сканирующих линий (кабина пилота)
+ * Живые карточки с левитацией
+ * Статус-бар приподнят и выровнен
+ * VERSHINA v200.11 Protocol — Level 5++
  */
 
 // 12 секторов империи
@@ -30,8 +35,9 @@ const SECTORS = [
   {
     code: 'LG',
     title: 'ЛОГИСТИКА И МАРШРУТЫ',
-    subtitle: 'Грузы активны',
+    subtitle: 'ВКУСВИЛЛ: АКТИВНО',
     icon: Truck,
+    liveCount: '--', // Заглушка — подключить к API позже
   },
   {
     code: 'IT',
@@ -102,17 +108,23 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
     <div
       className={`
         min-h-screen relative
-        ${isDark ? 'bg-dominion-black' : 'bg-ivory-bg'}
+        ${isDark ? '' : 'bg-ivory-bg'}
       `}
     >
       {/* Фоновые частицы */}
       <ParticleBackground theme={theme} count={35} />
 
+      {/* Контурная карта мира — ВЕЛИЧЕСТВЕННАЯ, неоновая */}
+      <WorldMapBackground theme={theme} />
+
+      {/* Эффект сканирующих линий — кабина пилота */}
+      {isDark && <ScanLinesOverlay />}
+
       {/* Верхняя панель */}
       <TopBar theme={theme} onToggleTheme={onToggleTheme} />
 
       {/* Основной контент */}
-      <main className="relative z-10 px-4 md:px-6 lg:px-8 py-6 pb-24">
+      <main className="relative z-[10] px-4 md:px-6 lg:px-8 py-6 pb-24">
         {/* Заголовок секции */}
         <motion.div
           className="mb-8"
@@ -156,8 +168,8 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
           </p>
         </motion.div>
 
-        {/* Сетка карточек: 1 / 2 / 4 колонки */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto">
+        {/* Сетка карточек: 1 / 2 / 4 колонки — СТРОГО одинаковая высота через h-full */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-[1440px] mx-auto auto-rows-fr">
           {SECTORS.map((sector, index) => (
             <SectorCard
               key={sector.code}
@@ -167,15 +179,16 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
               icon={sector.icon}
               index={index}
               theme={theme}
+              liveCount={sector.liveCount ?? null}
             />
           ))}
         </div>
 
-        {/* Нижняя статистика */}
+        {/* СТАТУС-БАР — приподнят, ровно выровнен (mt-6) */}
         <motion.div
-          className="mt-10 max-w-[1440px] mx-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className="mt-6 max-w-[1440px] mx-auto"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.6 }}
         >
           <div
@@ -183,11 +196,17 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
               flex items-center justify-center gap-8 flex-wrap
               py-4 px-6 rounded-xl border
               ${isDark
-                ? 'bg-white/[0.02] border-white/[0.05]'
+                ? 'bg-white/[0.02] border-white/[0.06]'
                 : 'bg-white/40 border-ivory-border'
               }
             `}
-            style={{ backdropFilter: 'blur(12px)' }}
+            style={{
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: isDark
+                ? '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)'
+                : '0 2px 12px rgba(0,0,0,0.05)',
+            }}
           >
             <StatItem
               label="Секторов"
@@ -245,7 +264,10 @@ function StatItem({ label, value, suffix, color, isDark }) {
         {suffix && <span className="text-sm">{suffix}</span>}
         <span
           className="text-lg font-orbitron font-bold"
-          style={{ color }}
+          style={{
+            color,
+            textShadow: `0 0 10px ${color}40`,
+          }}
         >
           {value}
         </span>

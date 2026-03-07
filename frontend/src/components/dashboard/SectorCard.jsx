@@ -2,17 +2,16 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 
 /**
- * S-GLOBAL DOMINION — Sector Card (Glassmorphism)
- * Карточка сектора империи с неоновым glow-свечением
+ * S-GLOBAL DOMINION — Sector Card v3.0 (Level 5++ LEVITATION)
+ * ============================================================
+ * Карточка сектора империи с эффектами:
+ * - Левитация при наведении (y: -12, scale: 1.04)
+ * - Glow x2 при ховере
+ * - Стеклянный блик, пробегающий по карточке
+ * - Фиксированная высота h-[160px]
+ * - Неоновый border-glow
  * 
- * Props:
- *   code     — код сектора (FL, LG, IT, ...)
- *   title    — название сектора
- *   subtitle — подзаголовок / статус
- *   icon     — Lucide icon component
- *   color    — цвет свечения (hex)
- *   index    — индекс для stagger-анимации
- *   theme    — 'dark' | 'ivory'
+ * VERSHINA v200.11 Protocol — Level 5++
  */
 
 // Цветовая палитра для каждого сектора
@@ -31,65 +30,125 @@ const SECTOR_COLORS = {
   AC: { glow: '#ec4899', accent: '#ec4899', gradient: 'from-pink-500/20 to-pink-500/5' },
 }
 
-export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, theme = 'dark' }) {
+export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, theme = 'dark', liveCount = null }) {
   const [isHovered, setIsHovered] = useState(false)
+  const [glintTriggered, setGlintTriggered] = useState(false)
   const isDark = theme === 'dark'
   const colors = SECTOR_COLORS[code] || SECTOR_COLORS.FL
 
+  // Запуск стеклянного блика при наведении
+  const handleMouseEnter = () => {
+    setIsHovered(true)
+    setGlintTriggered(false)
+    // Небольшая задержка перед запуском блика
+    requestAnimationFrame(() => setGlintTriggered(true))
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+    setGlintTriggered(false)
+  }
+
   return (
     <motion.div
-      className="relative group"
+      className="relative group h-full"
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
+      whileHover={{
+        y: -12,
+        scale: 1.04,
+        transition: {
+          type: 'spring',
+          stiffness: 300,
+          damping: 20,
+        },
+      }}
       transition={{
         duration: 0.5,
         delay: index * 0.08,
         ease: [0.16, 1, 0.3, 1],
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Внешний неоновый glow */}
+      {/* Внешний неоновый glow — УСИЛЕННЫЙ x2 при ховере */}
       <motion.div
-        className="absolute -inset-0.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"
+        className="absolute -inset-[2px] rounded-xl blur-[2px]"
         style={{
-          background: `linear-gradient(135deg, ${colors.glow}40, transparent, ${colors.glow}20)`,
+          background: `linear-gradient(135deg, ${colors.glow}40, transparent 40%, ${colors.glow}20, transparent 70%, ${colors.glow}30)`,
         }}
-        animate={isHovered ? { opacity: 0.6 } : { opacity: 0 }}
+        animate={{
+          opacity: isHovered ? 0.9 : 0.3,
+        }}
+        transition={{ duration: 0.4 }}
       />
 
-      {/* Карточка */}
+      {/* Второй слой glow — появляется при ховере (x2 мощность) */}
+      <motion.div
+        className="absolute -inset-[4px] rounded-2xl blur-[6px]"
+        style={{
+          background: `radial-gradient(ellipse at center, ${colors.glow}25, transparent 70%)`,
+        }}
+        animate={{
+          opacity: isHovered ? 0.7 : 0,
+        }}
+        transition={{ duration: 0.5 }}
+      />
+
+      {/* Карточка — ФИКСИРОВАННАЯ ВЫСОТА */}
       <div
         className={`
-          relative overflow-hidden rounded-xl border p-5
-          transition-all duration-300 cursor-pointer
+          relative overflow-hidden rounded-xl border p-5 h-[160px] flex flex-col
+          transition-colors duration-300 cursor-pointer
           ${isDark
-            ? 'bg-white/[0.03] border-white/[0.08] hover:border-white/[0.15]'
-            : 'bg-white/60 border-ivory-border hover:border-ivory-gold/40'
+            ? 'bg-slate-900/30 backdrop-blur-2xl hover:border-white/[0.15]'
+            : 'bg-white/60 backdrop-blur-lg border-ivory-border hover:border-ivory-gold/40'
           }
         `}
         style={{
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          borderColor: isDark
+            ? (isHovered ? `${colors.glow}60` : `${colors.glow}20`)
+            : undefined,
           boxShadow: isHovered
-            ? `0 8px 32px rgba(0,0,0,${isDark ? '0.6' : '0.1'}), 0 0 20px ${colors.glow}15, inset 0 1px 0 rgba(255,255,255,${isDark ? '0.05' : '0.8'})`
-            : `0 4px 16px rgba(0,0,0,${isDark ? '0.4' : '0.05'}), inset 0 1px 0 rgba(255,255,255,${isDark ? '0.03' : '0.6'})`,
+            ? `0 12px 40px rgba(0,0,0,${isDark ? '0.7' : '0.12'}), 0 0 40px ${colors.glow}25, 0 0 80px ${colors.glow}10, inset 0 1px 0 rgba(255,255,255,${isDark ? '0.08' : '0.8'})`
+            : `0 4px 16px rgba(0,0,0,${isDark ? '0.4' : '0.05'}), 0 0 12px ${colors.glow}08, inset 0 1px 0 rgba(255,255,255,${isDark ? '0.03' : '0.6'})`,
+          transition: 'box-shadow 0.4s ease, border-color 0.3s ease',
         }}
       >
         {/* Фоновый градиент */}
         <div
-          className="absolute inset-0 opacity-30 transition-opacity duration-500 group-hover:opacity-50"
+          className="absolute inset-0 transition-opacity duration-500"
           style={{
-            background: `radial-gradient(ellipse at top right, ${colors.glow}08, transparent 70%)`,
+            background: `radial-gradient(ellipse at top right, ${colors.glow}${isHovered ? '12' : '06'}, transparent 70%)`,
+            opacity: isHovered ? 0.6 : 0.3,
           }}
         />
+
+        {/* === СТЕКЛЯННЫЙ БЛИК — пробегает при наведении === */}
+        {glintTriggered && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none z-10"
+            initial={{ x: '-100%' }}
+            animate={{ x: '200%' }}
+            transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+            onAnimationComplete={() => setGlintTriggered(false)}
+          >
+            <div
+              className="h-full w-1/3"
+              style={{
+                background: `linear-gradient(105deg, transparent 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, rgba(255,255,255,0) 70%, transparent 100%)`,
+              }}
+            />
+          </motion.div>
+        )}
 
         {/* Сканирующая линия при ховере */}
         {isHovered && (
           <motion.div
-            className="absolute left-0 right-0 h-px pointer-events-none"
+            className="absolute left-0 right-0 h-[1px] pointer-events-none z-10"
             style={{
-              background: `linear-gradient(90deg, transparent, ${colors.glow}60, transparent)`,
+              background: `linear-gradient(90deg, transparent, ${colors.glow}80, transparent)`,
+              boxShadow: `0 0 8px ${colors.glow}40`,
             }}
             initial={{ top: 0 }}
             animate={{ top: '100%' }}
@@ -98,7 +157,7 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
         )}
 
         {/* Верхняя часть: Бейдж + Статус */}
-        <div className="relative flex items-start justify-between mb-4">
+        <div className="relative flex items-start justify-between mb-3">
           {/* Бейдж сектора */}
           <motion.div
             className="flex items-center justify-center w-11 h-11 rounded-lg"
@@ -107,7 +166,8 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
                 ? `linear-gradient(135deg, ${colors.glow}20, ${colors.glow}05)`
                 : `linear-gradient(135deg, ${colors.glow}15, ${colors.glow}05)`,
               border: `1px solid ${colors.glow}${isDark ? '40' : '30'}`,
-              boxShadow: isHovered ? `0 0 12px ${colors.glow}30` : 'none',
+              boxShadow: isHovered ? `0 0 16px ${colors.glow}40` : 'none',
+              transition: 'box-shadow 0.4s ease',
             }}
             whileHover={{ scale: 1.1, rotate: 5 }}
             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
@@ -144,37 +204,55 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
 
         {/* Код сектора */}
         <div
-          className="text-[10px] font-orbitron font-bold tracking-[0.3em] uppercase mb-1.5"
+          className="text-[10px] font-orbitron font-bold tracking-[0.3em] uppercase mb-1"
           style={{ color: `${colors.accent}${isDark ? 'aa' : '80'}` }}
         >
           {code}
         </div>
 
-        {/* Название */}
+        {/* Название — flex-grow для выравнивания */}
         <h3
           className={`
-            font-montserrat font-bold text-[15px] leading-tight mb-2
+            font-montserrat font-bold text-[14px] leading-tight mb-auto
             ${isDark ? 'text-white/90' : 'text-ivory-text'}
           `}
         >
           {title}
         </h3>
 
-        {/* Подзаголовок */}
-        <p
-          className={`
-            text-xs font-montserrat
-            ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}
-          `}
-        >
-          {subtitle}
-        </p>
+        {/* Подзаголовок — всегда внизу */}
+        <div className="flex items-center gap-2 mt-2">
+          <p
+            className={`
+              text-xs font-montserrat
+              ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}
+            `}
+          >
+            {subtitle}
+          </p>
+          {/* Пульсирующий индикатор активных машин (для LG и других секторов с liveCount) */}
+          {liveCount !== null && (
+            <span className="flex items-center gap-1 ml-auto">
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: colors.glow, boxShadow: `0 0 6px ${colors.glow}80` }}
+              />
+              <span
+                className="text-[10px] font-orbitron font-bold"
+                style={{ color: colors.glow }}
+              >
+                {liveCount}
+              </span>
+            </span>
+          )}
+        </div>
 
         {/* Нижняя линия-акцент */}
         <motion.div
           className="absolute bottom-0 left-0 right-0 h-[2px]"
           style={{
             background: `linear-gradient(90deg, transparent, ${colors.glow}, transparent)`,
+            boxShadow: `0 0 8px ${colors.glow}60`,
           }}
           initial={{ scaleX: 0 }}
           animate={{ scaleX: isHovered ? 1 : 0 }}
@@ -183,20 +261,32 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
 
         {/* Угловые декоративные элементы */}
         <div
-          className="absolute top-0 left-0 w-4 h-4 border-t border-l rounded-tl-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500"
-          style={{ borderColor: colors.glow }}
+          className="absolute top-0 left-0 w-4 h-4 border-t border-l rounded-tl-xl transition-opacity duration-500"
+          style={{
+            borderColor: colors.glow,
+            opacity: isHovered ? 0.5 : 0.15,
+          }}
         />
         <div
-          className="absolute top-0 right-0 w-4 h-4 border-t border-r rounded-tr-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500"
-          style={{ borderColor: colors.glow }}
+          className="absolute top-0 right-0 w-4 h-4 border-t border-r rounded-tr-xl transition-opacity duration-500"
+          style={{
+            borderColor: colors.glow,
+            opacity: isHovered ? 0.5 : 0.15,
+          }}
         />
         <div
-          className="absolute bottom-0 left-0 w-4 h-4 border-b border-l rounded-bl-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500"
-          style={{ borderColor: colors.glow }}
+          className="absolute bottom-0 left-0 w-4 h-4 border-b border-l rounded-bl-xl transition-opacity duration-500"
+          style={{
+            borderColor: colors.glow,
+            opacity: isHovered ? 0.5 : 0.15,
+          }}
         />
         <div
-          className="absolute bottom-0 right-0 w-4 h-4 border-b border-r rounded-br-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500"
-          style={{ borderColor: colors.glow }}
+          className="absolute bottom-0 right-0 w-4 h-4 border-b border-r rounded-br-xl transition-opacity duration-500"
+          style={{
+            borderColor: colors.glow,
+            opacity: isHovered ? 0.5 : 0.15,
+          }}
         />
       </div>
     </motion.div>

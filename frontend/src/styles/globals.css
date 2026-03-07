@@ -343,6 +343,65 @@
   100% { background-position: 200% 0; }
 }
 
+/* === Пульсация ореола узла на карте (WorldMapBackground) === */
+@keyframes wmap-pulse-halo {
+  0%, 100% { r: 5; opacity: 0.5; }
+  50% { r: 14; opacity: 0.05; }
+}
+
+/* === Пульсация яркой точки узла === */
+@keyframes wmap-pulse-dot {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* CSS-классы для SVG-элементов карты */
+.wmap-pulse-halo {
+  animation: wmap-pulse-halo 3.5s ease-in-out infinite;
+}
+
+.wmap-pulse-dot {
+  animation: wmap-pulse-dot 2.5s ease-in-out infinite;
+}
+
+/* === WorldMap: одноразовые CSS-анимации появления === */
+@keyframes wmap-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wmap-stroke-draw {
+  from { stroke-dashoffset: 3000; opacity: 0; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+
+.wmap-continent-fill {
+  opacity: 0;
+  animation: wmap-fade-in 2s ease-out forwards;
+}
+
+.wmap-continent-stroke {
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
+  opacity: 0;
+  animation: wmap-stroke-draw 3s ease-in-out forwards;
+}
+
+.wmap-connection {
+  opacity: 0;
+  animation: wmap-fade-in 1.5s ease-out forwards;
+}
+
+.wmap-node-halo {
+  opacity: 0;
+  animation: wmap-fade-in 0.8s ease-out forwards;
+}
+
+.wmap-node-label {
+  opacity: 0;
+  animation: wmap-fade-in 0.8s ease-out forwards;
+}
+
 /* === NOISE TEXTURE OVERLAY (subtle) === */
 .noise-overlay::before {
   content: '';

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Shield, Sun, Moon, Zap } from 'lucide-react'
+import { Shield, Sun, Moon } from 'lucide-react'
 
 /**
- * S-GLOBAL DOMINION — Top Bar (HQ Status Panel)
- * Верхняя панель: "S-GLOBAL DOMINION HQ | STATUS: ONLINE"
- * Пульсирующая зелёная точка рядом с ONLINE
+ * S-GLOBAL DOMINION — Top Bar v2.0 (HQ Status Panel)
+ * ====================================================
+ * Верхняя панель: "S-GLOBAL DOMINION HQ | STATUS: ONLINE | GLOBAL THREAT LEVEL: LOW"
+ * Pixel-Perfect по референсу.
  */
 export default function TopBar({ theme, onToggleTheme }) {
   const [time, setTime] = useState(new Date())
@@ -53,7 +54,7 @@ export default function TopBar({ theme, onToggleTheme }) {
         />
       </div>
 
-      {/* Левая часть: Логотип + Название */}
+      {/* Левая часть: Логотип + Название + STATUS + THREAT LEVEL */}
       <div className="flex items-center gap-4">
         {/* Иконка щита */}
         <motion.div
@@ -74,7 +75,7 @@ export default function TopBar({ theme, onToggleTheme }) {
         </motion.div>
 
         {/* Название */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h1
             className={`
               font-cinzel font-bold text-sm tracking-[0.15em] uppercase
@@ -109,22 +110,26 @@ export default function TopBar({ theme, onToggleTheme }) {
               </span>
             </div>
           </div>
+
+          {/* Разделитель */}
+          <div className={`hidden md:block w-px h-5 ${isDark ? 'bg-dominion-border' : 'bg-ivory-border'}`} />
+
+          {/* GLOBAL THREAT LEVEL: LOW */}
+          <div className="hidden md:flex items-center gap-2">
+            <span className={`text-xs font-orbitron tracking-wider ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}`}>
+              GLOBAL THREAT LEVEL:
+            </span>
+            <span className="text-xs font-orbitron font-bold tracking-wider text-emerald-400">
+              LOW
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Правая часть: Время + Тема */}
       <div className="flex items-center gap-4">
-        {/* Протокол */}
-        <div className={`hidden md:flex items-center gap-2 text-xs font-orbitron ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}`}>
-          <Zap size={12} className={isDark ? 'text-dominion-neon' : 'text-ivory-accent'} />
-          <span className="tracking-wider">VERSHINA v200.11</span>
-        </div>
-
-        {/* Разделитель */}
-        <div className={`hidden md:block w-px h-5 ${isDark ? 'bg-dominion-border' : 'bg-ivory-border'}`} />
-
         {/* Дата и время */}
-        <div className={`text-right text-xs font-orbitron ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}`}>
+        <div className={`hidden md:block text-right text-xs font-orbitron ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}`}>
           <div className="tracking-wider">{formatDate(time)}</div>
           <div className={`tracking-[0.2em] font-bold ${isDark ? 'text-dominion-gold' : 'text-ivory-gold'}`}>
             {formatTime(time)}
