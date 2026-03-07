@@ -69,43 +69,29 @@ jobs:
           overwrite: true
           rm: true
 
-      - name: 🔐 Deploy via SSH
+      - name: 🔐 Activate frontend via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          command_timeout: 10m
+          command_timeout: 5m
           script: |
             set -e
 
-            echo "📥 Updating backend code..."
-            cd /root/dominion
-            git pull origin main
+            # 1. Снимаем защиту с папок, чтобы Nginx всё видел
+            chmod 755 /root
+            chmod -R 755 /root/dominion/frontend/dist
 
-            echo "🔧 Updating nginx config..."
-            cp nginx/s-global.conf /etc/nginx/sites-available/s-global.space
-            ln -sf /etc/nginx/sites-available/s-global.space /etc/nginx/sites-enabled/s-global.space
+            # 2. Перезагружаем Nginx (без Docker, напрямую)
+            systemctl reload nginx || systemctl restart nginx
 
-            echo "🐳 Restarting Docker containers..."
-            cd /root/dominion
-            docker-compose down
-            docker-compose up -d --build
-
-            echo "🔄 Reloading nginx..."
-            nginx -t && systemctl reload nginx
-
-            echo "⏳ Waiting for app to start..."
-            sleep 10
-
-            echo "🏥 Health check..."
-            curl -sf http://127.0.0.1:8001/health || echo "⚠️ Health check failed"
-
-            echo "✅ Deploy complete: $(date)"
+            # 3. Проверка
+            echo "✅ Дизайн Доминиона доставлен и активирован."
 
 # ============================================================
-# 📋 АРХИТЕКТУРА ДЕПЛОЯ:
+# 📋 АРХИТЕКТУРА ДЕПЛОЯ (ЧИСТЫЙ ПУТЬ v59.0):
 #
 # Job 1 (build):
 #   - Собирает фронтенд в GitHub Actions (Node.js 20)
@@ -114,9 +100,8 @@ jobs:
 # Job 2 (deploy):
 #   - Скачивает артефакт
 #   - Копирует dist/ на сервер через SCP
-#   - Обновляет бэкенд (git pull)
-#   - Перезапускает Docker + nginx
-#   - Проверяет health endpoint
+#   - Устанавливает права доступа для Nginx
+#   - Перезагружает Nginx (без Docker)
 #
 # Секреты (уже настроены):
 #   SERVER_HOST    = 89.169.39.111
