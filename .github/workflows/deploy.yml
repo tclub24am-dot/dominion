@@ -20,8 +20,13 @@ jobs:
             echo "📥 Pulling latest changes..."
             git pull origin master
             
+            echo "🧹 Cleaning old frontend build..."
+            rm -rf /root/dominion/frontend/dist/*
+            mkdir -p /root/dominion/frontend/dist
+            
             echo "📦 Installing frontend dependencies..."
             cd frontend
+            rm -rf node_modules
             npm install --production=false
             npm run build
             cd ..
