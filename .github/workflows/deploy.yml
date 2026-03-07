@@ -61,13 +61,13 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets.SERVER_PORT }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: 📁 Create target directory on server
+      - name: 📁 Create target directories on server
         run: |
           ssh -i ~/.ssh/id_rsa \
             -p ${{ secrets.SERVER_PORT }} \
             -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "mkdir -p /var/www/dominion/frontend/dist"
+            "mkdir -p /var/www/dominion/frontend/dist /var/www/dominion/nginx"
 
       - name: 📂 Rsync dist to server
         run: |
@@ -107,7 +107,7 @@ jobs:
              echo '✅ Nginx конфиг активирован из репозитория. Цитадель освещена.'"
 
 # ============================================================
-# 📋 АРХИТЕКТУРА ДЕПЛОЯ (VERSHINA v200.25 — ФИНАЛЬНАЯ ГЕРМЕТИЗАЦИЯ):
+# 📋 АРХИТЕКТУРА ДЕПЛОЯ (VERSHINA v200.26 — NGINX DIR FIX):
 #
 # Job 1 (build):
 #   - Собирает фронтенд в GitHub Actions (Node.js 20)
