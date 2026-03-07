@@ -41,7 +41,7 @@
             --cmd-border: rgba(212,175,55,0.75);
             --cmd-text: #1A1A1A;
         }
-        [data-theme="ivory"] {
+        [data-theme="dominion"] {
             --bg: #0D0C0B;
             --panel: rgba(13, 12, 11, 0.85);
             --glass: rgba(8, 8, 8, 0.55);
@@ -519,7 +519,7 @@
             display: none; flex-direction: column; z-index: 12;
             box-shadow: 0 12px 30px rgba(0,0,0,0.5); backdrop-filter: blur(14px);
         }
-        [data-theme="ivory"] .messenger-widget {
+        [data-theme="dominion"] .messenger-widget {
             background: rgba(255,255,240,0.9);
             border: 1px solid rgba(212,175,55,0.55);
             box-shadow: 0 12px 30px rgba(0,0,0,0.2);
@@ -533,8 +533,8 @@
             color: #1A1A1A;
         }
         .chat-bubble.ai { background: rgba(255,215,0,0.22); border-color: rgba(212,175,55,0.85); color: #1A1A1A; }
-        [data-theme="ivory"] .chat-bubble { background: rgba(255,255,255,0.9); border-color: rgba(212,175,55,0.45); }
-        [data-theme="ivory"] .chat-bubble.ai { background: rgba(255,215,0,0.18); }
+        [data-theme="dominion"] .chat-bubble { background: rgba(255,255,255,0.9); border-color: rgba(212,175,55,0.45); }
+        [data-theme="dominion"] .chat-bubble.ai { background: rgba(255,215,0,0.18); }
         .ai-message { font-family: 'Cinzel', serif; color: #8B6508; text-shadow: 0 0 8px rgba(212,175,55,0.25); }
         .glitch { animation: glitch 1.8s ease-in-out infinite; }
         @keyframes glitch { 0%,100% { text-shadow: 0 0 8px rgba(33,243,199,0.4); } 50% { text-shadow: 2px 0 rgba(255,82,82,0.6), -2px 0 rgba(33,243,199,0.6); } }
@@ -582,7 +582,7 @@
         }
     </style>
 </head>
-<body data-role="{{ current_user.role if current_user else 'GUEST' }}" data-theme="ivory">
+<body data-role="{{ current_user.role if current_user else 'GUEST' }}" data-theme="dominion">
     <div id="map-bg"></div>
     <div class="bg-dust"></div>
     <div id="goldDustFlash"></div>

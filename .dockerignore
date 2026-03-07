@@ -1,0 +1,39 @@
+# Frontend (раздаётся Nginx, не нужен в Docker-образе Python)
+frontend/
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.kilocode/
+
+# Documentation
+docs/
+*.md
+docker-deployment-plan.md
+
+# Static binary files (не нужны в образе)
+static/
+
+# Storage (монтируется как volume)
+storage/
+
+# Scripts
+scripts/
+
+# Nginx config (копируется отдельно)
+nginx/
+
+# Config files
+.clinerules
+.cursorrules
+.rooignore
+.env
+.env.example
+
+# OS
+Thumbs.db
+.DS_Store

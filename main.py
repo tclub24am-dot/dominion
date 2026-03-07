@@ -211,7 +211,7 @@ async def lifespan(app: FastAPI):
                         "INSERT INTO users (username, hashed_password, full_name, role, is_active, "
                         "can_see_treasury, can_see_fleet, can_see_analytics, can_see_logistics, "
                         "can_see_hr, can_edit_users, rating, park_name, language, theme) "
-                        "VALUES (:u, :p, :n, 'master', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, 5.0, 'PRO', 'ru', 'ivory')"
+                        "VALUES (:u, :p, :n, 'master', TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, 5.0, 'PRO', 'ru', 'dominion')"
                     ),
                     {"u": master_username, "p": hash_password(master_password), "n": master_full_name}
                 )

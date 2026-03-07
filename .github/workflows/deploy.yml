@@ -2,12 +2,73 @@ name: 🚀 Deploy to s-global.space
 
 on:
   push:
-    branches: [master, main]
+    branches: [main]
 
 jobs:
-  deploy:
+  # ─────────────────────────────────────────────
+  # Job 1: Сборка фронтенда в GitHub Actions
+  # ─────────────────────────────────────────────
+  build:
     runs-on: ubuntu-latest
     steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: 🔨 Build frontend SPA
+        working-directory: frontend
+        run: npm run build
+
+      - name: ✅ Verify build output
+        run: |
+          if [ ! -f frontend/dist/index.html ]; then
+            echo "❌ FATAL: frontend/dist/index.html not found!"
+            exit 1
+          fi
+          echo "✅ Build verified: frontend/dist/index.html exists"
+          ls -la frontend/dist/
+
+      - name: 📤 Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 3
+
+  # ─────────────────────────────────────────────
+  # Job 2: Деплой на сервер 89.169.39.111
+  # ─────────────────────────────────────────────
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 📥 Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-dist
+
+      - name: 📂 Copy dist to server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "frontend-dist/*"
+          target: "/root/dominion/frontend/dist/"
+          strip_components: 1
+          overwrite: true
+          rm: true
+
       - name: 🔐 Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -18,51 +79,47 @@ jobs:
           command_timeout: 10m
           script: |
             set -e
-            
+
+            echo "📥 Updating backend code..."
             cd /root/dominion
-            echo "📥 Pulling latest changes..."
             git pull origin main
-            
-            echo "📦 Building frontend SPA..."
-            cd frontend
-            npm ci
-            npm run build
-            
-            if [ ! -f dist/index.html ]; then
-              echo "❌ FATAL: frontend/dist/index.html not found!"
-              exit 1
-            fi
-            cd ..
-            
+
             echo "🔧 Updating nginx config..."
             cp nginx/s-global.conf /etc/nginx/sites-available/s-global.space
             ln -sf /etc/nginx/sites-available/s-global.space /etc/nginx/sites-enabled/s-global.space
-            
+
             echo "🐳 Restarting Docker containers..."
+            cd /root/dominion
             docker-compose down
             docker-compose up -d --build
-            
+
             echo "🔄 Reloading nginx..."
             nginx -t && systemctl reload nginx
-            
+
             echo "⏳ Waiting for app to start..."
             sleep 10
-            
+
             echo "🏥 Health check..."
             curl -sf http://127.0.0.1:8001/health || echo "⚠️ Health check failed"
-            
+
             echo "✅ Deploy complete: $(date)"
 
 # ============================================================
-# 📋 ИНСТРУКЦИЯ ДЛЯ МАСТЕРА:
-# 
-# Добавь следующие Secrets в GitHub репозиторий:
-# Settings → Secrets and variables → Actions → New repository secret
+# 📋 АРХИТЕКТУРА ДЕПЛОЯ:
 #
-# 1. SERVER_HOST    = 89.169.39.111  (или s-global.space)
-# 2. SERVER_USER    = root           (или ваш SSH-пользователь)
-# 3. SSH_PRIVATE_KEY = (содержимое файла ~/.ssh/id_rsa)
+# Job 1 (build):
+#   - Собирает фронтенд в GitHub Actions (Node.js 20)
+#   - Загружает dist/ как артефакт
 #
-# После добавления секретов, каждый `git push origin main`
-# автоматически обновит сервер s-global.space.
+# Job 2 (deploy):
+#   - Скачивает артефакт
+#   - Копирует dist/ на сервер через SCP
+#   - Обновляет бэкенд (git pull)
+#   - Перезапускает Docker + nginx
+#   - Проверяет health endpoint
+#
+# Секреты (уже настроены):
+#   SERVER_HOST    = 89.169.39.111
+#   SERVER_USER    = root
+#   SSH_PRIVATE_KEY = (приватный SSH ключ)
 # ============================================================
