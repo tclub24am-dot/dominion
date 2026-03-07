@@ -6,28 +6,34 @@ import {
 } from 'lucide-react'
 
 /**
- * S-GLOBAL DOMINION — Bottom Drawer (Hover Reveal)
- * Выдвижная нижняя панель с кнопками быстрого доступа
- * Скрыта внизу, плавно выплывает при наведении мыши
+ * S-GLOBAL DOMINION — Floating Dock v2.0 (Premium macOS-style)
+ * =============================================================
+ * VERSHINA v200.15 Protocol — «Панель управления дорогой яхты»
+ * - Floating: отступ от краёв, border-radius 24px
+ * - Glassmorphism: backdrop-filter blur(20px) saturate(180%)
+ * - Hover: scale(1.2) + translateY(-8px) + indicator dot
+ * - Полная адаптация к темам через CSS-переменные
  */
 
 const DRAWER_BUTTONS = [
-  { id: 'search',  icon: Search,    label: 'Поиск',    color: '#00f5ff' },
-  { id: 'email',   icon: Mail,      label: 'Email',    color: '#a855f7' },
-  { id: 'book',    icon: BookOpen,  label: 'Книжка',   color: '#f0c060' },
-  { id: 'ai',      icon: Brain,     label: 'AI',       color: '#00ff88' },
-  { id: 'mindmap', icon: GitBranch, label: 'MindMap',  color: '#06b6d4' },
-  { id: 'fleet',   icon: Car,       label: 'Флот',     color: '#f97316' },
-  { id: 'matrix',  icon: Grid3X3,   label: 'Матрица',  color: '#ef4444' },
+  { id: 'search',  icon: Search,    label: 'Поиск',    color: '#00f5ff', colorRgb: '0, 245, 255' },
+  { id: 'email',   icon: Mail,      label: 'Email',    color: '#a855f7', colorRgb: '168, 85, 247' },
+  { id: 'book',    icon: BookOpen,  label: 'Книжка',   color: '#f0c060', colorRgb: '240, 192, 96' },
+  { id: 'ai',      icon: Brain,     label: 'AI',       color: '#00ff88', colorRgb: '0, 255, 136' },
+  { id: 'mindmap', icon: GitBranch, label: 'MindMap',  color: '#06b6d4', colorRgb: '6, 182, 212' },
+  { id: 'fleet',   icon: Car,       label: 'Флот',     color: '#f97316', colorRgb: '249, 115, 22' },
+  { id: 'matrix',  icon: Grid3X3,   label: 'Матрица',  color: '#ef4444', colorRgb: '239, 68, 68' },
 ]
 
 export default function BottomDrawer() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchValue, setSearchValue] = useState('')
+  const [activeId, setActiveId] = useState(null)
   const hoverZoneRef = useRef(null)
 
   const handleButtonClick = (id) => {
+    setActiveId(id)
     if (id === 'search') {
       setSearchOpen(prev => !prev)
     }
@@ -37,7 +43,6 @@ export default function BottomDrawer() {
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     if (searchValue.trim()) {
-      console.log('[DOMINION] Search:', searchValue)
       // TODO: Интеграция с поиском
     }
   }
@@ -47,7 +52,7 @@ export default function BottomDrawer() {
       {/* Зона активации (невидимая полоса внизу экрана) */}
       <div
         ref={hoverZoneRef}
-        className="fixed bottom-0 left-0 right-0 h-6 z-[60]"
+        className="fixed bottom-0 left-0 right-0 h-8 z-[60]"
         onMouseEnter={() => setIsOpen(true)}
       />
 
@@ -55,7 +60,7 @@ export default function BottomDrawer() {
       <AnimatePresence>
         {!isOpen && (
           <motion.div
-            className="fixed bottom-2 left-1/2 -translate-x-1/2 z-[59] flex items-center gap-2 cursor-pointer"
+            className="fixed bottom-3 left-1/2 -translate-x-1/2 z-[59] flex items-center gap-2 cursor-pointer"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
@@ -63,8 +68,8 @@ export default function BottomDrawer() {
             onClick={() => setIsOpen(true)}
           >
             <motion.div
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
             >
               <ChevronUp
                 size={16}
@@ -85,132 +90,219 @@ export default function BottomDrawer() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => { setIsOpen(false); setSearchOpen(false) }}
+              onClick={() => { setIsOpen(false); setSearchOpen(false); setActiveId(null) }}
             />
 
-            {/* Drawer */}
+            {/* === FLOATING DOCK === */}
             <motion.div
-              className="fixed bottom-0 left-0 right-0 z-[60] border-t backdrop-blur-xl bg-dominion-deep/95 border-dominion-gold/20"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60]"
+              initial={{ y: 120, opacity: 0, scale: 0.9 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 120, opacity: 0, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
               onMouseLeave={() => { setIsOpen(false); setSearchOpen(false) }}
             >
-              {/* Верхняя декоративная линия */}
-              <div className="absolute top-0 left-0 right-0 h-px overflow-hidden">
-                <motion.div
-                  className="h-full w-full"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent, #d4a843, transparent)',
-                  }}
-                  animate={{ opacity: [0.3, 0.8, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </div>
-
-              {/* Кнопка закрытия */}
-              <motion.button
-                className="absolute top-2 right-4 p-1 rounded-full text-dominion-muted hover:text-white"
-                onClick={() => { setIsOpen(false); setSearchOpen(false) }}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <X size={14} />
-              </motion.button>
-
-              {/* Контент */}
-              <div className="px-6 py-4">
-                {/* Кнопки быстрого доступа */}
-                <div className="flex items-center justify-center gap-3 flex-wrap">
-                  {DRAWER_BUTTONS.map((btn, i) => (
-                    <motion.button
-                      key={btn.id}
-                      className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl transition-all duration-300 min-w-[72px] bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.15]"
+              {/* Поле поиска (раскрывается над доком) */}
+              <AnimatePresence>
+                {searchOpen && (
+                  <motion.form
+                    className="mb-3 w-full"
+                    initial={{ height: 0, opacity: 0, y: 10 }}
+                    animate={{ height: 'auto', opacity: 1, y: 0 }}
+                    exit={{ height: 0, opacity: 0, y: 10 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    onSubmit={handleSearchSubmit}
+                  >
+                    <div
+                      className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
                       style={{
-                        boxShadow: 'none',
+                        background: 'rgba(var(--card-bg-rgb), 0.75)',
+                        backdropFilter: 'blur(20px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
                       }}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05, duration: 0.3 }}
-                      whileHover={{
-                        scale: 1.08,
-                        boxShadow: `0 0 20px ${btn.color}25, 0 4px 12px rgba(0,0,0,0.3)`,
-                        borderColor: `${btn.color}50`,
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleButtonClick(btn.id)}
                     >
-                      <btn.icon
-                        size={18}
-                        style={{ color: btn.color }}
+                      <Search size={16} className="text-dominion-muted flex-shrink-0" />
+                      <input
+                        type="text"
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        placeholder="Поиск по империи..."
+                        className="flex-1 bg-transparent outline-none text-sm font-montserrat placeholder:text-dominion-muted/50"
+                        style={{ color: 'var(--text-primary)' }}
+                        autoFocus
                       />
-                      <span
-                        className="text-[10px] font-orbitron tracking-wider text-dominion-muted"
+                      <motion.button
+                        type="button"
+                        className="p-1.5 rounded-lg transition-colors hover:bg-white/10"
+                        style={{ color: 'var(--text-label)' }}
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.9 }}
+                        title="Голосовой ввод"
                       >
-                        {btn.label}
-                      </span>
-                    </motion.button>
-                  ))}
+                        <Mic size={16} />
+                      </motion.button>
+                      <motion.button
+                        type="submit"
+                        className="px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold tracking-wider bg-dominion-gold/20 text-dominion-gold border border-dominion-gold/30 hover:bg-dominion-gold/30"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        ENTER
+                      </motion.button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+
+              {/* Основной контейнер дока */}
+              <div
+                className="relative flex items-end gap-2 px-5 py-3 dock-container"
+                style={{
+                  borderRadius: '24px',
+                  boxShadow: '0 20px 50px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)',
+                }}
+              >
+                {/* Верхняя декоративная линия */}
+                <div className="absolute top-0 left-8 right-8 h-px overflow-hidden rounded-full">
+                  <motion.div
+                    className="h-full w-full"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent, var(--accent, #d4a843), transparent)',
+                    }}
+                    animate={{ opacity: [0.2, 0.6, 0.2] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
                 </div>
 
-                {/* Поле поиска (раскрывается) */}
-                <AnimatePresence>
-                  {searchOpen && (
-                    <motion.form
-                      className="mt-4"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      onSubmit={handleSearchSubmit}
-                    >
-                      <div
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl border bg-white/[0.03] border-white/[0.08] focus-within:border-dominion-neon/40"
-                        style={{
-                          backdropFilter: 'blur(20px)',
-                        }}
-                      >
-                        <Search
-                          size={16}
-                          className="text-dominion-muted"
-                        />
-                        <input
-                          type="text"
-                          value={searchValue}
-                          onChange={(e) => setSearchValue(e.target.value)}
-                          placeholder="Поиск по империи..."
-                          className="flex-1 bg-transparent outline-none text-sm font-montserrat placeholder:text-dominion-muted/50 text-white"
-                          autoFocus
-                        />
-                        {/* Иконка микрофона (голосовой ввод) */}
-                        <motion.button
-                          type="button"
-                          className="p-1.5 rounded-lg transition-colors hover:bg-white/10 text-dominion-muted hover:text-dominion-neon"
-                          whileHover={{ scale: 1.15 }}
-                          whileTap={{ scale: 0.9 }}
-                          title="Голосовой ввод"
-                        >
-                          <Mic size={16} />
-                        </motion.button>
-                        {/* Кнопка Enter */}
-                        <motion.button
-                          type="submit"
-                          className="px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold tracking-wider transition-colors bg-dominion-gold/20 text-dominion-gold border border-dominion-gold/30 hover:bg-dominion-gold/30"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          ENTER
-                        </motion.button>
-                      </div>
-                    </motion.form>
-                  )}
-                </AnimatePresence>
+                {/* Кнопки дока */}
+                {DRAWER_BUTTONS.map((btn, i) => (
+                  <DockButton
+                    key={btn.id}
+                    btn={btn}
+                    index={i}
+                    isActive={activeId === btn.id}
+                    onClick={() => handleButtonClick(btn.id)}
+                  />
+                ))}
+
+                {/* Кнопка закрытия */}
+                <motion.button
+                  className="ml-2 flex items-center justify-center w-8 h-8 rounded-full"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'var(--text-secondary, rgba(255,255,255,0.4))',
+                  }}
+                  onClick={() => { setIsOpen(false); setSearchOpen(false); setActiveId(null) }}
+                  whileHover={{ scale: 1.15, background: 'rgba(255,255,255,0.1)' }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X size={12} />
+                </motion.button>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+/**
+ * Отдельный компонент кнопки дока с hover-эффектом macOS-style
+ * Магнитный spring: cubic-bezier(0.175, 0.885, 0.32, 1.275) — «подпрыгивание»
+ */
+function DockButton({ btn, index, isActive, onClick }) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <motion.div
+      className="relative flex flex-col items-center"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {/* Кнопка */}
+      <motion.button
+        className="relative flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl"
+        style={{
+          background: isHovered
+            ? `rgba(${btn.colorRgb}, 0.15)`
+            : 'rgba(255, 255, 255, 0.03)',
+          border: isHovered
+            ? `1px solid rgba(${btn.colorRgb}, 0.4)`
+            : '1px solid rgba(255, 255, 255, 0.06)',
+          minWidth: '60px',
+          transition: 'background 0.2s ease, border-color 0.2s ease',
+        }}
+        animate={{
+          scale: isHovered ? 1.22 : 1,
+          y: isHovered ? -10 : 0,
+        }}
+        transition={{
+          type: 'spring',
+          stiffness: 450,
+          damping: 18,
+          mass: 0.8,
+        }}
+        whileTap={{ scale: 0.92 }}
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        onClick={onClick}
+      >
+        {/* Иконка — усиленный glow при наведении */}
+        <motion.div
+          animate={{
+            filter: isHovered
+              ? `drop-shadow(0 0 10px rgba(${btn.colorRgb}, 1)) drop-shadow(0 0 20px rgba(${btn.colorRgb}, 0.5))`
+              : 'none',
+          }}
+          transition={{ duration: 0.15 }}
+        >
+          <btn.icon
+            size={20}
+            style={{
+              color: isHovered ? btn.color : `rgba(${btn.colorRgb}, 0.65)`,
+              transition: 'color 0.15s ease',
+            }}
+          />
+        </motion.div>
+
+        {/* Лейбл */}
+        <span
+          className="text-[9px] font-orbitron tracking-wider"
+          style={{
+            color: isHovered ? btn.color : 'var(--text-secondary, rgba(255,255,255,0.4))',
+            transition: 'color 0.15s ease',
+            fontWeight: isHovered ? 700 : 400,
+          }}
+        >
+          {btn.label}
+        </span>
+      </motion.button>
+
+      {/* Indicator dot — светящаяся точка под активной/наведённой кнопкой */}
+      <AnimatePresence>
+        {(isHovered || isActive) && (
+          <motion.div
+            className="absolute -bottom-2 left-1/2 -translate-x-1/2"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+          >
+            <div
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: btn.color,
+                boxShadow: `0 0 8px rgba(${btn.colorRgb}, 1), 0 0 16px rgba(${btn.colorRgb}, 0.5)`,
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

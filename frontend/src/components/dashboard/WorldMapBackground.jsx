@@ -105,7 +105,7 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
   const { theme } = useTheme()
 
   const mapLineColor = React.useMemo(() => {
-    if (theme === 'ivory') return '#D1D1C7'
+    if (theme === 'ivory') return '#BDBDB7'  // дорогая гравировка — чуть темнее для выразительности
     if (theme === 'cobalt') return '#00F0FF'
     return '#00BFFF' // void (default)
   }, [theme])

@@ -1,34 +1,20 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { SECTOR_COLORS } from './sectorColors'
 
 /**
- * S-GLOBAL DOMINION — Sector Card v3.0 (Level 5++ LEVITATION)
- * ============================================================
+ * S-GLOBAL DOMINION — Sector Card v3.1 (Level 5++ LEVITATION + AURA)
+ * ====================================================================
  * Карточка сектора империи с эффектами:
  * - Левитация при наведении (y: -12, scale: 1.04)
  * - Glow x2 при ховере
  * - Стеклянный блик, пробегающий по карточке
  * - Фиксированная высота h-[160px]
  * - Неоновый border-glow
- * 
- * VERSHINA v200.11 Protocol — Level 5++
+ * - Эффект «АУРЫ» — медленно пульсирующее цветное пятно
+ *
+ * VERSHINA v200.13 Protocol — Level 5++
  */
-
-// Цветовая палитра для каждого сектора
-const SECTOR_COLORS = {
-  FL: { glow: '#00f5ff', accent: '#00f5ff', gradient: 'from-cyan-500/20 to-cyan-500/5' },
-  LG: { glow: '#00ff88', accent: '#00ff88', gradient: 'from-emerald-500/20 to-emerald-500/5' },
-  IT: { glow: '#a855f7', accent: '#a855f7', gradient: 'from-purple-500/20 to-purple-500/5' },
-  WH: { glow: '#f97316', accent: '#f97316', gradient: 'from-orange-500/20 to-orange-500/5' },
-  AI: { glow: '#06b6d4', accent: '#06b6d4', gradient: 'from-cyan-600/20 to-cyan-600/5' },
-  IM: { glow: '#8b5cf6', accent: '#8b5cf6', gradient: 'from-violet-500/20 to-violet-500/5' },
-  GP: { glow: '#22d3ee', accent: '#22d3ee', gradient: 'from-cyan-400/20 to-cyan-400/5' },
-  TS: { glow: '#f59e0b', accent: '#f59e0b', gradient: 'from-amber-500/20 to-amber-500/5' },
-  MR: { glow: '#ef4444', accent: '#ef4444', gradient: 'from-red-500/20 to-red-500/5' },
-  IV: { glow: '#10b981', accent: '#10b981', gradient: 'from-emerald-600/20 to-emerald-600/5' },
-  FP: { glow: '#d4a843', accent: '#d4a843', gradient: 'from-yellow-600/20 to-yellow-600/5' },
-  AC: { glow: '#ec4899', accent: '#ec4899', gradient: 'from-pink-500/20 to-pink-500/5' },
-}
 
 export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, liveCount = null }) {
   const [isHovered, setIsHovered] = useState(false)
@@ -70,6 +56,24 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      {/* === ЭФФЕКТ «АУРЫ» — медленно пульсирующее цветное пятно === */}
+      <motion.div
+        className="absolute -inset-6 rounded-2xl pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at center, rgba(${colors.glowRgb}, 0.063) 0%, transparent 70%)`,
+          zIndex: -1,
+        }}
+        animate={{
+          opacity: [0.4, 1, 0.4],
+          scale: [0.95, 1.05, 0.95],
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
+
       {/* Внешний неоновый glow — УСИЛЕННЫЙ x2 при ховере */}
       <motion.div
         className="absolute -inset-[2px] rounded-xl blur-[2px]"
@@ -270,5 +274,3 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
     </motion.div>
   )
 }
-
-export { SECTOR_COLORS }
