@@ -14,26 +14,42 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
+          port: 22
+          command_timeout: 10m
           script: |
+            set -e
+            
             cd /root/dominion
             echo "📥 Pulling latest changes..."
-            git pull origin master
+            git pull origin main
             
-            echo "🧹 Cleaning old frontend build..."
-            rm -rf /root/dominion/frontend/dist/*
-            mkdir -p /root/dominion/frontend/dist
-            
-            echo "📦 Installing frontend dependencies..."
+            echo "📦 Building frontend SPA..."
             cd frontend
-            rm -rf node_modules
-            npm install --production=false
+            npm ci
             npm run build
+            
+            if [ ! -f dist/index.html ]; then
+              echo "❌ FATAL: frontend/dist/index.html not found!"
+              exit 1
+            fi
             cd ..
+            
+            echo "🔧 Updating nginx config..."
+            cp nginx/s-global.conf /etc/nginx/sites-available/s-global.space
+            ln -sf /etc/nginx/sites-available/s-global.space /etc/nginx/sites-enabled/s-global.space
             
             echo "🐳 Restarting Docker containers..."
             docker-compose down
             docker-compose up -d --build
+            
+            echo "🔄 Reloading nginx..."
+            nginx -t && systemctl reload nginx
+            
+            echo "⏳ Waiting for app to start..."
+            sleep 10
+            
+            echo "🏥 Health check..."
+            curl -sf http://127.0.0.1:8001/health || echo "⚠️ Health check failed"
             
             echo "✅ Deploy complete: $(date)"
 
@@ -46,8 +62,7 @@ jobs:
 # 1. SERVER_HOST    = 89.169.39.111  (или s-global.space)
 # 2. SERVER_USER    = root           (или ваш SSH-пользователь)
 # 3. SSH_PRIVATE_KEY = (содержимое файла ~/.ssh/id_rsa)
-# 4. SERVER_PORT    = 22             (опционально, если нестандартный)
 #
-# После добавления секретов, каждый `git push origin master`
+# После добавления секретов, каждый `git push origin main`
 # автоматически обновит сервер s-global.space.
 # ============================================================
