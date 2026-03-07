@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Shield } from 'lucide-react'
+import ThemeSwitcher from './ThemeSwitcher'
 
 /**
  * S-GLOBAL DOMINION — Top Bar v2.0 (HQ Status Panel)
@@ -106,8 +107,10 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* Правая часть: Время */}
+      {/* Правая часть: ThemeSwitcher + Время */}
       <div className="flex items-center gap-4">
+        {/* Переключатель тем */}
+        <ThemeSwitcher />
         {/* Дата и время */}
         <div className="hidden md:block text-right text-xs font-orbitron text-dominion-muted">
           <div className="tracking-wider">{formatDate(time)}</div>

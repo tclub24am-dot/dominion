@@ -2,7 +2,7 @@ import asyncio
 import os
 from app.database import SessionLocal
 from app.models.all_models import User, UserRole
-from app.services.security import get_password_hash
+from app.services.auth import hash_password as get_password_hash
 
 async def create_master_user():
     async with SessionLocal() as db:
@@ -15,7 +15,10 @@ async def create_master_user():
             return
             
         # Создаем пользователя master с правильными привилегиями
-        master_password = os.getenv("MASTER_BOOTSTRAP_PASSWORD", "MasterSpartak777!")
+        master_password = os.getenv("MASTER_BOOTSTRAP_PASSWORD")
+        if not master_password:
+            print("ОШИБКА БЕЗОПАСНОСТИ: MASTER_BOOTSTRAP_PASSWORD не задан в .env! Создание мастера отменено.")
+            return
         user = User(
             username='master',
             email='master@s-global.space',

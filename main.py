@@ -330,9 +330,14 @@ app = FastAPI(
 )
 
 # 4. ПРОТОКОЛ CORS (Связи между мирами)
+# ВАЖНО: allow_origins=["*"] + allow_credentials=True — невалидная комбинация по спецификации CORS.
+# Браузеры блокируют такие запросы. Указываем конкретные домены Цитадели.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://s-global.space",
+        "http://localhost:5173",   # Vite dev server
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # app/api/v1/auth.py
 
+import asyncio
 import logging
 import os
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+import secrets
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
@@ -12,6 +14,7 @@ from datetime import datetime
 from app.database import get_db
 from app.models.all_models import User
 from app.services.auth import verify_password, create_access_token, hash_password
+from app.services.security import get_current_user_from_cookie
 
 # Настройка логгера Врат
 logger = logging.getLogger("AuthModule")
@@ -40,9 +43,18 @@ async def login(
         # 2. АВТО-БУТСТРАП МАСТЕРА (если не найден)
         if not user:
             master_username = os.getenv("MASTER_BOOTSTRAP_USERNAME", "master")
-            master_password = os.getenv("MASTER_BOOTSTRAP_PASSWORD", "MasterSpartak777!")
+            master_password = os.getenv("MASTER_BOOTSTRAP_PASSWORD")
             master_full_name = os.getenv("MASTER_BOOTSTRAP_NAME", "Master Spartak")
-            if payload.username == master_username and payload.password == master_password:
+            if not master_password:
+                logger.critical("SECURITY: MASTER_BOOTSTRAP_PASSWORD не задан в .env! Авто-бутстрап отключён.")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Доступ отклонен: Ключ не подходит"
+                )
+            if payload.username == master_username and secrets.compare_digest(
+                payload.password.encode("utf-8"),
+                master_password.encode("utf-8")
+            ):
                 user = User(
                     username=master_username,
                     hashed_password=hash_password(master_password),
@@ -62,6 +74,7 @@ async def login(
 
         # 3. ПРОВЕРКА КЛЮЧА (Пароля)
         if not user or not verify_password(payload.password, user.hashed_password):
+            await asyncio.sleep(0.3)  # Нивелирует timing side-channel
             logger.warning(f"SECURITY ALERT: Неудачная попытка входа для пользователя: {payload.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -71,29 +84,30 @@ async def login(
         # 4. ГЕНЕРАЦИЯ JWT (Магический Знак)
         token = create_access_token(data={"sub": user.username})
         
-        # 4. УСТАНОВКА COOKIE (Память Цитадели)
+        # 5. УСТАНОВКА COOKIE (Память Цитадели)
+        is_production = os.getenv("ENVIRONMENT") == "production"
         response.set_cookie(
             key="access_token",
             value=token,
-            httponly=True,  # Защита от XSS
-            max_age=86400,  # 24 часа мощи
+            httponly=True,   # Защита от XSS
+            max_age=86400,   # 24 часа мощи
             samesite="lax",
             path="/",
-            secure=False  # True только для HTTPS
+            secure=is_production  # True только в продакшне (HTTPS), False для localhost
         )
         
-        # 5. РЕГИСТРАЦИЯ ВХОДА (Для истории Оракула)
+        # 6. РЕГИСТРАЦИЯ ВХОДА (Для истории Оракула)
         logger.info(f"ACCESS GRANTED: {user.full_name} ({user.role}) вошел в систему.")
 
-        # 6. ВОЗВРАТ ПРАВ И ДАННЫХ
+        # 7. ВОЗВРАТ ПРАВ И ДАННЫХ (токен передаётся только через httpOnly cookie)
         return {
             "status": "success",
-            "access_token": token,
-            "token_type": "bearer",
+            "token_type": "cookie",
             "user": {
                 "id": user.id,
+                "username": user.username,
                 "full_name": user.full_name,
-                "role": user.role,
+                "role": str(user.role) if user.role else "manager",
                 "permissions": {
                     "treasury": user.can_see_treasury,
                     "fleet": user.can_see_fleet,
@@ -102,8 +116,8 @@ async def login(
                 }
             }
         }
-    except HTTPException as he:
-        raise he
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"SYSTEM AUTH ERROR: {e}")
         raise HTTPException(
@@ -112,6 +126,19 @@ async def login(
         )
 
 @router.get("/me")
-async def get_me(user: User = Depends(User)): # Здесь в будущем будет зависимость get_current_user
-    """Проверка текущего статуса сессии"""
-    return {"status": "active", "timestamp": datetime.now()}
+async def get_me(user: User = Depends(get_current_user_from_cookie)):
+    """
+    Проверка текущего статуса сессии.
+    Валидирует httpOnly cookie → возвращает данные пользователя.
+    Используется React SPA для восстановления сессии при перезагрузке.
+    """
+    return {
+        "status": "active",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "full_name": user.full_name,
+            "role": str(user.role) if user.role else "manager",
+        },
+        "timestamp": datetime.now().isoformat(),
+    }

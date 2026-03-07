@@ -96,7 +96,7 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
 
       {/* Карточка — ФИКСИРОВАННАЯ ВЫСОТА */}
       <div
-        className="relative overflow-hidden rounded-xl border p-5 h-[160px] flex flex-col transition-colors duration-300 cursor-pointer bg-slate-900/30 backdrop-blur-2xl hover:border-white/[0.15]"
+        className="sector-card relative overflow-hidden rounded-xl border p-5 h-[160px] flex flex-col transition-colors duration-300 cursor-pointer backdrop-blur-2xl hover:border-white/[0.15]"
         style={{
           borderColor: isHovered ? `${colors.glow}60` : `${colors.glow}20`,
           boxShadow: isHovered

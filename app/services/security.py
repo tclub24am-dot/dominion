@@ -24,8 +24,8 @@ async def get_current_user_from_cookie(
     if not access_token:
         logger.warning(f"Access denied: No token for {request.url.path}")
         raise HTTPException(
-            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-            headers={"Location": "/login"}
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Токен не найден. Требуется авторизация."
         )
 
     try:
@@ -40,8 +40,8 @@ async def get_current_user_from_cookie(
         if username is None:
             logger.warning("Token payload invalid: no 'sub' field")
             raise HTTPException(
-                status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-                headers={"Location": "/login"}
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Токен повреждён: отсутствует поле 'sub'."
             )
 
         async with AsyncSessionLocal() as session:
@@ -52,8 +52,8 @@ async def get_current_user_from_cookie(
         if user is None:
             logger.warning(f"User not found: {username}")
             raise HTTPException(
-                status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-                headers={"Location": "/login"}
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Пользователь не найден."
             )
 
         if not user.is_active:
@@ -69,16 +69,16 @@ async def get_current_user_from_cookie(
     except JWTError as e:
         logger.warning(f"JWT decode error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-            headers={"Location": "/login"}
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Токен недействителен или истёк."
         )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Auth error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-            headers={"Location": "/login"}
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Ошибка авторизации."
         )
 
 async def get_current_user_optional(

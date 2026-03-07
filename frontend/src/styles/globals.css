@@ -2,6 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════
+   THEME ENGINE — S-GLOBAL DOMINION
+   ═══════════════════════════════════════════════════════ */
+
+/* THE VOID (базовая тёмная тема) */
+:root {
+  --bg-main: #000000;
+  --card-bg: rgba(10, 10, 10, 0.8);
+  --card-bg-rgb: 10, 10, 10;
+  --accent: #FFD700;
+  --accent-rgb: 255, 215, 0;
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255,255,255,0.6);
+  --text-label: #00FFFF;
+  --border-glow: rgba(255, 215, 0, 0.2);
+  --font-weight-base: 400;
+  --heading-color: #FFD700;
+  --letter-spacing-small: 0.05em;
+  --map-line-color: #00BFFF;
+}
+
+/* IVORY LUXE (светлая тема) */
+.theme-ivory {
+  --bg-main: #FDFCF0;
+  --card-bg: #F5F4E6;
+  --card-bg-rgb: 245, 244, 230;
+  --accent: #8B6914;
+  --accent-rgb: 139, 105, 20;
+  --text-primary: #1A1A1B;
+  --text-secondary: rgba(26,26,27,0.65);
+  --text-label: #007A7A;
+  --border-glow: rgba(139, 105, 20, 0.1);
+  --font-weight-base: 500;
+  --heading-color: #5D4B1B;
+  --card-shadow: 8px 8px 20px rgba(0,0,0,0.05);
+  --map-line-color: #D1D1C7;
+}
+
+/* CYBER-COBALT (синяя тема) */
+.theme-cobalt {
+  --bg-main: #050B18;
+  --card-bg: rgba(15, 23, 42, 0.7);
+  --card-bg-rgb: 15, 23, 42;
+  --accent: #00F0FF;
+  --accent-rgb: 0, 240, 255;
+  --text-primary: #E2E8F0;
+  --text-secondary: rgba(148,163,184,0.8);
+  --text-label: #00F0FF;
+  --border-glow: rgba(0, 240, 255, 0.4);
+  --font-weight-base: 400;
+  --heading-color: #00F0FF;
+  --card-backdrop: blur(12px);
+  --map-line-color: #00F0FF;
+}
+
+/* Плавное переключение тем — ТОЛЬКО для body и тематических элементов.
+   НЕ применяем к *, чтобы не ломать Framer Motion и SVG @keyframes. */
+body {
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
 /* ============================================================
    S-GLOBAL DOMINION — Global Styles v5.0
    VERSHINA v200.11 Protocol
@@ -165,6 +226,32 @@
   .glow-red     { box-shadow: 0 0 15px rgba(239, 68, 68, 0.15), 0 0 30px rgba(239, 68, 68, 0.05); }
   .glow-pink    { box-shadow: 0 0 15px rgba(236, 72, 153, 0.15), 0 0 30px rgba(236, 72, 153, 0.05); }
   .glow-amber   { box-shadow: 0 0 15px rgba(245, 158, 11, 0.15), 0 0 30px rgba(245, 158, 11, 0.05); }
+
+  /* === SECTOR CARD — Glassmorphism === */
+  .sector-card {
+    background: rgba(var(--card-bg-rgb), 0.5);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+    /* Конкретные свойства — не 'all', чтобы не мешать transform/opacity анимациям */
+    transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  /* === TYPOGRAPHY — Ivory Luxe === */
+  .theme-ivory h1, .theme-ivory h2, .theme-ivory h3 {
+    color: #2D2D2D;
+    letter-spacing: 0.02em;
+  }
+  .theme-ivory p, .theme-ivory span, .theme-ivory div {
+    color: #4A4A4A;
+    letter-spacing: 0.02em;
+  }
+
+  /* === TYPOGRAPHY — The Void (text-shadow для заголовков) === */
+  :root h1, :root h2, :root h3 {
+    text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3);
+  }
 }
 
 @layer utilities {

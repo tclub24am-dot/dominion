@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTheme } from '../../contexts/ThemeContext'
 // motion удалён — все одноразовые анимации заменены на CSS @keyframes
 
 /**
@@ -101,6 +102,17 @@ const GRID_LINES = {
 }
 
 const WorldMapBackground = React.memo(function WorldMapBackground() {
+  const { theme } = useTheme()
+
+  const mapLineColor = React.useMemo(() => {
+    if (theme === 'ivory') return '#D1D1C7'
+    if (theme === 'cobalt') return '#00F0FF'
+    return '#00BFFF' // void (default)
+  }, [theme])
+
+  const mapStrokeWidth = React.useMemo(() => '0.5', []) // всегда 0.5px
+  const showGlow = theme !== 'ivory' // неоновое свечение только для Void и Cobalt
+
   return (
     <div
       style={{
@@ -126,30 +138,30 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
         style={{ maxWidth: '2200px' }}
       >
         <defs>
-          {/* Приглушённый неоновый градиент — бирюзовый */}
+          {/* Приглушённый неоновый градиент — цвет из темы */}
           <linearGradient id="wmap-neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(0,255,242,0.12)" />
-            <stop offset="50%" stopColor="rgba(0,255,242,0.25)" />
-            <stop offset="100%" stopColor="rgba(0,255,242,0.12)" />
+            <stop offset="0%" stopColor={mapLineColor} stopOpacity="0.12" />
+            <stop offset="50%" stopColor={mapLineColor} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={mapLineColor} stopOpacity="0.12" />
           </linearGradient>
 
           {/* Заливка континентов — едва заметная */}
           <linearGradient id="wmap-fillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(0,255,242,0.02)" />
-            <stop offset="50%" stopColor="rgba(0,255,242,0.04)" />
-            <stop offset="100%" stopColor="rgba(0,255,242,0.02)" />
+            <stop offset="0%" stopColor={mapLineColor} stopOpacity="0.02" />
+            <stop offset="50%" stopColor={mapLineColor} stopOpacity="0.04" />
+            <stop offset="100%" stopColor={mapLineColor} stopOpacity="0.02" />
           </linearGradient>
 
           {/* Градиент линий связи */}
           <linearGradient id="wmap-linkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(0,255,242,0.05)" />
-            <stop offset="50%" stopColor="rgba(0,255,242,0.2)" />
-            <stop offset="100%" stopColor="rgba(0,255,242,0.05)" />
+            <stop offset="0%" stopColor={mapLineColor} stopOpacity="0.05" />
+            <stop offset="50%" stopColor={mapLineColor} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={mapLineColor} stopOpacity="0.05" />
           </linearGradient>
 
           {/* Drop-shadow для контуров */}
           <filter id="wmap-neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="rgba(0,255,242,1)" floodOpacity="0.15" />
+            <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor={mapLineColor} floodOpacity="0.15" />
           </filter>
 
           {/* Glow для узлов */}
@@ -165,7 +177,7 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
 
           {/* Glow для линий связи */}
           <filter id="wmap-lineGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="rgba(0,255,242,1)" floodOpacity="0.12" />
+            <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor={mapLineColor} floodOpacity="0.12" />
           </filter>
         </defs>
 
@@ -175,8 +187,9 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
             <line
               key={`m-${i}`}
               x1={x} y1="10" x2={x} y2="490"
-              stroke="rgba(0,255,242,0.06)"
-              strokeWidth="0.3"
+              stroke={mapLineColor}
+              strokeOpacity="0.06"
+              strokeWidth={mapStrokeWidth}
               strokeDasharray="2 10"
             />
           ))}
@@ -184,8 +197,9 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
             <line
               key={`p-${i}`}
               x1="10" y1={y} x2="990" y2={y}
-              stroke="rgba(0,255,242,0.06)"
-              strokeWidth="0.3"
+              stroke={mapLineColor}
+              strokeOpacity="0.06"
+              strokeWidth={mapStrokeWidth}
               strokeDasharray="2 10"
             />
           ))}
@@ -206,11 +220,12 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
             <path
               d={continent.path}
               fill="none"
-              stroke="rgba(0,255,242,0.2)"
-              strokeWidth="1.2"
+              stroke={mapLineColor}
+              strokeOpacity="0.2"
+              strokeWidth={mapStrokeWidth}
               strokeLinejoin="round"
               strokeLinecap="round"
-              filter="url(#wmap-neonGlow)"
+              filter={showGlow ? "url(#wmap-lineGlow)" : undefined}
               className="wmap-continent-stroke"
               style={{ animationDelay: `${0.2 + i * 0.1}s` }}
             />
@@ -246,7 +261,8 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
               cy={node.y}
               r="5"
               fill="none"
-              stroke="rgba(0,255,242,0.4)"
+              stroke={mapLineColor}
+              strokeOpacity="0.4"
               strokeWidth="0.5"
               className="wmap-pulse-halo"
               style={{ animationDelay: `${node.delay + 2}s` }}
@@ -256,8 +272,10 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
               cx={node.x}
               cy={node.y}
               r="4"
-              fill="rgba(0,255,242,0.08)"
-              stroke="rgba(0,255,242,0.2)"
+              fill={mapLineColor}
+              fillOpacity="0.08"
+              stroke={mapLineColor}
+              strokeOpacity="0.2"
               strokeWidth="0.5"
               className="wmap-node-halo"
               style={{ animationDelay: `${1.5 + node.delay}s` }}
@@ -267,7 +285,8 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
               cx={node.x}
               cy={node.y}
               r="2"
-              fill="rgba(0,255,242,0.7)"
+              fill={mapLineColor}
+              fillOpacity="0.7"
               className="wmap-pulse-dot"
               style={{ animationDelay: `${1.5 + node.delay}s` }}
             />
@@ -276,7 +295,8 @@ const WorldMapBackground = React.memo(function WorldMapBackground() {
               x={node.x}
               y={node.y - 9}
               textAnchor="middle"
-              fill="rgba(0,255,242,0.35)"
+              fill={mapLineColor}
+              fillOpacity="0.35"
               fontSize="6"
               fontFamily="'Orbitron', monospace"
               fontWeight="bold"

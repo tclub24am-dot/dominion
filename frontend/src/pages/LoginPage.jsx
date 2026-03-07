@@ -55,7 +55,7 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center overflow-hidden"
-      style={{ backgroundColor: '#050508' }}
+      style={{ backgroundColor: '#000000' }}
     >
       {/* Золотая пыль — фоновые частицы */}
       <GoldDustBackground />
@@ -104,17 +104,36 @@ export default function LoginPage({ onLogin }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            {/* Иконка щита */}
+            {/* Золотой шестиугольник с иконкой Shield */}
             <motion.div
-              className="flex items-center justify-center w-16 h-16 rounded-2xl mb-5"
-              style={{
-                background: 'linear-gradient(135deg, rgba(212,168,67,0.15), rgba(212,168,67,0.03))',
-                border: '1px solid rgba(212,168,67,0.25)',
-                boxShadow: '0 0 40px rgba(212,168,67,0.1)',
-              }}
-              whileHover={{ scale: 1.05, rotate: 3 }}
+              className="relative flex items-center justify-center mb-5"
+              style={{ width: 72, height: 72 }}
+              whileHover={{ scale: 1.06, rotate: 5 }}
+              transition={{ type: 'spring', stiffness: 300 }}
             >
-              <Shield size={28} style={{ color: '#d4a843' }} />
+              {/* SVG шестиугольник */}
+              <svg
+                viewBox="0 0 72 72"
+                width="72"
+                height="72"
+                className="absolute inset-0"
+                style={{ filter: 'drop-shadow(0 0 12px rgba(212,168,67,0.45))' }}
+              >
+                <polygon
+                  points="36,4 66,20 66,52 36,68 6,52 6,20"
+                  fill="rgba(212,168,67,0.08)"
+                  stroke="rgba(212,168,67,0.55)"
+                  strokeWidth="1.5"
+                />
+                <polygon
+                  points="36,10 60,23 60,49 36,62 12,49 12,23"
+                  fill="none"
+                  stroke="rgba(212,168,67,0.18)"
+                  strokeWidth="0.8"
+                />
+              </svg>
+              {/* Shield иконка по центру */}
+              <Shield size={26} style={{ color: '#d4a843', position: 'relative', zIndex: 1 }} />
             </motion.div>
 
             {/* Название */}
