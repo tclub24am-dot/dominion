@@ -47,11 +47,6 @@
     color: #e8e8f0;
   }
 
-  /* Ivory theme body */
-  .theme-ivory body {
-    background-color: #f5f0e8;
-    color: #1a1a2e;
-  }
 
   /* Scrollbar styling — Dark */
   ::-webkit-scrollbar {
@@ -69,25 +64,10 @@
     background: #f0c060;
   }
 
-  /* Scrollbar styling — Ivory */
-  .theme-ivory ::-webkit-scrollbar-track {
-    background: #f0ebe0;
-  }
-  .theme-ivory ::-webkit-scrollbar-thumb {
-    background: #b8860b;
-  }
-  .theme-ivory ::-webkit-scrollbar-thumb:hover {
-    background: #8b6914;
-  }
-
   /* Selection */
   ::selection {
     background: rgba(212, 168, 67, 0.3);
     color: #fff;
-  }
-  .theme-ivory ::selection {
-    background: rgba(184, 134, 11, 0.2);
-    color: #1a1a2e;
   }
 }
 
@@ -174,66 +154,6 @@
     background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.3), transparent);
     animation: scanLine 8s linear infinite;
     pointer-events: none;
-  }
-
-  /* ============================================================
-     IVORY LIGHT THEME — Full Override
-     ============================================================ */
-  .theme-ivory {
-    --bg-dark: #f5f0e8;
-    --bg-card: #faf7f2;
-    --border-dark: #d4c9b0;
-    --text-primary: #1a1a2e;
-    --text-muted: #6b6b7a;
-    --gold: #b8860b;
-  }
-
-  .theme-ivory body {
-    background-color: #f5f0e8;
-    color: #1a1a2e;
-  }
-
-  .theme-ivory .glass-card {
-    background: rgba(250, 247, 242, 0.85);
-    border-color: rgba(212, 201, 176, 0.6);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  }
-
-  .theme-ivory .glass-card:hover {
-    border-color: rgba(184, 134, 11, 0.4);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12), 0 0 20px rgba(184, 134, 11, 0.1);
-  }
-
-  .theme-ivory .text-gold-gradient {
-    background: linear-gradient(135deg, #b8860b 0%, #d4a843 50%, #b8860b 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .theme-ivory .text-neon-glow {
-    color: #0891b2;
-    text-shadow: none;
-  }
-
-  .theme-ivory .text-gold-glow {
-    color: #b8860b;
-    text-shadow: none;
-  }
-
-  /* Ivory: Ensure text contrast is WCAG AA compliant */
-  .theme-ivory .sector-badge {
-    background: linear-gradient(135deg, rgba(184, 134, 11, 0.15), rgba(184, 134, 11, 0.05));
-    border-color: rgba(184, 134, 11, 0.3);
-    color: #8b6914;
-  }
-
-  .theme-ivory .status-online {
-    color: #059669;
-  }
-
-  .theme-ivory .status-online::before {
-    background-color: #059669;
   }
 
   /* === NEON GLOW BORDERS (per-sector) === */

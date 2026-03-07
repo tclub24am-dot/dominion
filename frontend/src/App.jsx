@@ -15,7 +15,11 @@ import api from './api/client'
  */
 export default function App() {
   const [stage, setStage] = useState('loading') // 'loading' | 'auth' | 'intro' | 'dashboard'
-  const [theme, setTheme] = useState('dark') // 'dark' | 'ivory'
+
+  // Всегда применяем dark-тему
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+  }, [])
 
   // Восстанавливаем сессию при перезагрузке — проверяем httpOnly cookie через /auth/me
   useEffect(() => {
@@ -55,22 +59,6 @@ export default function App() {
     setStage('dashboard')
   }, [])
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'ivory' : 'dark')
-  }
-
-  // Применяем тему к html элементу
-  useEffect(() => {
-    const html = document.documentElement
-    if (theme === 'dark') {
-      html.classList.add('dark')
-      html.classList.remove('theme-ivory')
-    } else {
-      html.classList.remove('dark')
-      html.classList.add('theme-ivory')
-    }
-  }, [theme])
-
   // Стадия 0: Проверка сессии — золотой спиннер на чёрном фоне
   if (stage === 'loading') {
     return (
@@ -96,6 +84,6 @@ export default function App() {
 
   // Стадия 3: Дашборд
   return (
-    <Dashboard theme={theme} onToggleTheme={toggleTheme} />
+    <Dashboard />
   )
 }

@@ -21,12 +21,11 @@ const DRAWER_BUTTONS = [
   { id: 'matrix',  icon: Grid3X3,   label: 'Матрица',  color: '#ef4444' },
 ]
 
-export default function BottomDrawer({ theme = 'dark' }) {
+export default function BottomDrawer() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   const hoverZoneRef = useRef(null)
-  const isDark = theme === 'dark'
 
   const handleButtonClick = (id) => {
     if (id === 'search') {
@@ -69,7 +68,7 @@ export default function BottomDrawer({ theme = 'dark' }) {
             >
               <ChevronUp
                 size={16}
-                className={isDark ? 'text-dominion-gold/40' : 'text-ivory-gold/40'}
+                className="text-dominion-gold/40"
               />
             </motion.div>
           </motion.div>
@@ -91,14 +90,7 @@ export default function BottomDrawer({ theme = 'dark' }) {
 
             {/* Drawer */}
             <motion.div
-              className={`
-                fixed bottom-0 left-0 right-0 z-[60]
-                border-t backdrop-blur-xl
-                ${isDark
-                  ? 'bg-dominion-deep/95 border-dominion-gold/20'
-                  : 'bg-ivory-card/95 border-ivory-border'
-                }
-              `}
+              className="fixed bottom-0 left-0 right-0 z-[60] border-t backdrop-blur-xl bg-dominion-deep/95 border-dominion-gold/20"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -110,9 +102,7 @@ export default function BottomDrawer({ theme = 'dark' }) {
                 <motion.div
                   className="h-full w-full"
                   style={{
-                    background: isDark
-                      ? 'linear-gradient(90deg, transparent, #d4a843, transparent)'
-                      : 'linear-gradient(90deg, transparent, #b8860b, transparent)',
+                    background: 'linear-gradient(90deg, transparent, #d4a843, transparent)',
                   }}
                   animate={{ opacity: [0.3, 0.8, 0.3] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -121,10 +111,7 @@ export default function BottomDrawer({ theme = 'dark' }) {
 
               {/* Кнопка закрытия */}
               <motion.button
-                className={`
-                  absolute top-2 right-4 p-1 rounded-full
-                  ${isDark ? 'text-dominion-muted hover:text-white' : 'text-ivory-muted hover:text-ivory-text'}
-                `}
+                className="absolute top-2 right-4 p-1 rounded-full text-dominion-muted hover:text-white"
                 onClick={() => { setIsOpen(false); setSearchOpen(false) }}
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.9 }}
@@ -139,14 +126,7 @@ export default function BottomDrawer({ theme = 'dark' }) {
                   {DRAWER_BUTTONS.map((btn, i) => (
                     <motion.button
                       key={btn.id}
-                      className={`
-                        flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl
-                        transition-all duration-300 min-w-[72px]
-                        ${isDark
-                          ? 'bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.15]'
-                          : 'bg-white/40 border border-ivory-border hover:border-ivory-gold/30'
-                        }
-                      `}
+                      className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl transition-all duration-300 min-w-[72px] bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.15]"
                       style={{
                         boxShadow: 'none',
                       }}
@@ -166,7 +146,7 @@ export default function BottomDrawer({ theme = 'dark' }) {
                         style={{ color: btn.color }}
                       />
                       <span
-                        className={`text-[10px] font-orbitron tracking-wider ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}`}
+                        className="text-[10px] font-orbitron tracking-wider text-dominion-muted"
                       >
                         {btn.label}
                       </span>
@@ -186,43 +166,27 @@ export default function BottomDrawer({ theme = 'dark' }) {
                       onSubmit={handleSearchSubmit}
                     >
                       <div
-                        className={`
-                          flex items-center gap-3 px-4 py-3 rounded-xl border
-                          ${isDark
-                            ? 'bg-white/[0.03] border-white/[0.08] focus-within:border-dominion-neon/40'
-                            : 'bg-white/60 border-ivory-border focus-within:border-ivory-gold/40'
-                          }
-                        `}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl border bg-white/[0.03] border-white/[0.08] focus-within:border-dominion-neon/40"
                         style={{
                           backdropFilter: 'blur(20px)',
                         }}
                       >
                         <Search
                           size={16}
-                          className={isDark ? 'text-dominion-muted' : 'text-ivory-muted'}
+                          className="text-dominion-muted"
                         />
                         <input
                           type="text"
                           value={searchValue}
                           onChange={(e) => setSearchValue(e.target.value)}
                           placeholder="Поиск по империи..."
-                          className={`
-                            flex-1 bg-transparent outline-none text-sm font-montserrat
-                            placeholder:text-dominion-muted/50
-                            ${isDark ? 'text-white' : 'text-ivory-text placeholder:text-ivory-muted/50'}
-                          `}
+                          className="flex-1 bg-transparent outline-none text-sm font-montserrat placeholder:text-dominion-muted/50 text-white"
                           autoFocus
                         />
                         {/* Иконка микрофона (голосовой ввод) */}
                         <motion.button
                           type="button"
-                          className={`
-                            p-1.5 rounded-lg transition-colors
-                            ${isDark
-                              ? 'hover:bg-white/10 text-dominion-muted hover:text-dominion-neon'
-                              : 'hover:bg-ivory-gold/10 text-ivory-muted hover:text-ivory-gold'
-                            }
-                          `}
+                          className="p-1.5 rounded-lg transition-colors hover:bg-white/10 text-dominion-muted hover:text-dominion-neon"
                           whileHover={{ scale: 1.15 }}
                           whileTap={{ scale: 0.9 }}
                           title="Голосовой ввод"
@@ -232,14 +196,7 @@ export default function BottomDrawer({ theme = 'dark' }) {
                         {/* Кнопка Enter */}
                         <motion.button
                           type="submit"
-                          className={`
-                            px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold tracking-wider
-                            transition-colors
-                            ${isDark
-                              ? 'bg-dominion-gold/20 text-dominion-gold border border-dominion-gold/30 hover:bg-dominion-gold/30'
-                              : 'bg-ivory-gold/20 text-ivory-gold border border-ivory-gold/30 hover:bg-ivory-gold/30'
-                            }
-                          `}
+                          className="px-3 py-1.5 rounded-lg text-xs font-orbitron font-bold tracking-wider transition-colors bg-dominion-gold/20 text-dominion-gold border border-dominion-gold/30 hover:bg-dominion-gold/30"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >

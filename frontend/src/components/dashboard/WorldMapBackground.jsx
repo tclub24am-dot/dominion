@@ -100,10 +100,7 @@ const GRID_LINES = {
   parallels: [50, 100, 150, 200, 250, 300, 350, 400, 450],
 }
 
-const WorldMapBackground = React.memo(function WorldMapBackground({ theme = 'dark' }) {
-  const isDark = theme === 'dark'
-  if (!isDark) return null
-
+const WorldMapBackground = React.memo(function WorldMapBackground() {
   return (
     <div
       style={{

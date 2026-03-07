@@ -7,10 +7,9 @@ import { MessageCircle } from 'lucide-react'
  * Объёмная иконка мессенджера в левом нижнем углу
  * drop-shadow + rotate при наведении
  */
-export default function MessengerBubble({ theme = 'dark' }) {
+export default function MessengerBubble() {
   const [isHovered, setIsHovered] = useState(false)
   const [unread] = useState(3) // Заглушка для непрочитанных
-  const isDark = theme === 'dark'
 
   return (
     <motion.div
@@ -23,9 +22,7 @@ export default function MessengerBubble({ theme = 'dark' }) {
       <motion.div
         className="absolute inset-0 rounded-2xl"
         style={{
-          background: isDark
-            ? 'linear-gradient(135deg, #8b5cf6, #a855f7)'
-            : 'linear-gradient(135deg, #7c3aed, #8b5cf6)',
+          background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
         }}
         animate={{
           scale: isHovered ? [1, 1.2, 1] : [1, 1.08, 1],
@@ -36,14 +33,7 @@ export default function MessengerBubble({ theme = 'dark' }) {
 
       {/* Кнопка */}
       <motion.button
-        className={`
-          relative flex items-center justify-center w-14 h-14 rounded-2xl
-          transition-colors duration-300
-          ${isDark
-            ? 'bg-gradient-to-br from-violet-600 to-purple-700 border border-violet-400/30'
-            : 'bg-gradient-to-br from-violet-500 to-purple-600 border border-violet-300/40'
-          }
-        `}
+        className="relative flex items-center justify-center w-14 h-14 rounded-2xl transition-colors duration-300 bg-gradient-to-br from-violet-600 to-purple-700 border border-violet-400/30"
         style={{
           boxShadow: isHovered
             ? '0 8px 30px rgba(139,92,246,0.5), 0 0 20px rgba(139,92,246,0.3)'
@@ -98,15 +88,7 @@ export default function MessengerBubble({ theme = 'dark' }) {
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            className={`
-              absolute left-full ml-3 top-1/2 -translate-y-1/2
-              px-3 py-1.5 rounded-lg whitespace-nowrap
-              text-xs font-orbitron tracking-wider
-              ${isDark
-                ? 'bg-dominion-deep/90 border border-dominion-border text-dominion-gold'
-                : 'bg-ivory-card/90 border border-ivory-border text-ivory-gold'
-              }
-            `}
+            className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg whitespace-nowrap text-xs font-orbitron tracking-wider bg-dominion-deep/90 border border-dominion-border text-dominion-gold"
             style={{ backdropFilter: 'blur(12px)' }}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}

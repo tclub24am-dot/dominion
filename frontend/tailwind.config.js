@@ -23,16 +23,6 @@ export default {
           text:     '#e8e8f0',
           muted:    '#8888aa',
         },
-        // === LIGHT THEME: Ivory/Слоновая кость ===
-        ivory: {
-          bg:       '#f5f0e8',
-          card:     '#faf7f2',
-          border:   '#d4c9b0',
-          gold:     '#b8860b',
-          text:     '#1a1a2e',
-          muted:    '#6b6b7a',
-          accent:   '#8b6914',
-        },
       },
       fontFamily: {
         cinzel:    ['Cinzel', 'serif'],

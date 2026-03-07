@@ -37,35 +37,47 @@
             width: 100%;
             margin: 8px 0 16px;
             padding: 10px 12px;
-            background: #FDFCF0;
-            color: #1A1A1A;
-            border: 1px solid rgba(212,175,55,0.75);
+            background: rgba(255,255,255,0.05);
+            color: #FDFCF0;
+            border: 1px solid rgba(212,175,55,0.3);
             border-radius: 10px;
             font-weight: 600;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input::placeholder { color: rgba(253,252,240,0.3); }
+        input:focus {
+            outline: none;
+            border-color: rgba(212,175,55,0.7);
+            box-shadow: 0 0 12px rgba(212,175,55,0.15);
         }
         button {
             width: 100%;
             padding: 10px 12px;
-            background: #FDFCF0;
-            color: #8B6508;
-            border: 1px solid rgba(212,175,55,0.75);
+            background: rgba(212,175,55,0.15);
+            color: #FFD700;
+            border: 1px solid rgba(212,175,55,0.5);
             border-radius: 10px;
             font-family: 'Cinzel', serif;
             letter-spacing: 0.12em;
             cursor: pointer;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        button:hover {
+            background: rgba(212,175,55,0.25);
+            box-shadow: 0 0 18px rgba(212,175,55,0.3);
         }
         .hint { margin-top: 12px; font-size: 11px; color: #b6a77a; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>IVORY LUXE ACCESS</h1>
+        <h1>S-GLOBAL DOMINION</h1>
         <label>USERNAME</label>
         <input id="username" placeholder="Master">
         <label>PASSWORD</label>
         <input id="password" type="password" placeholder="••••••••">
         <button id="loginBtn">ENTER</button>
-        <div class="hint">Закрытый объект. Доступ только для элитного персонала.</div>
+        <div class="hint">Закрытый объект · VERSHINA v200.11</div>
     </div>
     <script>
         const btn = document.getElementById('loginBtn');

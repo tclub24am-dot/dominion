@@ -30,10 +30,9 @@ const SECTOR_COLORS = {
   AC: { glow: '#ec4899', accent: '#ec4899', gradient: 'from-pink-500/20 to-pink-500/5' },
 }
 
-export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, theme = 'dark', liveCount = null }) {
+export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, liveCount = null }) {
   const [isHovered, setIsHovered] = useState(false)
   const [glintTriggered, setGlintTriggered] = useState(false)
-  const isDark = theme === 'dark'
   const colors = SECTOR_COLORS[code] || SECTOR_COLORS.FL
 
   // Запуск стеклянного блика при наведении
@@ -97,21 +96,12 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
 
       {/* Карточка — ФИКСИРОВАННАЯ ВЫСОТА */}
       <div
-        className={`
-          relative overflow-hidden rounded-xl border p-5 h-[160px] flex flex-col
-          transition-colors duration-300 cursor-pointer
-          ${isDark
-            ? 'bg-slate-900/30 backdrop-blur-2xl hover:border-white/[0.15]'
-            : 'bg-white/60 backdrop-blur-lg border-ivory-border hover:border-ivory-gold/40'
-          }
-        `}
+        className="relative overflow-hidden rounded-xl border p-5 h-[160px] flex flex-col transition-colors duration-300 cursor-pointer bg-slate-900/30 backdrop-blur-2xl hover:border-white/[0.15]"
         style={{
-          borderColor: isDark
-            ? (isHovered ? `${colors.glow}60` : `${colors.glow}20`)
-            : undefined,
+          borderColor: isHovered ? `${colors.glow}60` : `${colors.glow}20`,
           boxShadow: isHovered
-            ? `0 12px 40px rgba(0,0,0,${isDark ? '0.7' : '0.12'}), 0 0 40px ${colors.glow}25, 0 0 80px ${colors.glow}10, inset 0 1px 0 rgba(255,255,255,${isDark ? '0.08' : '0.8'})`
-            : `0 4px 16px rgba(0,0,0,${isDark ? '0.4' : '0.05'}), 0 0 12px ${colors.glow}08, inset 0 1px 0 rgba(255,255,255,${isDark ? '0.03' : '0.6'})`,
+            ? `0 12px 40px rgba(0,0,0,0.7), 0 0 40px ${colors.glow}25, 0 0 80px ${colors.glow}10, inset 0 1px 0 rgba(255,255,255,0.08)`
+            : `0 4px 16px rgba(0,0,0,0.4), 0 0 12px ${colors.glow}08, inset 0 1px 0 rgba(255,255,255,0.03)`,
           transition: 'box-shadow 0.4s ease, border-color 0.3s ease',
         }}
       >
@@ -162,10 +152,8 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
           <motion.div
             className="flex items-center justify-center w-11 h-11 rounded-lg"
             style={{
-              background: isDark
-                ? `linear-gradient(135deg, ${colors.glow}20, ${colors.glow}05)`
-                : `linear-gradient(135deg, ${colors.glow}15, ${colors.glow}05)`,
-              border: `1px solid ${colors.glow}${isDark ? '40' : '30'}`,
+              background: `linear-gradient(135deg, ${colors.glow}20, ${colors.glow}05)`,
+              border: `1px solid ${colors.glow}40`,
               boxShadow: isHovered ? `0 0 16px ${colors.glow}40` : 'none',
               transition: 'box-shadow 0.4s ease',
             }}
@@ -205,29 +193,19 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
         {/* Код сектора */}
         <div
           className="text-[10px] font-orbitron font-bold tracking-[0.3em] uppercase mb-1"
-          style={{ color: `${colors.accent}${isDark ? 'aa' : '80'}` }}
+          style={{ color: `${colors.accent}aa` }}
         >
           {code}
         </div>
 
         {/* Название — flex-grow для выравнивания */}
-        <h3
-          className={`
-            font-montserrat font-bold text-[14px] leading-tight mb-auto
-            ${isDark ? 'text-white/90' : 'text-ivory-text'}
-          `}
-        >
+        <h3 className="font-montserrat font-bold text-[14px] leading-tight mb-auto text-white/90">
           {title}
         </h3>
 
         {/* Подзаголовок — всегда внизу */}
         <div className="flex items-center gap-2 mt-2">
-          <p
-            className={`
-              text-xs font-montserrat
-              ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}
-            `}
-          >
+          <p className="text-xs font-montserrat text-dominion-muted">
             {subtitle}
           </p>
           {/* Пульсирующий индикатор активных машин (для LG и других секторов с liveCount) */}

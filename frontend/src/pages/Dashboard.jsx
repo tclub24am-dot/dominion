@@ -101,27 +101,20 @@ const SECTORS = [
   },
 ]
 
-export default function Dashboard({ theme = 'dark', onToggleTheme }) {
-  const isDark = theme === 'dark'
-
+export default function Dashboard() {
   return (
-    <div
-      className={`
-        min-h-screen relative
-        ${isDark ? '' : 'bg-ivory-bg'}
-      `}
-    >
+    <div className="min-h-screen relative">
       {/* Фоновые частицы */}
-      <ParticleBackground theme={theme} count={35} />
+      <ParticleBackground count={35} />
 
       {/* Контурная карта мира — ВЕЛИЧЕСТВЕННАЯ, неоновая */}
-      <WorldMapBackground theme={theme} />
+      <WorldMapBackground />
 
       {/* Эффект сканирующих линий — кабина пилота */}
-      {isDark && <ScanLinesOverlay />}
+      <ScanLinesOverlay />
 
       {/* Верхняя панель */}
-      <TopBar theme={theme} onToggleTheme={onToggleTheme} />
+      <TopBar />
 
       {/* Основной контент */}
       <main className="relative z-[10] px-4 md:px-6 lg:px-8 py-6 pb-24">
@@ -136,34 +129,22 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
             <div
               className="h-px flex-1 max-w-16"
               style={{
-                background: isDark
-                  ? 'linear-gradient(90deg, #d4a843, transparent)'
-                  : 'linear-gradient(90deg, #b8860b, transparent)',
+                background: 'linear-gradient(90deg, #d4a843, transparent)',
               }}
             />
             <h2
-              className={`
-                font-orbitron text-xs tracking-[0.4em] uppercase
-                ${isDark ? 'text-dominion-gold/60' : 'text-ivory-gold/60'}
-              `}
+              className="font-orbitron text-xs tracking-[0.4em] uppercase text-dominion-gold/60"
             >
               СЕКТОРЫ ИМПЕРИИ
             </h2>
             <div
               className="h-px flex-1 max-w-16"
               style={{
-                background: isDark
-                  ? 'linear-gradient(90deg, transparent, #d4a843)'
-                  : 'linear-gradient(90deg, transparent, #b8860b)',
+                background: 'linear-gradient(90deg, transparent, #d4a843)',
               }}
             />
           </div>
-          <p
-            className={`
-              text-center text-xs font-montserrat
-              ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}
-            `}
-          >
+          <p className="text-center text-xs font-montserrat text-dominion-muted">
             12 подразделений · Полный контроль · VERSHINA v200.11
           </p>
         </motion.div>
@@ -178,7 +159,6 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
               subtitle={sector.subtitle}
               icon={sector.icon}
               index={index}
-              theme={theme}
               liveCount={sector.liveCount ?? null}
             />
           ))}
@@ -192,59 +172,46 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
           transition={{ delay: 1.2, duration: 0.6 }}
         >
           <div
-            className={`
-              flex items-center justify-center gap-8 flex-wrap
-              py-4 px-6 rounded-xl border
-              ${isDark
-                ? 'bg-white/[0.02] border-white/[0.06]'
-                : 'bg-white/40 border-ivory-border'
-              }
-            `}
+            className="flex items-center justify-center gap-8 flex-wrap py-4 px-6 rounded-xl border bg-white/[0.02] border-white/[0.06]"
             style={{
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
-              boxShadow: isDark
-                ? '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)'
-                : '0 2px 12px rgba(0,0,0,0.05)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)',
             }}
           >
             <StatItem
               label="Секторов"
               value="12"
-              color={isDark ? '#d4a843' : '#b8860b'}
-              isDark={isDark}
+              color="#d4a843"
             />
-            <div className={`w-px h-8 ${isDark ? 'bg-white/10' : 'bg-ivory-border'}`} />
+            <div className="w-px h-8 bg-white/10" />
             <StatItem
               label="Парковый флот"
               value="41"
               suffix="⭐"
-              color={isDark ? '#00f5ff' : '#0891b2'}
-              isDark={isDark}
+              color="#00f5ff"
             />
-            <div className={`w-px h-8 ${isDark ? 'bg-white/10' : 'bg-ivory-border'}`} />
+            <div className="w-px h-8 bg-white/10" />
             <StatItem
               label="Статус"
               value="ONLINE"
               color="#00ff88"
-              isDark={isDark}
             />
-            <div className={`w-px h-8 ${isDark ? 'bg-white/10' : 'bg-ivory-border'}`} />
+            <div className="w-px h-8 bg-white/10" />
             <StatItem
               label="Протокол"
               value="v200.11"
-              color={isDark ? '#a855f7' : '#7c3aed'}
-              isDark={isDark}
+              color="#a855f7"
             />
           </div>
         </motion.div>
       </main>
 
       {/* 3D Messenger */}
-      <MessengerBubble theme={theme} />
+      <MessengerBubble />
 
       {/* Нижняя выдвижная панель */}
-      <BottomDrawer theme={theme} />
+      <BottomDrawer />
     </div>
   )
 }
@@ -252,11 +219,11 @@ export default function Dashboard({ theme = 'dark', onToggleTheme }) {
 /**
  * Мини-компонент статистики
  */
-function StatItem({ label, value, suffix, color, isDark }) {
+function StatItem({ label, value, suffix, color }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <span
-        className={`text-[10px] font-orbitron tracking-[0.2em] uppercase ${isDark ? 'text-dominion-muted' : 'text-ivory-muted'}`}
+        className="text-[10px] font-orbitron tracking-[0.2em] uppercase text-dominion-muted"
       >
         {label}
       </span>
