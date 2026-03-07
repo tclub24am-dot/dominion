@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 # main.py
+# ============================================================
+# S-GLOBAL DOMINION — ПРОТОКОЛ «ЕДИНОВЛАСТИЕ ФРОНТЕНДА»
+# FastAPI отдаёт ТОЛЬКО: API, Static, SPA fallback, WebSocket
+# ============================================================
 
 from datetime import datetime, timedelta
 import asyncio
@@ -21,7 +25,6 @@ from sqlalchemy import text, select, and_, or_, func
 
 # Импорт роутеров
 from app.api.v1 import auth, kazna, fleet, logistics, warehouse, analytics
-from app.api.v1.fleet import pages_router as fleet_pages
 from app.api.v1.kazna import get_transactions as kazna_transactions_handler
 from app.api.v1.partner import router as partners
 from app.api.v1.cashflow import router as cashflow_router
@@ -51,7 +54,7 @@ logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
 logging.getLogger("sqlalchemy.dialects").setLevel(logging.WARNING)
 
-# 2. ИНИЦИАЛИЗАЦИЯ ШАБЛОНОВ NEXUS (Jinja2)
+# 2. ИНИЦИАЛИЗАЦИЯ ШАБЛОНОВ NEXUS (Jinja2) — нужен для HTMX-виджетов в API-роутерах
 TEMPLATE_DIR = "app/templates"
 if not os.path.exists(TEMPLATE_DIR):
     os.makedirs(TEMPLATE_DIR, exist_ok=True)
@@ -322,7 +325,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="S-GLOBAL Dominion", 
-    version="17.0.Nexus", 
+    version="18.0.SPA", 
     lifespan=lifespan
 )
 
@@ -344,69 +347,6 @@ app.include_router(auth, prefix="/api/v1/auth", tags=["Врата"])
 app.include_router(realtime, tags=["Real-Time Engine: Вездещее Око 2026"], dependencies=[Depends(require_module("fleet"))])
 app.include_router(realtime_ws, tags=["WebSocket Endpoints"])  # WebSocket без зависимостей
 app.include_router(fleet, prefix="/api/v1/fleet", tags=["Флот"], dependencies=[Depends(require_module("fleet"))])
-
-# РЕЕСТРЫ: регистрируем ДО fleet_pages, иначе /fleet/vehicles-list матчится как /fleet/vehicle/{id} с vehicle_id="list"
-@app.get("/fleet/vehicles-list", response_class=HTMLResponse)
-async def fleet_vehicles_list_page(
-    request: Request,
-    current_user: Optional[User] = Depends(get_current_user_optional),
-):
-    if current_user and not has_module_access(current_user, "fleet"):
-        raise HTTPException(status_code=403, detail="Нет доступа к Флоту")
-    return templates.TemplateResponse(
-        "modules/fleet_vehicles_list.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/fleet/drivers-list", response_class=HTMLResponse)
-async def fleet_drivers_list_page(
-    request: Request,
-    current_user: Optional[User] = Depends(get_current_user_optional),
-):
-    if current_user and not has_module_access(current_user, "fleet"):
-        raise HTTPException(status_code=403, detail="Нет доступа к Флоту")
-    return templates.TemplateResponse(
-        "modules/fleet_drivers_list.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/fleet/calendar", response_class=HTMLResponse)
-async def fleet_calendar_page(
-    request: Request,
-    current_user: Optional[User] = Depends(get_current_user_optional),
-):
-    if current_user and not has_module_access(current_user, "fleet"):
-        raise HTTPException(status_code=403, detail="Нет доступа к Флоту")
-    return templates.TemplateResponse(
-        "modules/fleet_calendar.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/fleet/periodic-charges", response_class=HTMLResponse)
-async def fleet_periodic_charges_page(
-    request: Request,
-    current_user: Optional[User] = Depends(get_current_user_optional),
-):
-    if current_user and not has_module_access(current_user, "fleet"):
-        raise HTTPException(status_code=403, detail="Нет доступа к Флоту")
-    return templates.TemplateResponse(
-        "modules/fleet_periodic_charges.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/fleet/legion", response_class=HTMLResponse)
-async def fleet_legion_page(
-    request: Request,
-    current_user: Optional[User] = Depends(get_current_user_optional),
-):
-    if current_user and not has_module_access(current_user, "fleet"):
-        raise HTTPException(status_code=403, detail="Нет доступа к Флоту")
-    return templates.TemplateResponse(
-        "modules/fleet_legion.html",
-        {"request": request, "current_user": current_user}
-    )
-
-app.include_router(fleet_pages, tags=["Fleet Pages"])
 app.include_router(kazna, prefix="/api/v1/kazna", tags=["Казна"], dependencies=[Depends(require_module("kazna"))])
 app.include_router(logistics, prefix="/api/v1/logistics", tags=["Логистика"], dependencies=[Depends(require_module("logistics"))])
 app.include_router(warehouse, prefix="/api/v1/warehouse", tags=["Склад"], dependencies=[Depends(require_module("warehouse"))])
@@ -417,11 +357,7 @@ app.include_router(neural_core_router, tags=["Neural Core"])
 app.include_router(messenger_router, tags=["Imperial Messenger"], dependencies=[Depends(require_module("messenger"))])
 app.include_router(messenger_ws, tags=["WebSocket Messenger"])  # WebSocket без зависимостей
 
-# Новые страницы флота и API триады: без редиректа при YANDEX_ALLOW_SYNC_NOAUTH
-_FLEET_PAGES_NOAUTH = {
-    "/fleet/vehicles-list", "/fleet/drivers-list", "/fleet/legion",
-    "/fleet/calendar", "/fleet/periodic-charges",
-}
+# Legacy NOAUTH sets (для обратной совместимости с YANDEX_ALLOW_SYNC_NOAUTH)
 _FLEET_API_NOAUTH = {
     "/api/v1/fleet/triad-data",
     "/api/v1/fleet/legion-data",
@@ -479,37 +415,44 @@ async def health():
     """Проверка живости для nginx/мониторинга — без авторизации."""
     return {"status": "ok", "service": "dominion"}
 
+# ============================================================
+# 7. LOCKDOWN MIDDLEWARE — ПРОТОКОЛ «ЕДИНОВЛАСТИЕ ФРОНТЕНДА»
+# SPA-пути пропускаем (React сам проверит auth)
+# API-пути проверяем JWT → 401 JSON если нет токена
+# ============================================================
 @app.middleware("http")
 async def lockdown_middleware(request: Request, call_next):
     path = request.url.path
-    if path.startswith("/static") or path.startswith("/storage"):
+
+    # Публичные пути — пропускаем без проверки
+    public_prefixes = ["/static", "/storage", "/assets", "/health", "/api/v1/auth/login"]
+    if any(path.startswith(p) for p in public_prefixes):
         return await call_next(request)
-    if path == "/health":
+
+    # SPA пути (не API) — всегда пропускаем, React сам проверит auth
+    if not path.startswith("/api/"):
         return await call_next(request)
-    if path.startswith("/fleet/drivers") and settings.YANDEX_ALLOW_SYNC_NOAUTH:
+
+    # API: YANDEX_ALLOW_SYNC_NOAUTH — пропускаем fleet/neural API без auth
+    if settings.YANDEX_ALLOW_SYNC_NOAUTH:
+        if path in _FLEET_API_NOAUTH:
+            return await call_next(request)
+        if path.startswith("/api/v1/fleet/") or path.startswith("/api/v1/neural/"):
+            return await call_next(request)
+
+    # API: публичный login endpoint
+    if path == "/api/v1/auth/login":
         return await call_next(request)
-    if path in _FLEET_PAGES_NOAUTH and settings.YANDEX_ALLOW_SYNC_NOAUTH:
-        return await call_next(request)
-    if path in _FLEET_API_NOAUTH and settings.YANDEX_ALLOW_SYNC_NOAUTH:
-        return await call_next(request)
-    if path.startswith("/api/v1/fleet/") and settings.YANDEX_ALLOW_SYNC_NOAUTH:
-        return await call_next(request)
-    if path.startswith("/api/v1/neural/") and settings.YANDEX_ALLOW_SYNC_NOAUTH:
-        return await call_next(request)
-    if path == "/" and settings.YANDEX_ALLOW_SYNC_NOAUTH:
-        return await call_next(request)
-    if path in ("/login", "/api/v1/auth/login"):
-        return await call_next(request)
-    if request.cookies.get("access_token") is None:
-        from urllib.parse import quote
-        next_path = (request.url.path or "/").strip("/") or ""
-        qs = getattr(request, "query_string", None) or getattr(request.url, "query", "") or ""
-        if qs:
-            next_path = next_path + "?" + (qs if isinstance(qs, str) else qs.decode("utf-8"))
-        return RedirectResponse("/login" + ("?next=" + quote(next_path) if next_path else ""))
+
+    # API пути — проверяем auth (cookie token)
+    token = request.cookies.get("access_token")
+    if not token:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+    # Токен есть — пропускаем дальше (валидация в Depends)
     return await call_next(request)
 
-# 7. NEXUS RENDER ENGINE (Для HTMX-фрагментов)
+# 8. NEXUS RENDER ENGINE (Для HTMX-фрагментов — оставлен для API-виджетов)
 @app.get("/api/v1/nexus/widget/{widget_name}", response_class=HTMLResponse)
 async def render_nexus_widget(
     widget_name: str, 
@@ -554,174 +497,7 @@ async def render_nexus_widget(
             status_code=200
         )
 
-# 8. AUTH & PUBLIC PAGES
-@app.get("/", response_class=HTMLResponse)
-async def root(
-    request: Request,
-    current_user: Optional[User] = Depends(get_current_user_optional)
-):
-    """Главная страница — Neural Core (только после логина)"""
-    if current_user is None and not getattr(settings, "YANDEX_ALLOW_SYNC_NOAUTH", False):
-        return RedirectResponse(url="/login", status_code=307)
-    response = templates.TemplateResponse(
-        "neural_core.html",
-        {"request": request, "current_user": current_user}
-    )
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
-
-
-@app.get("/archive-v1", response_class=HTMLResponse)
-async def archive_v1(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("core"))
-):
-    """Архив удален — ведем в Neural Core"""
-    return RedirectResponse(url="/neural-core", status_code=302)
-
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(
-    request: Request,
-    access_token: Optional[str] = Cookie(None)
-):
-    """Врата Цитадели — страница входа"""
-    # Если уже авторизован - редирект на dashboard
-    if access_token:
-        try:
-            user = await get_current_user_optional(request, access_token)
-            if user:
-                return RedirectResponse(url="/", status_code=302)
-        except:
-            pass
-    
-    return templates.TemplateResponse("login.html", {"request": request})
-
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("core"))
-):
-    """Dashboard (Protected)"""
-    response = templates.TemplateResponse(
-        "index.html", 
-        {"request": request, "current_user": current_user}
-    )
-    if current_user and current_user.role == "master":
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-    return response
-
-@app.get("/logout")
-async def logout(response: Response):
-    """Выход из системы — удаление токена"""
-    logger.info("User logged out")
-    
-    # Удаляем Cookie
-    response = RedirectResponse(url="/login", status_code=302)
-    response.delete_cookie(
-        key="access_token",
-        path="/"
-    )
-    
-    return response
-
-# =================================================================
-# МОДУЛЬНЫЕ СТРАНИЦЫ (Full Page Routes)
-# =================================================================
-
-# =================================================================
-# МОДУЛЬНЫЕ СТРАНИЦЫ (Full Page Routes)
-# =================================================================
-
-@app.get("/garage", response_class=HTMLResponse)
-async def garage_page(
-    request: Request, 
-    park: str = "PRO", 
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet")),
-    db: AsyncSession = Depends(get_db)
-):
-    from app.models.all_models import Vehicle
-    from sqlalchemy import select, func, and_
-    from sqlalchemy.orm import joinedload
-    from app.services.cache_service import cache_service
-    from app.services.analytics_engine import AnalyticsEngine
-    import logging
-
-    logger = logging.getLogger("Dominion.Garage")
-    target_park = park.upper()
-    bypass_cache = bool(current_user and current_user.role == "master")
-
-    try:
-        # 🔥 ПРОВЕРЯЕМ КЭШ (используем только stats, не список машин)
-        cached_stats = None
-        if not bypass_cache:
-            cached_stats = await cache_service.get_garage_stats(target_park)
-        cached_stats_data = None
-        if cached_stats and isinstance(cached_stats, dict):
-            cached_stats_data = cached_stats.get("stats")
-            if cached_stats_data:
-                logger.info(f"✓ Статистика гаража из кэша ({target_park})")
-        
-        # 1. Запрос машин для этого парка (EAGER LOADING ВОДИТЕЛЕЙ)
-        stmt = (
-            select(Vehicle)
-            .options(joinedload(Vehicle.driver))
-            .where(Vehicle.park_name == target_park)
-        )
-        result = await db.execute(stmt)
-        vehicles = result.scalars().unique().all()
-        
-        # 2. Живые данные парка (через AnalyticsEngine)
-        park_stats = await AnalyticsEngine.get_fleet_park_stats(db, target_park)
-        cars_count = len(vehicles) if vehicles else 0
-        active_count = park_stats["vehicles_working"]
-        drivers_count = park_stats["drivers_live"]
-
-        # 6. Безопасные переменные для шаблона
-        stats_data = cached_stats_data or {
-            "cars": cars_count,              # Общее количество машин парка
-            "drivers": drivers_count,        # Живые водители (48ч)
-            "active": active_count,          # 🔥 ИСПРАВЛЕНО: Активные машины в рейсе
-            "service": park_stats["vehicles_service"],
-            "reserve": park_stats["vehicles_reserve"],
-            "profit": 0                      # Прибыль за 24ч (резерв)
-        }
-
-        # 🔥 КЭШИРУЕМ (только stats, без списка машин)
-        if not bypass_cache:
-            await cache_service.set_garage_stats(
-                {"stats": stats_data},
-                target_park
-            )
-
-        logger.info(f"✓ ГАРАЖ {target_park}: {stats_data['cars']} машин, {stats_data['active']} в рейсе, {stats_data['drivers']} водителей")
-
-        response = templates.TemplateResponse(
-            "garage_professional.html", 
-            {
-                "request": request, 
-                "vehicles": vehicles or [], 
-                "park": target_park,
-                "stats": stats_data,
-                "current_user": current_user
-            }
-        )
-        if bypass_cache:
-            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
-        return response
-    except Exception as e:
-        logger.error(f"!!! КРИТИЧЕСКАЯ ОШИБКА ГАРАЖА ({target_park}): {e}", exc_info=True)
-        return HTMLResponse(content=f"Ошибка в секторе {target_park}: {e}", status_code=500)
-
-
+# 9. API ALIASES (совместимость)
 @app.get("/api/v1/transactions", response_class=HTMLResponse)
 async def transactions_alias(
     request: Request,
@@ -748,524 +524,40 @@ async def transactions_alias(
         current_user=current_user
     )
 
+# ============================================================
+# 10. SPA FRONTEND — ПРОТОКОЛ «ЕДИНОВЛАСТИЕ ФРОНТЕНДА»
+# React SPA assets + catch-all fallback
+# ============================================================
 
-@app.get("/garage/{vehicle_id}", response_class=HTMLResponse)
-async def garage_detail_page(
-    vehicle_id: int,
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet")),
-    db: AsyncSession = Depends(get_db)
-):
-    """ДЕТАЛИ АВТОМОБИЛЯ: Центр управления (v30.1)"""
-    from app.models.all_models import Vehicle, VehicleStatusHistory
-    from app.services.analytics_engine import AnalyticsEngine
-    from sqlalchemy import select, desc
-    
-    try:
-        # Получаем машину
-        vehicle = await db.get(Vehicle, vehicle_id)
-        if not vehicle:
-            return HTMLResponse(content="<h1>Машина не найдена</h1>", status_code=404)
-        
-        finance = await AnalyticsEngine.get_vehicle_finance(
-            db, vehicle_id, vehicle.license_plate
-        )
-        
-        # История статусов
-        history_stmt = select(VehicleStatusHistory).where(
-            VehicleStatusHistory.vehicle_id == vehicle_id
-        ).order_by(desc(VehicleStatusHistory.changed_at)).limit(20)
-        
-        history_result = await db.execute(history_stmt)
-        status_history = history_result.scalars().all()
-        
-        return templates.TemplateResponse(
-            "vehicle_360.html",
-            {
-                "request": request,
-                "current_user": current_user,
-                "vehicle": vehicle,
-                "finance": {
-                    "income": finance["income"],
-                    "repair_cost": finance["repair_cost"],
-                    "profit": finance["profit"]
-                },
-                "status_history": status_history,
-                "get_status_text": lambda s: {
-                    "working": "Работает",
-                    "service": "В ремонте",
-                    "preparing": "Подготовка",
-                    "no_driver": "Нет водителя",
-                    "offline": "Не работает"
-                }.get(s, s)
-            }
-        )
-        
-    except Exception as e:
-        logger.error(f"Garage detail error: {e}", exc_info=True)
-        return HTMLResponse(content=f"<h1>Ошибка: {str(e)}</h1>", status_code=500)
+# React SPA assets (Vite build output)
+_SPA_ASSETS_DIR = os.path.join("frontend", "dist", "assets")
+if os.path.isdir(_SPA_ASSETS_DIR):
+    app.mount("/assets", StaticFiles(directory=_SPA_ASSETS_DIR), name="spa_assets")
 
-@app.get("/partners", response_class=HTMLResponse)
-async def partners_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("partners"))
-):
-    """ПАРТНЁРЫ И ВЫПЛАТЫ: B2B и FIRE PAY"""
-    return templates.TemplateResponse(
-        "modules/partners.html",
-        {"request": request, "current_user": current_user}
-    )
+# SPA catch-all (ПОСЛЕДНИЙ роут — после всех API)
+@app.get("/{full_path:path}")
+async def spa_fallback(request: Request, full_path: str):
+    """Все не-API пути → React SPA index.html"""
+    index_path = os.path.join("frontend", "dist", "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return JSONResponse(status_code=503, content={"detail": "Frontend not built. Run: cd frontend && npm run build"})
 
-@app.get("/warehouse", response_class=HTMLResponse)
-async def warehouse_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("warehouse"))
-):
-    """АВТОСЕРВИС И СКЛАД"""
-    return templates.TemplateResponse(
-        "modules/warehouse.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/warehouse/suppliers", response_class=HTMLResponse)
-async def suppliers_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("warehouse"))
-):
-    """Страница управления поставщиками"""
-    return templates.TemplateResponse(
-        "warehouse_suppliers.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/service/create", response_class=HTMLResponse)
-async def service_create_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("autoservice"))
-):
-    """Создание заказ-наряда (адаптивный интерфейс)"""
-    return templates.TemplateResponse(
-        "service_create.html",
-        {"request": request, "current_user": current_user}
-    )
-
-# v30.0 - 23 АКТИВНЫХ СТРАНИЦЫ
-@app.get("/kazna/transactions", response_class=HTMLResponse)
-async def kazna_transactions_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("kazna"))
-):
-    return templates.TemplateResponse("pages/kazna_transactions.html", {"request": request, "current_user": current_user})
-
-@app.get("/kazna/cashflow", response_class=HTMLResponse)
-async def kazna_cashflow_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("kazna"))
-):
-    return templates.TemplateResponse("pages/kazna_cashflow.html", {"request": request, "current_user": current_user})
-
-@app.get("/fleet/maintenance", response_class=HTMLResponse)
-async def fleet_maintenance_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    return templates.TemplateResponse("pages/fleet_maintenance.html", {"request": request, "current_user": current_user})
-
-@app.get("/fleet/analytics", response_class=HTMLResponse)
-async def fleet_analytics_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    return templates.TemplateResponse("pages/fleet_analytics.html", {"request": request, "current_user": current_user})
-
-@app.get("/hr/drivers", response_class=HTMLResponse)
-async def hr_drivers_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    return templates.TemplateResponse("pages/hr_drivers.html", {"request": request, "current_user": current_user})
-
-@app.get("/hr/scoring", response_class=HTMLResponse)
-async def hr_scoring_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    return templates.TemplateResponse("pages/hr_scoring.html", {"request": request, "current_user": current_user})
-
-@app.get("/hr/blacklist", response_class=HTMLResponse)
-async def hr_blacklist_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("security"))
-):
-    return templates.TemplateResponse("pages/hr_blacklist.html", {"request": request, "current_user": current_user})
-
-@app.get("/hr/documents", response_class=HTMLResponse)
-async def hr_documents_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    return templates.TemplateResponse("pages/hr_documents.html", {"request": request, "current_user": current_user})
-
-@app.get("/consulting/clients", response_class=HTMLResponse)
-async def consulting_clients_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("consulting"))
-):
-    return templates.TemplateResponse("pages/consulting_clients.html", {"request": request, "current_user": current_user})
-
-@app.get("/consulting/pipeline", response_class=HTMLResponse)
-async def consulting_pipeline_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("consulting"))
-):
-    return templates.TemplateResponse("pages/consulting_pipeline.html", {"request": request, "current_user": current_user})
-
-@app.get("/system/status", response_class=HTMLResponse)
-async def system_status_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("core"))
-):
-    return templates.TemplateResponse("pages/system_status.html", {"request": request, "current_user": current_user})
-
-
-@app.get("/consulting", response_class=HTMLResponse)
-async def consulting_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("consulting"))
-):
-    """КОНСАЛТИНГ И IT"""
-    return templates.TemplateResponse(
-        "modules/consulting.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/logbook", response_class=HTMLResponse)
-async def logbook_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    """ЖУРНАЛ: Путевые листы"""
-    return templates.TemplateResponse(
-        "logbook.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/kazna", response_class=HTMLResponse)
-async def kazna_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("kazna"))
-):
-    """КАЗНА: Финансовый центр"""
-    return templates.TemplateResponse(
-        "widgets/kazna.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/fleet", response_class=HTMLResponse)
-async def fleet_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    """ТАКСОПАРК T-CLUB24"""
-    return templates.TemplateResponse(
-        "modules/fleet.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/fleet/drivers/{driver_id}", response_class=HTMLResponse)
-async def fleet_driver_page(
-    driver_id: int,
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet")),
-    db: AsyncSession = Depends(get_db),
-):
-    from app.services.yandex_sync_service import yandex_sync
-    from app.models.all_models import User as UserModel, Vehicle, Transaction
-    user_stmt = select(UserModel).where(
-        and_(
-            UserModel.id == driver_id,
-            UserModel.park_name == current_user.park_name
-        )
-    )
-    user = (await db.execute(user_stmt)).scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="Водитель не найден")
-    contractor_id = user.yandex_contractor_id or user.yandex_driver_id
-    yandex_profile = {}
-    if contractor_id:
-        try:
-            yandex_profile = await yandex_sync.fetch_driver_profile(user.park_name or "PRO", str(contractor_id))
-        except Exception:
-            yandex_profile = {}
-    vehicle = None
-    if user.current_vehicle_id:
-        vehicle = await db.get(Vehicle, user.current_vehicle_id)
-    reserve_stmt = select(Vehicle).where(
-        and_(Vehicle.is_free == True, Vehicle.park_name == (user.park_name or "PRO").upper())
-    ).order_by(Vehicle.license_plate)
-    reserve_vehicles = (await db.execute(reserve_stmt)).scalars().all()
-    driver_ids = [user.yandex_driver_id]
-    if user.yandex_contractor_id:
-        driver_ids.append(user.yandex_contractor_id)
-    tx_stmt = select(Transaction).where(
-        and_(
-            Transaction.yandex_driver_id.in_([d for d in driver_ids if d]),
-            Transaction.park_name == user.park_name
-        )
-    ).order_by(Transaction.date.desc()).limit(10)
-    transactions = (await db.execute(tx_stmt)).scalars().all()
-    return templates.TemplateResponse(
-        "modules/driver_profile.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "driver": user,
-            "vehicle": vehicle,
-            "yandex_profile": yandex_profile,
-            "transactions": transactions,
-            "reserve_vehicles": reserve_vehicles,
-        },
-    )
-
-@app.get("/fleet/vehicles/{vehicle_id}", response_class=HTMLResponse)
-async def fleet_vehicle_page(
-    vehicle_id: int,
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet")),
-    db: AsyncSession = Depends(get_db),
-):
-    from app.models.all_models import Vehicle, VehicleRepairHistory, Transaction, User as UserModel
-    vehicle_stmt = select(Vehicle).where(
-        and_(
-            Vehicle.id == vehicle_id,
-            Vehicle.park_name == current_user.park_name
-        )
-    )
-    vehicle = (await db.execute(vehicle_stmt)).scalar_one_or_none()
-    if not vehicle:
-        raise HTTPException(status_code=404, detail="Автомобиль не найден")
-    repairs_stmt = select(VehicleRepairHistory).where(
-        and_(
-            VehicleRepairHistory.vehicle_id == vehicle.id,
-            VehicleRepairHistory.park_name == vehicle.park_name
-        )
-    ).order_by(VehicleRepairHistory.created_at.desc())
-    repairs = (await db.execute(repairs_stmt)).scalars().all()
-    plate = (vehicle.license_plate or "").upper()
-    history_stmt = (
-        select(
-            Transaction.yandex_driver_id,
-            func.max(Transaction.date),
-        )
-        .where(
-            and_(
-                Transaction.yandex_driver_id.isnot(None),
-                or_(
-                    Transaction.plate_info == plate,
-                    Transaction.description.ilike(f"%{plate}%"),
-                ),
-                Transaction.park_name == vehicle.park_name
-            )
-        )
-        .group_by(Transaction.yandex_driver_id)
-        .order_by(func.max(Transaction.date).desc())
-        .limit(10)
-    )
-    driver_rows = (await db.execute(history_stmt)).all()
-    driver_ids = [row[0] for row in driver_rows if row[0]]
-    users_stmt = select(UserModel).where(
-        and_(
-            or_(
-                UserModel.yandex_driver_id.in_(driver_ids),
-                UserModel.yandex_contractor_id.in_(driver_ids),
-            ),
-            UserModel.park_name == vehicle.park_name
-        )
-    )
-    users = {u.yandex_driver_id or u.yandex_contractor_id: u for u in (await db.execute(users_stmt)).scalars().all()}
-    driver_history = [
-        {"driver_id": driver_id, "last_seen": last_seen, "driver": users.get(driver_id)}
-        for driver_id, last_seen in driver_rows
-    ]
-    return templates.TemplateResponse(
-        "modules/vehicle_profile.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "vehicle": vehicle,
-            "repairs": repairs,
-            "driver_history": driver_history,
-        },
-    )
-
-@app.get("/fleet/contract-matrix", response_class=HTMLResponse)
-async def contract_matrix_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("fleet"))
-):
-    return templates.TemplateResponse(
-        "modules/contract_matrix.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/analytics/pl", response_class=HTMLResponse)
-async def analytics_pl_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("kazna"))
-):
-    """P&L ОТЧЁТ: Прибыли и Убытки"""
-    return templates.TemplateResponse(
-        "analytics_pl.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/analytics", response_class=HTMLResponse)
-async def analytics_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("kazna"))
-):
-    """АНАЛИТИКА: Дашборд метрик"""
-    return templates.TemplateResponse(
-        "analytics.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/logistics", response_class=HTMLResponse)
-async def logistics_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("logistics"))
-):
-    """ЛОГИСТИКА И МАРШРУТЫ"""
-    return templates.TemplateResponse(
-        "modules/logistics.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/ai-analyst", response_class=HTMLResponse)
-async def ai_analyst_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("ai_analyst"))
-):
-    """AI АНАЛИТИК"""
-    return templates.TemplateResponse(
-        "modules/ai_analyst.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/messenger", response_class=HTMLResponse)
-async def messenger_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("messenger"))
-):
-    """IMPERIAL MESSENGER"""
-    return templates.TemplateResponse(
-        "modules/messenger.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/gps", response_class=HTMLResponse)
-async def gps_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("gps"))
-):
-    """GPS МОНИТОРИНГ"""
-    return templates.TemplateResponse(
-        "modules/gps.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/tasks", response_class=HTMLResponse)
-async def tasks_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("tasks"))
-):
-    """AI ОТЧЕТЫ И ЗАДАЧИ"""
-    return templates.TemplateResponse(
-        "modules/tasks.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/merit", response_class=HTMLResponse)
-async def merit_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("merit"))
-):
-    """ГАРНИЗОН ПОЧЕТА"""
-    return templates.TemplateResponse(
-        "modules/merit.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/investments", response_class=HTMLResponse)
-async def investments_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("investments"))
-):
-    """ИНВЕСТИЦИИ И БЛАГОТВОРИТЕЛЬНОСТЬ"""
-    return templates.TemplateResponse(
-        "modules/investments.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/academy", response_class=HTMLResponse)
-async def academy_page(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("academy"))
-):
-    """S-GLOBAL ACADEMY & LEGAL"""
-    return templates.TemplateResponse(
-        "modules/academy.html",
-        {"request": request, "current_user": current_user}
-    )
-
-@app.get("/admin/debug", response_class=HTMLResponse)
-async def admin_debug(
-    request: Request,
-    current_user: User = Depends(get_current_user_from_cookie),
-    module_guard: User = Depends(require_module("core"))
-):
-    """ADMIN DEBUG: Техническая панель"""
-    return templates.TemplateResponse(
-        "admin_debug.html",
-        {"request": request, "current_user": current_user}
-    )
-
+# ============================================================
+# 11. EXCEPTION HANDLERS
+# ============================================================
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
-    return RedirectResponse(url="/neural-core", status_code=302)
+    """404: API → JSON, всё остальное → SPA index.html"""
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+    # Всё остальное — SPA
+    index_path = os.path.join("frontend", "dist", "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return JSONResponse(status_code=404, content={"detail": "SPA not built"})
 
 if __name__ == "__main__":
     # Запуск Ядра на порту 8001
