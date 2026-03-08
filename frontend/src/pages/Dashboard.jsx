@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import {
-  Car, Truck, Monitor, Wrench, Brain, MessageCircle,
+  Car, Truck, Monitor, Wrench, Brain, Wallet,
   MapPin, FileText, Award, TrendingUp, Users, GraduationCap
 } from 'lucide-react'
 
@@ -14,15 +14,18 @@ import WorldMapBackground from '../components/dashboard/WorldMapBackground'
 import ScanLinesOverlay from '../components/dashboard/ScanLinesOverlay'
 
 /**
- * S-GLOBAL DOMINION — Main Dashboard v7.0 (Level 5++)
+ * S-GLOBAL DOMINION — Main Dashboard v7.2 (Level 5++)
  * =====================================================
  * 12 секторов империи в glassmorphism-сетке
  * Фон: ВЕЛИЧЕСТВЕННАЯ контурная карта мира с неоновыми границами
  * Эффект сканирующих линий (кабина пилота)
  * Живые карточки с левитацией
  * Статус-бар приподнят и выровнен
- * VERSHINA v200.11 Protocol — Level 5++
+ * VERSHINA v200.29.1 Protocol — ГЕРМЕТИЗАЦИЯ БЕЗОПАСНОСТИ + IVORY LUXE
  */
+
+/** Единый источник правды для версии протокола */
+const PROTOCOL_VERSION = 'v200.29.2'
 
 // 12 секторов империи
 const SECTORS = [
@@ -58,10 +61,10 @@ const SECTORS = [
     icon: Brain,
   },
   {
-    code: 'IM',
-    title: 'IMPERIAL MESSENGER',
-    subtitle: 'Онлайн',
-    icon: MessageCircle,
+    code: 'FN',
+    title: 'ФИНАНСЫ И БУХГАЛТЕРИЯ',
+    subtitle: 'Банковские шлюзы: АКТИВНО',
+    icon: Wallet,
   },
   {
     code: 'GP',
@@ -101,7 +104,7 @@ const SECTORS = [
   },
 ]
 
-export default function Dashboard() {
+export default function Dashboard({ onLogout }) {
   return (
     <div className="min-h-screen relative">
       {/* Фоновые частицы */}
@@ -114,7 +117,7 @@ export default function Dashboard() {
       <ScanLinesOverlay />
 
       {/* Верхняя панель */}
-      <TopBar />
+      <TopBar onLogout={onLogout} />
 
       {/* Основной контент */}
       <main className="relative z-[10] px-4 md:px-6 lg:px-8 py-6 pb-24">
@@ -145,7 +148,7 @@ export default function Dashboard() {
             />
           </div>
           <p className="text-center text-xs font-montserrat text-dominion-muted">
-            12 подразделений · Полный контроль · VERSHINA v200.11
+            12 подразделений · Полный контроль · VERSHINA {PROTOCOL_VERSION}
           </p>
         </motion.div>
 
@@ -200,7 +203,7 @@ export default function Dashboard() {
             <div className="w-px h-8 bg-white/10" />
             <StatItem
               label="Протокол"
-              value="v200.11"
+              value={PROTOCOL_VERSION}
               color="#a855f7"
             />
           </div>

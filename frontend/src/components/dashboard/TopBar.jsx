@@ -12,7 +12,7 @@ import ThemeSwitcher from './ThemeSwitcher'
  * - LogOut кнопка: Ivory=#1A1A1B, тёмные=приглушённый красный
  * - Полная адаптация к темам через CSS-переменные
  */
-export default function TopBar() {
+export default function TopBar({ onLogout }) {
   const [time, setTime] = useState(new Date())
   const { theme } = useTheme()
 
@@ -29,15 +29,9 @@ export default function TopBar() {
     return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' })
-    } catch (_) {
-      // Игнорируем ошибку сети — всё равно очищаем сессию
-    }
-    sessionStorage.clear()
-    localStorage.clear()
-    window.location.href = '/login'
+  const handleLogout = () => {
+    // Вся логика logout (fetch + очистка сессии) — в App.jsx
+    onLogout?.()
   }
 
   // Цвет кнопки выхода: Ivory — чёткий антрацит, тёмные — приглушённый красный

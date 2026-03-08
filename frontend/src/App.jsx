@@ -6,8 +6,8 @@ import Dashboard from './pages/Dashboard'
 import api from './api/client'
 
 /**
- * S-GLOBAL DOMINION — Root Application v3.1
- * VERSHINA v200.11 Protocol — ГЕРМЕТИЗАЦИЯ БЕЗОПАСНОСТИ
+ * S-GLOBAL DOMINION — Root Application v3.2
+ * VERSHINA v200.29.2 Protocol — ГЕРМЕТИЗАЦИЯ БЕЗОПАСНОСТИ
  * 
  * Строгий поток: Auth → Intro (15s) → Dashboard
  * Стадии: 'loading' | 'auth' | 'intro' | 'dashboard'
@@ -54,6 +54,23 @@ export default function App() {
     setStage('dashboard')
   }, [])
 
+  const handleLogout = useCallback(async () => {
+    // Единая точка logout: убиваем httpOnly cookie на сервере, затем чистим клиент
+    // Используем централизованный api-клиент (axios) — перехватчики ошибок работают корректно
+    try {
+      await api.post('/api/v1/auth/logout')
+    } catch (err) {
+      // Игнорируем сетевую ошибку — всё равно очищаем клиентскую сессию
+      // В dev-режиме логируем для диагностики
+      if (import.meta.env.DEV) {
+        console.warn('[Logout] Server error (cookie may not be deleted):', err?.response?.status ?? err?.message)
+      }
+    }
+    sessionStorage.clear()
+    localStorage.clear()
+    setStage('auth')
+  }, [])
+
   // Стадия -1: Сетевая ошибка — сессия сохранена, предлагаем повтор
   if (stage === 'network_error') {
     return (
@@ -95,6 +112,6 @@ export default function App() {
 
   // Стадия 3: Дашборд
   return (
-    <Dashboard />
+    <Dashboard onLogout={handleLogout} />
   )
 }

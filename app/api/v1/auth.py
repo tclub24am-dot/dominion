@@ -125,6 +125,45 @@ async def login(
             detail="Сбой магических контуров Врат"
         )
 
+@router.post("/logout")
+async def logout(
+    response: Response,
+    request: Request,
+):
+    """
+    ОПЕРАЦИЯ «ЧИСТЫЙ СЛЕД»: Физическое уничтожение httpOnly cookie на сервере.
+    Вызывается из App.jsx при выходе Мастера из системы.
+    Без этого эндпоинта cookie живёт 24 часа даже после «выхода» на клиенте.
+
+    VERSHINA v200.29.3 FIX: Зависимость от авторизации УБРАНА намеренно.
+    Причина: при истёкшем токене Depends(get_current_user_from_cookie) вернул бы
+    401 ДО выполнения delete_cookie — cookie осталась бы в браузере навсегда.
+    Cookie должна удаляться ВСЕГДА, независимо от валидности токена.
+    """
+    is_production = os.getenv("ENVIRONMENT") == "production"
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        samesite="lax",
+        secure=is_production,
+    )
+    # Логируем username best-effort: используем optional-проверку без блокировки
+    access_token = request.cookies.get("access_token")
+    if access_token:
+        try:
+            from jose import jwt
+            from app.core.config import settings
+            payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            username = payload.get("sub", "unknown")
+            logger.info(f"USER {username} LOGGED OUT SUCCESSFULLY.")
+        except Exception:
+            logger.info("LOGOUT: cookie deleted (token was already expired or invalid).")
+    else:
+        logger.info("LOGOUT: no cookie present, nothing to delete.")
+    return {"status": "logged_out"}
+
+
 @router.get("/me")
 async def get_me(user: User = Depends(get_current_user_from_cookie)):
     """

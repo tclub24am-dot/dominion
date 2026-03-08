@@ -40,7 +40,7 @@
   --accent: #8B6914;
   --accent-rgb: 139, 105, 20;
   --text-primary: #1A1B1E;
-  --text-secondary: rgba(26,27,30,0.65);
+  --text-secondary: rgba(26,27,30,0.88); /* IVORY LUXE: «звенящий» контраст для Дока */
   --text-label: #007A7A;
   --border-glow: rgba(139, 105, 20, 0.15);
   --font-weight-base: 500;
