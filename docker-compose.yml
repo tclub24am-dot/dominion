@@ -61,8 +61,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      asterisk:
-        condition: service_started
       ollama:
         condition: service_started
     networks:
