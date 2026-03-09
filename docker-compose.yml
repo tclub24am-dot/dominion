@@ -1,5 +1,15 @@
 version: '3.8'
 
+# ============================================================
+# S-GLOBAL DOMINION — docker-compose.yml
+# Протокол: VERSHINA v200.15
+# Сервер: 89.169.39.111
+# Запуск: docker-compose --env-file .env up -d
+# NETWORK TIGHTENING v200.15:
+#   - SIP (5060/udp, 5061/tcp) и RTP (10000-20000/udp) привязаны
+#     ТОЛЬКО к внешнему IP 89.169.39.111 — публичный доступ «для всех» закрыт.
+# ============================================================
+
 services:
   db:
     image: postgres:15
@@ -42,6 +52,8 @@ services:
       # Переопределяем REDIS_URL: внутри Docker-сети localhost не работает.
       # Имя сервиса 'redis' резолвится через Docker DNS автоматически.
       - REDIS_URL=redis://redis:6379/0
+      # Ollama LLM-движок: доступен по имени сервиса внутри dominion_net
+      - OLLAMA_BASE_URL=http://ollama:11434
     ports:
       - "8001:8001"
     depends_on:
@@ -49,16 +61,111 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      asterisk:
+        condition: service_started
+      ollama:
+        condition: service_started
     networks:
       - dominion_net
     volumes:
       - ./app:/app/app
       - ./static:/app/static
+      - dominion_storage:/root/dominion/storage
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ============================================================
+  # S-АТС — Asterisk 20 (PJSIP + AMI + AGI)
+  # VERSHINA v200.14: SaaS-телефония с изоляцией по tenant_id
+  # ============================================================
+  asterisk:
+    image: andrius/asterisk:20-alpine
+    container_name: dominion_asterisk
+    hostname: s-ats.dominion.local
+    env_file:
+      - ./.env
+    environment:
+      # Передаём секрет для CURL-уведомлений в dialplan
+      # ОБЯЗАТЕЛЬНО: ATS_WEBHOOK_SECRET должен быть задан в .env
+      - ATS_WEBHOOK_SECRET=${ATS_WEBHOOK_SECRET}
+      # URL внутреннего API (app-сервис в той же сети)
+      - DOMINION_API_URL=http://app:8001
+      # Секреты Asterisk (подставляются в конфиги через init_asterisk_secrets.sh)
+      - AMI_SECRET=${AMI_SECRET}
+      - F2B_SECRET=${F2B_SECRET}
+      - ASTERISK_SYSTEM_PASS=${ASTERISK_SYSTEM_PASS}
+      - SIP_PRO_001_PASS=${SIP_PRO_001_PASS}
+      - SIP_GO_001_PASS=${SIP_GO_001_PASS}
+      - SIP_PLUS_001_PASS=${SIP_PLUS_001_PASS}
+      - SIP_EXPRESS_001_PASS=${SIP_EXPRESS_001_PASS}
+    ports:
+      # SIP-сигнализация (UDP, порт 5060) — ТОЛЬКО внешний IP сервера
+      - "89.169.39.111:5060:5060/udp"
+      # SIP-сигнализация (TCP, порт 5061) — ТОЛЬКО внешний IP сервера
+      - "89.169.39.111:5061:5061/tcp"
+      # AMI (Asterisk Manager Interface) — только внутри сети (не публикуем)
+      # - "5038:5038"  # Раскомментировать при необходимости внешнего AMI
+      # RTP медиа-поток (UDP) — ТОЛЬКО внешний IP сервера
+      - "89.169.39.111:10000-20000:10000-20000/udp"
+    # Скрипт инициализации: подставляет секреты из ENV в конфиги перед запуском Asterisk
+    entrypoint: ["/bin/sh", "-c", "/etc/asterisk/init_asterisk_secrets.sh && exec asterisk -f"]
+    volumes:
+      # Конфиги монтируются из ./asterisk/ — изменения без перезапуска контейнера
+      # ВАЖНО: монтируются как rw (не :ro) — init_asterisk_secrets.sh перезаписывает плейсхолдеры
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/logger.conf:/etc/asterisk/logger.conf:ro
+      - ./asterisk/manager.conf:/etc/asterisk/manager.conf
+      # Скрипт инициализации секретов
+      - ./asterisk/init_asterisk_secrets.sh:/etc/asterisk/init_asterisk_secrets.sh:ro
+      # Персистентные данные: CDR, voicemail, recordings
+      - asterisk_data:/var/spool/asterisk
+      - asterisk_logs:/var/log/asterisk
+    networks:
+      - dominion_net
+    depends_on:
+      - app
+    restart: unless-stopped
+    # Защита от OOM при большом числе каналов
+    mem_limit: 512m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # OLLAMA — локальный LLM-движок (VERSHINA v200.11)
+  # Доступен внутри сети по адресу: http://ollama:11434
+  # dominion_app обращается к нему через OLLAMA_BASE_URL
+  # ============================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dominion_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - dominion_net
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
 volumes:
   dominion_data:
   redis_data:
+  dominion_storage:
+  asterisk_data:
+  asterisk_logs:
+  ollama_data:
 
 networks:
   dominion_net:
