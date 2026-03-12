@@ -1,0 +1,77 @@
+/* S-GLOBAL DOMINION - Local Fonts */
+/* ВЕРШИНА v200.11 - Offline Font Bundle */
+
+/* Cinzel - Imperial Titles */
+@font-face {
+    font-family: 'Cinzel';
+    src: url('/static/fonts/Cinzel-400.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cinzel';
+    src: url('/static/fonts/Cinzel-600.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Cinzel';
+    src: url('/static/fonts/Cinzel-800.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Montserrat - Body Text */
+@font-face {
+    font-family: 'Montserrat';
+    src: url('/static/fonts/Montserrat-300.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('/static/fonts/Montserrat-500.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('/static/fonts/Montserrat-700.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Orbitron - Tech/Sci-Fi Display */
+@font-face {
+    font-family: 'Orbitron';
+    src: url('/static/fonts/Orbitron-400.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Orbitron';
+    src: url('/static/fonts/Orbitron-600.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Orbitron';
+    src: url('/static/fonts/Orbitron-800.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}

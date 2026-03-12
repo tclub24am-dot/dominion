@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Реестр «Автомобили» • S-GLOBAL DOMINION</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{
+            --bg:#0D0C0B;
+            --panel:rgba(13,12,11,0.95);
+            --border:rgba(212,175,55,0.2);
+            --text:#f4efe0;
+            --muted:#9a8e6e;
+            --accent:#D4AF37;
+            --accent-2:#FFD700;
+            --danger:#ff6b6b;
+            --success:#23c981;
+            --info:#5b9aff;
+            --warn:#ffb347;
+            --secondary:#6c757d;
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        
+        /* === GLOBAL FONT SIZE INCREASED === */
+        body{background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh;padding-bottom:80px;font-size:16px;}
+        
+        .page-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 20%, rgba(212,175,55,0.05) 0%, transparent 60%);pointer-events:none;z-index:0;}
+        .wrap{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:20px 24px;}
+        .back{display:inline-flex;align-items:center;gap:6px;color:var(--accent);text-decoration:none;font-size:13px;opacity:0.7;transition:opacity 0.2s;margin-bottom:10px;}
+        .back:hover{opacity:1;}
+        .header{display:flex;align-items:flex-end;justify-content:space-between;margin:10px 0 20px;flex-wrap:wrap;gap:12px;}
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.15em;font-size:18px;font-weight:700;background:linear-gradient(135deg,#D4AF37,#FFD700,#f4efe0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;}
+        .sub{font-size:12px;color:var(--muted);letter-spacing:0.05em;margin-top:4px;}
+        
+        /* === BALANCE - RED FOR NEGATIVE === */
+        .balance-cell{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;}
+        .balance-negative{color:#ff4444 !important;}
+        .balance-positive{color:var(--success);}
+        .balance-zero{color:var(--muted);}
+
+        /* Stats bar - enlarged */
+        .stats-bar{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:rgba(212,175,55,0.05);border-radius:10px;border:1px solid var(--border);}
+        .stat-item{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;}
+        .stat-dot{width:10px;height:10px;border-radius:50%;}
+        .stat-dot.green{background:var(--success);box-shadow:0 0 8px var(--success);}
+        .stat-dot.yellow{background:var(--warn);box-shadow:0 0 8px var(--warn);}
+        .stat-dot.red{background:var(--danger);box-shadow:0 0 8px var(--danger);}
+        .stat-dot.blue{background:var(--info);box-shadow:0 0 8px var(--info);}
+        .stat-dot.gray{background:var(--secondary);}
+        .stat-count{font-weight:700;font-variant-numeric:tabular-nums;font-size:16px;}
+
+        /* v35.1: Кнопка «+ НОВЫЙ АВТО» — стиль Яндекса */
+        .add-vehicle-btn{
+            width:42px;height:42px;border-radius:50%;
+            background:var(--accent);color:#0D0C0B;
+            border:none;font-size:26px;font-weight:800;
+            cursor:pointer;display:flex;align-items:center;justify-content:center;
+            transition:all 0.2s;box-shadow:0 2px 8px rgba(212,175,55,0.3);
+            flex-shrink:0;line-height:1;
+        }
+        .add-vehicle-btn:hover{background:var(--accent-2);transform:scale(1.1);box-shadow:0 4px 16px rgba(212,175,55,0.5);}
+
+        /* v35.1: Tabs парков — стиль вкладок Яндекса */
+        .park-tabs{display:flex;gap:0;flex-wrap:wrap;margin-bottom:14px;border-bottom:2px solid rgba(212,175,55,0.15);}
+        .park-tab{background:transparent;border:none;border-bottom:3px solid transparent;color:var(--muted);padding:10px 20px;font-size:14px;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all 0.2s;font-weight:500;letter-spacing:0.05em;margin-bottom:-2px;}
+        .park-tab.active{color:var(--accent-2);border-bottom-color:var(--accent);font-weight:700;}
+        .park-tab:hover:not(.active){color:var(--text);border-bottom-color:rgba(212,175,55,0.3);}
+        .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+        .filter-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all 0.2s;}
+        .filter-btn.active{background:#f4efe0;color:#0D0C0B;border-color:#f4efe0;font-weight:600;}
+        .filter-btn:hover:not(.active){border-color:var(--accent);color:var(--text);}
+        .search{flex:1;min-width:240px;}
+        .search input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px 16px;font-size:14px;font-family:'Montserrat',sans-serif;outline:none;transition:border-color 0.2s;}
+        .search input:focus{border-color:var(--accent);}
+        .search input::placeholder{color:var(--muted);}
+
+        /* === TABLE - CLEAN DESIGN, LARGER FONTS === */
+        .table-wrap{background:var(--panel);border-radius:14px;overflow:hidden;}
+        .table-scroll{overflow-x:auto;}
+        table{width:100%;border-collapse:collapse;font-size:15px;}
+        
+        /* Headers */
+        th{padding:18px 16px;text-align:left;font-size:17px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid rgba(212,175,55,0.1);background:rgba(212,175,55,0.03);white-space:nowrap;font-weight:600;}
+        
+        /* Cells - NO BORDERS, MORE PADDING, MORE AIR */
+        td{padding:22px 16px;border-bottom:none;white-space:nowrap;vertical-align:middle;}
+        tr{border-bottom:1px solid rgba(212,175,55,0.04);}
+        tr:hover td{background:rgba(212,175,55,0.03);}
+        tr:last-child{border-bottom:none;}
+        
+         /* === ГОСНОМЕР, ПОЗЫВНОЙ И ФИО ВОДИТЕЛЯ - ЖИРНЫЕ 20PX === */
+        .plate-cell{font-weight:800;font-size:22px;letter-spacing:0.1em;color:var(--accent-2);}
+        .plate-link{color:var(--accent-2);text-decoration:none;transition:color 0.2s;}
+        .plate-link:hover{color:#fff;text-decoration:underline;}
+        
+        .callsign-cell{font-weight:500;font-size:15px;color:var(--text);letter-spacing:0.04em;}
+        
+        /* Driver */
+        .driver-info{display:flex;flex-direction:column;gap:4px;}
+        .driver-name{font-size:14px;font-weight:600;}
+        .driver-phone{font-size:12px;color:var(--muted);}
+        
+        /* Rating */
+        .rating-cell{font-size:14px;font-weight:500;}
+        .rating-low{color:var(--danger);}
+        .rating-normal{color:var(--text);}
+        
+        /* Docs */
+        .doc-cell{font-size:13px;color:var(--muted);letter-spacing:0.03em;}
+        /* VIN — полный 17-значный код, компактный шрифт */
+        .vin-full{font-size:12px;font-family:'Courier New',monospace;color:var(--muted);letter-spacing:0.02em;word-break:break-all;white-space:nowrap;}
+        
+        /* Car info */
+        .car-info{display:flex;flex-direction:column;gap:4px;}
+        .car-model{font-size:12px;color:var(--muted);}
+
+        /* === INTERACTIVE STATUS (YANDEX-STYLE — точная копия) === */
+        .status-dropdown{
+            position:relative;
+            display:inline-block;
+            cursor:pointer;
+        }
+        .status-trigger{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:4px 0;
+            font-size:14px;
+            font-weight:400;
+            color:var(--text);
+            transition:all 0.15s;
+            background:none;
+            border:none;
+        }
+        .status-trigger:hover{opacity:0.8;}
+        .status-trigger .status-arrow{
+            font-size:8px;
+            color:var(--muted);
+            margin-left:2px;
+            opacity:0.6;
+        }
+        
+        /* Status colors — цвет только у точки, текст единый */
+        .status-trigger.working .status-dot{background:var(--success);box-shadow:0 0 6px var(--success);}
+        .status-trigger.preparing .status-dot{background:var(--info);box-shadow:0 0 6px var(--info);}
+        .status-trigger.no_driver .status-dot{background:var(--warn);box-shadow:0 0 6px var(--warn);}
+        .status-trigger.repair .status-dot,.status-trigger.service .status-dot{background:var(--danger);box-shadow:0 0 6px var(--danger);}
+        .status-trigger.idle .status-dot{background:var(--warn);box-shadow:0 0 6px var(--warn);}
+        .status-trigger.debt_lock .status-dot{background:var(--danger);box-shadow:0 0 6px var(--danger);}
+        .status-trigger.other .status-dot{background:var(--secondary);}
+        
+        /* Status dot */
+        .status-dot{
+            width:10px;
+            height:10px;
+            border-radius:50%;
+            flex-shrink:0;
+        }
+        
+        /* Dropdown menu */
+        .status-menu{
+            position:absolute;
+            top:100%;
+            left:0;
+            z-index:100;
+            min-width:180px;
+            background:#1a1918;
+            border:1px solid var(--border);
+            border-radius:10px;
+            padding:6px 0;
+            margin-top:6px;
+            display:none;
+            box-shadow:0 12px 32px rgba(0,0,0,0.5);
+        }
+        .status-menu.show{display:block;}
+        .status-option{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            padding:10px 14px;
+            font-size:14px;
+            cursor:pointer;
+            transition:background 0.1s;
+        }
+        .status-option:hover{background:rgba(212,175,55,0.12);}
+        .status-option.selected{background:rgba(212,175,55,0.18);}
+        .status-option .status-dot{width:10px;height:10px;border-radius:50%;}
+
+        /* Owner type */
+        .owner-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 8px;border-radius:6px;font-weight:600;}
+        .owner-tag.park{background:rgba(212,175,55,0.15);color:var(--accent);border:1px solid rgba(212,175,55,0.3);}
+        .owner-tag.private{background:rgba(91,154,255,0.12);color:var(--info);border:1px solid rgba(91,154,255,0.2);}
+        .park-badge{display:inline-block;background:rgba(212,175,55,0.1);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;}
+        .revenue-cell{color:var(--accent-2);font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;}
+        .empty-msg{text-align:center;padding:50px;color:var(--muted);font-size:16px;}
+        
+        /* v33.0: ПАРКОВЫЙ badge - выделение для субаренды */
+        .parkovy-badge{
+            display:inline-flex;
+            align-items:center;
+            gap:4px;
+            background:linear-gradient(135deg, rgba(212,175,55,0.25), rgba(255,215,0,0.15));
+            color:var(--accent-2);
+            border:1px solid rgba(212,175,55,0.5);
+            border-radius:4px;
+            padding:2px 8px;
+            font-size:10px;
+            font-weight:800;
+            letter-spacing:0.1em;
+            text-transform:uppercase;
+            margin-left:8px;
+            animation:parkovy-glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes parkovy-glow{
+            from{box-shadow:0 0 4px rgba(212,175,55,0.3);}
+            to{box-shadow:0 0 8px rgba(212,175,55,0.6);}
+        }
+        
+        /* Archive toggle button */
+        .archive-toggle{
+            background:transparent;
+            border:1px solid var(--border);
+            color:var(--muted);
+            border-radius:8px;
+            padding:8px 16px;
+            font-size:13px;
+            cursor:pointer;
+            font-family:'Montserrat',sans-serif;
+            transition:all 0.2s;
+            margin-left:auto;
+        }
+        .archive-toggle:hover{border-color:var(--accent);color:var(--text);}
+        .archive-toggle.active{background:rgba(255,107,107,0.15);color:var(--danger);border-color:var(--danger);}
+        
+        /* Active 24h indicator */
+        .active-indicator{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:4px;}
+        .inactive-indicator{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--secondary);margin-right:4px;}
+        
+        /* Toast */
+        .toast{
+            position:fixed;
+            bottom:80px;
+            right:24px;
+            background:rgba(35,201,129,0.95);
+            color:#fff;
+            padding:12px 20px;
+            border-radius:10px;
+            font-size:14px;
+            font-weight:600;
+            z-index:200;
+            opacity:0;
+            transform:translateY(20px);
+            transition:all 0.3s;
+        }
+        .toast.show{opacity:1;transform:translateY(0);}
+        .toast.error{background:rgba(255,107,107,0.95);}
+        
+        /* === BOTTOM STATUS PANEL === */
+        .bottom-panel{
+            position:fixed;
+            bottom:0;
+            left:0;
+            right:0;
+            background:rgba(13,12,11,0.98);
+            border-top:1px solid var(--border);
+            padding:14px 24px;
+            display:flex;
+            justify-content:center;
+            gap:32px;
+            z-index:50;
+            backdrop-filter:blur(10px);
+        }
+        .bottom-stat{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            font-size:15px;
+            font-weight:600;
+        }
+        .bottom-stat .stat-dot{width:12px;height:12px;}
+        .bottom-stat .stat-count{font-size:18px;font-weight:800;color:var(--text);}
+    </style>
+</head>
+<body>
+    <div class="page-bg"></div>
+    <div class="wrap">
+        <a class="back" href="/fleet">← Командная башня</a>
+        <div class="header">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div>
+                    <div class="title">РЕЕСТР «АВТОМОБИЛИ»</div>
+                    <div class="sub">Активный флот Доминиона</div>
+                </div>
+                <button class="add-vehicle-btn" id="addVehicleBtn" title="Новый автомобиль">+</button>
+            </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item"><span class="stat-dot green"></span>Работает: <span class="stat-count" id="statWorking">0</span></div>
+            <div class="stat-item"><span class="stat-dot blue"></span>Подготовка: <span class="stat-count" id="statPreparing">0</span></div>
+            <div class="stat-item"><span class="stat-dot yellow"></span>Нет водителя: <span class="stat-count" id="statNoDriver">0</span></div>
+            <div class="stat-item"><span class="stat-dot red"></span>Сервис: <span class="stat-count" id="statService">0</span></div>
+        </div>
+
+        <div class="park-tabs" id="parkTabs">
+            <button class="park-tab active" data-park="ALL">ВСЕ <span id="countALL"></span></button>
+            <button class="park-tab" data-park="PRO">PRO <span id="countPRO"></span></button>
+            <button class="park-tab" data-park="GO">GO <span id="countGO"></span></button>
+            <button class="park-tab" data-park="PLUS">PLUS <span id="countPLUS"></span></button>
+            <button class="park-tab" data-park="EXPRESS">EXPRESS <span id="countEXPRESS"></span></button>
+        </div>
+
+        <div class="controls">
+            <div class="search"><input type="text" id="searchInput" placeholder="Поиск по госномеру, позывному, VIN..."></div>
+            <button class="filter-btn active" data-owner="">Все</button>
+            <button class="archive-toggle" id="archiveToggle">📂 Показать архив</button>
+        </div>
+
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table>
+                     <thead>
+                        <tr>
+                            <th>Автомобиль</th>
+                            <th>Статус</th>
+                            <th>Позывной</th>
+                            <th>СТС</th>
+                            <th>VIN</th>
+                            <th>Парк</th>
+                            <th>Раб.статус</th>
+                            <th>Водитель</th>
+                            <th>Рейтинг</th>
+                            <th>Оборот 7д</th>
+                            <th>Создан</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehiclesBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Status Panel -->
+    <div class="bottom-panel">
+        <div class="bottom-stat"><span class="stat-dot green"></span>Работает: <span class="stat-count" id="bottomWorking">0</span></div>
+        <div class="bottom-stat"><span class="stat-dot blue"></span>Подготовка: <span class="stat-count" id="bottomPreparing">0</span></div>
+        <div class="bottom-stat"><span class="stat-dot yellow"></span>Нет водителя: <span class="stat-count" id="bottomNoDriver">0</span></div>
+        <div class="bottom-stat"><span class="stat-dot red"></span>Сервис: <span class="stat-count" id="bottomService">0</span></div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let owner = '';
+        let park = 'ALL';
+        let searchQ = '';
+        let includeArchive = false;
+        let vehiclesData = [];
+        let openDropdown = null;
+        
+        const fmt = v => Number(v||0).toLocaleString('ru-RU');
+        
+         // === v35.0: STATUS MAPPING — СТРОГО ПО БИБЛИИ API (§2) ===
+        // yandex_status: working, not_working, blocked, repairing
+        // Статусы Dominion: working, preparing, no_driver, service, other
+        // КИРИЛЛИЦА ТОЛЬКО
+        const STATUS_OPTIONS = [
+            {value:'working',label:'Работает',color:'var(--success)'},
+            {value:'preparing',label:'Подготовка',color:'var(--info)'},
+            {value:'no_driver',label:'Нет водителя',color:'var(--warn)'},
+            {value:'service',label:'Сервис',color:'var(--danger)'},
+            {value:'other',label:'Другое',color:'var(--secondary)'}
+        ];
+        
+        // Маппинг статусов → КИРИЛЛИЦА
+        const STATUS_LABELS = {
+            working:'Работает',
+            preparing:'Подготовка',
+            no_driver:'Нет водителя',
+            service:'Сервис',
+            other:'Другое'
+        };
+        
+        // CSS-классы для статусов
+        const STATUS_CLASSES = {
+            working:'working',
+            preparing:'preparing',
+            no_driver:'no_driver',
+            service:'service',
+            other:'other'
+        };
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show' + (isError ? ' error' : '');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        async function updateVehicleStatus(vehicleId, newStatus) {
+            try {
+                const r = await fetch(`/api/v1/fleet/vehicles/${vehicleId}/status`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type':'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({status: newStatus})
+                });
+                if (r.ok) {
+                    showToast('Статус обновлен');
+                    const v = vehiclesData.find(x => x.id === vehicleId);
+                    if (v) v.status = newStatus;
+                    renderTable();
+                    updateStats();
+                } else {
+                    const err = await r.json().catch(() => ({}));
+                    showToast(err.detail || 'Ошибка обновления', true);
+                }
+            } catch (e) {
+                showToast('Ошибка сети', true);
+            }
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('show'));
+            openDropdown = null;
+        }
+
+        // v35.0: Статус приходит уже правильный из backend (§2 Библии)
+        // Backend определяет: working, preparing, no_driver, service, other
+        function getDisplayStatus(vehicle) {
+            const s = vehicle.status || 'other';
+            // Валидные статусы Dominion
+            if (['working','preparing','no_driver','service','other'].includes(s)) return s;
+            // Fallback для старых русских значений
+            if (s === 'Работает') return 'working';
+            if (s === 'Простой' || s === 'idle') return 'no_driver';
+            if (s === 'Сервис' || s === 'repair' || s === 'maintenance') return 'service';
+            return 'other';
+        }
+
+        function renderStatusDropdown(vehicle) {
+            const currentStatus = getDisplayStatus(vehicle);
+            const statusCls = STATUS_CLASSES[currentStatus] || 'other';
+            const statusLabel = STATUS_LABELS[currentStatus] || currentStatus || '---';
+            
+            let optionsHtml = STATUS_OPTIONS.map(opt => `
+                <div class="status-option ${opt.value === statusCls ? 'selected' : ''}"
+                     data-vehicle="${vehicle.id}" data-status="${opt.value}">
+                    <span class="status-dot" style="background:${opt.color}"></span>
+                    ${opt.label}
+                </div>
+            `).join('');
+            
+            return `
+                <div class="status-dropdown" data-vehicle="${vehicle.id}">
+                    <div class="status-trigger ${statusCls}">
+                        <span class="status-dot"></span>
+                        ${statusLabel}
+                        <span class="status-arrow">&#8964;</span>
+                    </div>
+                    <div class="status-menu">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateStats() {
+            let working=0, preparing=0, noDriver=0, service=0;
+            
+            vehiclesData.forEach(v => {
+                const status = getDisplayStatus(v);
+                const cls = STATUS_CLASSES[status] || 'other';
+                if (cls === 'working') working++;
+                else if (cls === 'preparing') preparing++;
+                else if (cls === 'no_driver') noDriver++;
+                else if (cls === 'service') service++;
+                else noDriver++; // other/unknown → нет водителя
+            });
+            
+            // Top stats bar
+            document.getElementById('statWorking').textContent = working;
+            document.getElementById('statPreparing').textContent = preparing;
+            document.getElementById('statNoDriver').textContent = noDriver;
+            document.getElementById('statService').textContent = service;
+            
+            // Bottom panel
+            document.getElementById('bottomWorking').textContent = working;
+            document.getElementById('bottomPreparing').textContent = preparing;
+            document.getElementById('bottomNoDriver').textContent = noDriver;
+            document.getElementById('bottomService').textContent = service;
+        }
+
+        function renderTable() {
+            let items = vehiclesData || [];
+            
+            // v35.0: Мгновенный поиск по госномеру, позывному, VIN, СТС, марке, модели, водителю
+            if (searchQ) {
+                const q = searchQ.toLowerCase();
+                items = items.filter(v =>
+                    (v.license_plate||'').toLowerCase().includes(q) ||
+                    (v.callsign||'').toLowerCase().includes(q) ||
+                    (v.vin||'').toLowerCase().includes(q) ||
+                    (v.sts_number||'').toLowerCase().includes(q) ||
+                    (v.brand||'').toLowerCase().includes(q) ||
+                    (v.model||'').toLowerCase().includes(q) ||
+                    (v.driver_name||'').toLowerCase().includes(q) ||
+                    (v.park_name||'').toLowerCase().includes(q)
+                );
+            }
+            
+            const tbody = document.getElementById('vehiclesBody');
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="11" class="empty-msg">Нет данных</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = items.map(v => {
+                // v35.2: Убран бейдж «Парковый» по запросу Мастера
+                // Car cell — чистый, без ownership badge
+                const carCell = `
+                    <div class="car-info">
+                        <a class="plate-link plate-cell" href="/fleet/vehicles/${v.id}">${v.license_plate}</a>
+                        <span class="car-model">${(v.brand||'') + ' ' + (v.model||'')}</span>
+                    </div>
+                `;
+                
+                // Status - interactive dropdown with yandex_status
+                const statusCell = renderStatusDropdown(v);
+                
+                // Callsign - 18px Extra Bold
+                const callsign = v.callsign && v.callsign !== '---' && v.callsign !== 'Внешнее авто'
+                    ? `<span class="callsign-cell">${v.callsign}</span>`
+                    : '<span style="color:var(--muted)">---</span>';
+                
+                // STS
+                const sts = v.sts_number && v.sts_number !== '---' && v.sts_number !== 'Внешнее авто'
+                    ? `<span class="doc-cell">${v.sts_number}</span>`
+                    : '<span style="color:var(--muted)">---</span>';
+                
+                // VIN — полный 17-значный код без обрезки
+                const vin = v.vin && v.vin !== '---' && v.vin !== 'Внешнее авто'
+                    ? `<span class="vin-full">${v.vin}</span>`
+                    : '<span style="color:var(--muted)">---</span>';
+                
+                 // Driver
+                const driverCell = v.driver_name !== '---'
+                    ? `<div class="driver-info"><span class="driver-name">${v.driver_name}</span>${v.driver_phone !== '---' ? `<span class="driver-phone">${v.driver_phone}</span>` : ''}</div>`
+                    : '<span style="color:var(--muted)">---</span>';
+                
+                // Rating - подсветка красным если < 4.8
+                const ratingCell = v.yandex_rating ? 
+                    `<span class="rating-cell ${v.yandex_rating < 4.8 ? 'rating-low' : 'rating-normal'}">${v.yandex_rating.toFixed(2)}</span>` : 
+                    '<span style="color:var(--muted)">---</span>';
+                
+                // Revenue
+                const rev7 = v.revenue_7d > 0
+                    ? `<span class="revenue-cell">${fmt(v.revenue_7d)} ₽</span>`
+                    : '<span style="color:var(--muted)">0</span>';
+                
+                // Created date
+                const created = v.created_at
+                    ? `<span style="font-size:12px;color:var(--muted)">${new Date(v.created_at).toLocaleDateString('ru-RU')}</span>`
+                    : '<span style="color:var(--muted)">---</span>';
+                
+                return `<tr>
+                    <td>${carCell}</td>
+                    <td>${statusCell}</td>
+                    <td>${callsign}</td>
+                    <td>${sts}</td>
+                    <td>${vin}</td>
+                    <td><span class="park-badge">${v.park_name}</span></td>
+                    <td><span class="owner-tag ${getDisplayStatus(v)}">${STATUS_LABELS[getDisplayStatus(v)] || '---'}</span></td>
+                    <td>${driverCell}</td>
+                    <td>${ratingCell}</td>
+                    <td>${rev7}</td>
+                    <td>${created}</td>
+                </tr>`;
+            }).join('');
+            
+            // Attach dropdown handlers
+            document.querySelectorAll('.status-dropdown').forEach(dd => {
+                const trigger = dd.querySelector('.status-trigger');
+                const menu = dd.querySelector('.status-menu');
+                
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = menu.classList.contains('show');
+                    closeAllDropdowns();
+                    if (!isOpen) {
+                        menu.classList.add('show');
+                        openDropdown = menu;
+                    }
+                });
+                
+                menu.querySelectorAll('.status-option').forEach(opt => {
+                    opt.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const vehicleId = parseInt(opt.dataset.vehicle);
+                        const newStatus = opt.dataset.status;
+                        updateVehicleStatus(vehicleId, newStatus);
+                        closeAllDropdowns();
+                    });
+                });
+            });
+        }
+
+        async function load(){
+            const params = new URLSearchParams();
+            if (owner) params.set('owner', owner);
+            if (park !== 'ALL') params.set('park', park);
+            if (includeArchive) params.set('include_archive', 'true');
+            const r = await fetch('/api/v1/fleet/vehicles-list-data?' + params, { credentials: 'include' });
+            if (!r.ok) return;
+            const { vehicles, counts, include_archive } = await r.json();
+            vehiclesData = vehicles || [];
+
+            ['ALL','PRO','GO','PLUS','EXPRESS'].forEach(p => {
+                const el = document.getElementById('count' + p);
+                if (el) el.textContent = counts[p] !== undefined ? `(${counts[p]})` : '';
+            });
+            
+            // v33.0: Обновляем информацию об активных
+            const archiveToggle = document.getElementById('archiveToggle');
+            if (includeArchive) {
+                archiveToggle.classList.add('active');
+                archiveToggle.textContent = `📂 Архив (${counts.ALL})`;
+            } else {
+                archiveToggle.classList.remove('active');
+                archiveToggle.textContent = `📂 Показать архив (${counts.ALL})`;
+            }
+
+            updateStats();
+            renderTable();
+        }
+
+        // Close dropdown on outside click
+        document.addEventListener('click', () => closeAllDropdowns());
+
+        document.querySelectorAll('.park-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.park-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                park = btn.dataset.park || 'ALL';
+                load();
+            });
+        });
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                owner = btn.dataset.owner || '';
+                load();
+            });
+        });
+        
+        // v33.0: Archive toggle
+        document.getElementById('archiveToggle').addEventListener('click', () => {
+            includeArchive = !includeArchive;
+            load();
+        });
+        
+        let searchTimer;
+        document.getElementById('searchInput').addEventListener('input', e => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => { searchQ = e.target.value.trim(); renderTable(); }, 80);
+        });
+        load();
+    </script>
+</body>
+</html>

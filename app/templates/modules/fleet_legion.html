@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дворец Легион • S-GLOBAL DOMINION</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{--bg:#0D0C0B;--panel:rgba(13,12,11,0.92);--glass:rgba(16,14,12,0.72);--border:rgba(212,175,55,0.25);--text:#f4efe0;--muted:#9a8e6e;--accent:#D4AF37;--accent-2:#FFD700;--danger:#ff6b6b;--success:#23c981;--info:#5b9aff;--warn:#ffb347;}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh;padding-bottom:56px;}
+        .page-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 20%, rgba(212,175,55,0.06) 0%, transparent 60%);pointer-events:none;z-index:0;}
+        .wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:20px 24px;}
+
+        /* Header */
+        .back{display:inline-flex;align-items:center;gap:6px;color:var(--accent);text-decoration:none;font-size:11px;letter-spacing:0.06em;opacity:0.7;transition:opacity 0.2s;}
+        .back:hover{opacity:1;}
+        .header{display:flex;align-items:flex-end;justify-content:space-between;margin:12px 0 20px;flex-wrap:wrap;gap:12px;}
+        .header-left{}
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.2em;font-size:18px;font-weight:700;background:linear-gradient(135deg,#D4AF37,#FFD700,#f4efe0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .sub{font-size:11px;color:var(--muted);letter-spacing:0.06em;margin-top:4px;}
+
+        /* KPI Bar */
+        .kpi-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+        .kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center;}
+        .kpi-label{font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+        .kpi-value{font-size:22px;font-weight:700;color:var(--accent-2);margin-top:4px;font-variant-numeric:tabular-nums;}
+        .kpi-value.small{font-size:18px;}
+
+        /* Park tabs */
+        .park-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+        .park-tab{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:999px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all 0.2s;letter-spacing:0.04em;}
+        .park-tab.active{background:var(--accent);color:#0D0C0B;border-color:var(--accent);font-weight:600;}
+        .park-tab:hover:not(.active){border-color:var(--accent);color:var(--text);}
+
+        /* Podium */
+        .podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:24px;}
+        .podium-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;position:relative;overflow:hidden;transition:transform 0.2s;}
+        .podium-card:hover{transform:translateY(-2px);}
+        .podium-card.gold{border-color:rgba(255,215,0,0.5);background:linear-gradient(135deg,rgba(212,175,55,0.12),var(--panel));}
+        .podium-card.silver{border-color:rgba(192,192,192,0.3);background:linear-gradient(135deg,rgba(192,192,192,0.08),var(--panel));}
+        .podium-card.bronze{border-color:rgba(205,127,50,0.3);background:linear-gradient(135deg,rgba(205,127,50,0.08),var(--panel));}
+        .podium-rank{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:700;line-height:1;}
+        .podium-card.gold .podium-rank{color:#FFD700;}
+        .podium-card.silver .podium-rank{color:#C0C0C0;}
+        .podium-card.bronze .podium-rank{color:#CD7F32;}
+        .podium-avatar{width:48px;height:48px;border-radius:50%;margin:8px auto;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid var(--border);}
+        .podium-card.gold .podium-avatar{border-color:#FFD700;}
+        .podium-card.silver .podium-avatar{border-color:#C0C0C0;}
+        .podium-card.bronze .podium-avatar{border-color:#CD7F32;}
+        .podium-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;}
+        .podium-name{font-size:13px;font-weight:600;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .podium-name a{color:var(--text);text-decoration:none;}
+        .podium-name a:hover{color:var(--accent-2);}
+        .podium-rev{font-size:18px;font-weight:700;color:var(--accent-2);margin-top:4px;font-variant-numeric:tabular-nums;}
+        .podium-meta{font-size:10px;color:var(--muted);margin-top:4px;}
+        .podium-plate{display:inline-block;background:rgba(212,175,55,0.12);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:10px;color:var(--text);margin-top:6px;letter-spacing:0.06em;}
+
+        /* Search */
+        .search-wrap{margin-bottom:16px;}
+        .search-wrap input{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 14px;font-size:12px;font-family:'Montserrat',sans-serif;outline:none;transition:border-color 0.2s;}
+        .search-wrap input:focus{border-color:var(--accent);}
+        .search-wrap input::placeholder{color:var(--muted);}
+
+        /* Table */
+        .table-wrap{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+        .table-scroll{overflow-x:auto;}
+        table{width:100%;border-collapse:collapse;font-size:12px;}
+        th{padding:12px 14px;text-align:left;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid var(--border);background:rgba(212,175,55,0.04);white-space:nowrap;cursor:pointer;user-select:none;}
+        th:hover{color:var(--accent);}
+        td{padding:10px 14px;border-bottom:1px solid rgba(212,175,55,0.06);white-space:nowrap;}
+        tr:hover td{background:rgba(212,175,55,0.04);}
+        .link{color:var(--accent-2);text-decoration:none;font-weight:500;}
+        .link:hover{text-decoration:underline;}
+        .revenue-bar{display:flex;align-items:center;gap:8px;}
+        .revenue-bar .bar{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent-2));min-width:2px;transition:width 0.4s;}
+        .revenue-val{font-variant-numeric:tabular-nums;font-weight:500;}
+        .status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;}
+        .status-dot.online,.status-dot.working,.status-dot.busy{background:var(--success);box-shadow:0 0 6px var(--success);}
+        .status-dot.offline,.status-dot.not_working{background:var(--muted);}
+        .rank-cell{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--muted);}
+        .rank-cell.top3{color:var(--accent-2);}
+        .park-badge{display:inline-block;background:rgba(212,175,55,0.1);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:10px;letter-spacing:0.04em;}
+        .balance-pos{color:var(--success);}
+        .balance-neg{color:var(--danger);}
+        .plate-tag{font-size:11px;color:var(--text);background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.15);border-radius:4px;padding:1px 6px;}
+        .empty-msg{text-align:center;padding:40px;color:var(--muted);font-size:13px;}
+
+        @media(max-width:768px){
+            .podium{grid-template-columns:1fr;}
+            .kpi-bar{grid-template-columns:1fr 1fr;}
+        }
+    </style>
+</head>
+<body>
+    <div class="page-bg"></div>
+    <div class="wrap">
+        <a class="back" href="/fleet">← Командная башня</a>
+        <div class="header">
+            <div class="header-left">
+                <div class="title">ДВОРЕЦ «ЛЕГИОН»</div>
+                <div class="sub">Топ-пилоты Империи за 30 дней по Грязному обороту</div>
+            </div>
+        </div>
+
+        <!-- KPI BAR -->
+        <div class="kpi-bar" id="kpiBar">
+            <div class="kpi-card"><div class="kpi-label">Грязный оборот</div><div class="kpi-value" id="kpiRevenue">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Всего поездок</div><div class="kpi-value small" id="kpiTrips">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Пилотов</div><div class="kpi-value small" id="kpiPilots">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Средний оборот</div><div class="kpi-value small" id="kpiAvg">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">На линии</div><div class="kpi-value small" id="kpiOnline">—</div></div>
+        </div>
+
+        <!-- Park Tabs -->
+        <div class="park-tabs" id="parkTabs">
+            <button class="park-tab active" data-park="ALL">ВСЕ <span id="countALL"></span></button>
+            <button class="park-tab" data-park="PRO">PRO <span id="countPRO"></span></button>
+            <button class="park-tab" data-park="GO">GO <span id="countGO"></span></button>
+            <button class="park-tab" data-park="PLUS">PLUS <span id="countPLUS"></span></button>
+            <button class="park-tab" data-park="EXPRESS">EXPRESS <span id="countEXPRESS"></span></button>
+        </div>
+
+        <!-- Podium -->
+        <div class="podium" id="podium"></div>
+
+        <!-- Search -->
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="Поиск по ФИО, телефону или номеру авто...">
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-sort="rank">#</th>
+                            <th data-sort="full_name">Пилот</th>
+                            <th data-sort="vehicle_plate">Борт</th>
+                            <th data-sort="park_name">Парк</th>
+                            <th data-sort="trips_count">Поездок</th>
+                            <th data-sort="revenue_month">Оборот 30д</th>
+                            <th data-sort="balance">Баланс</th>
+                            <th data-sort="last_order">Последний заказ</th>
+                            <th data-sort="status">Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="legionBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPark = 'ALL';
+        let allPilots = [];
+        let searchQ = '';
+        let sortField = 'rank';
+        let sortDir = 1; // 1 = asc, -1 = desc
+
+        const fmt = v => Number(v||0).toLocaleString('ru-RU');
+        const fmtK = v => {
+            if (v >= 1000000) return (v/1000000).toFixed(1) + ' млн';
+            if (v >= 1000) return (v/1000).toFixed(0) + ' тыс.';
+            return fmt(v);
+        };
+
+        function renderPodium(pilots) {
+            const pod = document.getElementById('podium');
+            if (pilots.length < 3) { pod.innerHTML = ''; return; }
+            const classes = ['gold', 'silver', 'bronze'];
+            const medals = ['I', 'II', 'III'];
+            pod.innerHTML = pilots.slice(0, 3).map((p, i) => {
+                const avatar = p.photo_url
+                    ? `<img src="${p.photo_url}" alt="">`
+                    : medals[i];
+                return `<div class="podium-card ${classes[i]}">
+                    <div class="podium-rank">${medals[i]}</div>
+                    <div class="podium-avatar">${avatar}</div>
+                    <div class="podium-name"><a href="/fleet/drivers/${p.id}">${p.full_name}</a></div>
+                    <div class="podium-rev">${fmt(p.revenue_month)} ₽</div>
+                    <div class="podium-meta">${fmt(p.trips_count)} поездок</div>
+                    ${p.vehicle_plate !== '—' ? `<span class="podium-plate">${p.vehicle_plate}</span>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function renderTable(pilots) {
+            const tbody = document.getElementById('legionBody');
+            if (!pilots.length) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">Нет данных за 30 дней</td></tr>';
+                return;
+            }
+            const maxRev = Math.max(...pilots.map(p => p.revenue_month), 1);
+            tbody.innerHTML = pilots.map(p => {
+                const barW = Math.max(2, (p.revenue_month / maxRev) * 120);
+                const last = p.last_order ? new Date(p.last_order).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+                const statusLabel = p.status === 'online' ? 'Онлайн' : p.status === 'busy' ? 'На заказе' : p.status === 'working' ? 'Работает' : 'Оффлайн';
+                const dotCls = ['online','busy','working'].includes(p.status) ? 'online' : 'offline';
+                const balCls = p.balance < 0 ? 'balance-neg' : p.balance > 0 ? 'balance-pos' : '';
+                const rankCls = p.rank <= 3 ? 'rank-cell top3' : 'rank-cell';
+                const plate = p.vehicle_plate !== '—' ? `<span class="plate-tag">${p.vehicle_plate}</span>` : '<span style="color:var(--muted)">—</span>';
+                return `<tr>
+                    <td class="${rankCls}">${p.rank}</td>
+                    <td><a class="link" href="/fleet/drivers/${p.id}">${p.full_name}</a></td>
+                    <td>${plate}</td>
+                    <td><span class="park-badge">${p.park_name}</span></td>
+                    <td style="font-variant-numeric:tabular-nums">${fmt(p.trips_count)}</td>
+                    <td><div class="revenue-bar"><span class="revenue-val">${fmt(p.revenue_month)} ₽</span><span class="bar" style="width:${barW}px"></span></div></td>
+                    <td class="${balCls}" style="font-variant-numeric:tabular-nums">${fmt(p.balance)} ₽</td>
+                    <td style="color:var(--muted);font-size:11px">${last}</td>
+                    <td><span class="status-dot ${dotCls}"></span>${statusLabel}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function applySearch(pilots) {
+            if (!searchQ) return pilots;
+            const q = searchQ.toLowerCase();
+            return pilots.filter(p =>
+                (p.full_name||'').toLowerCase().includes(q) ||
+                (p.phone||'').includes(q) ||
+                (p.vehicle_plate||'').toLowerCase().includes(q)
+            );
+        }
+
+        function applySort(pilots) {
+            return [...pilots].sort((a, b) => {
+                let va = a[sortField], vb = b[sortField];
+                if (typeof va === 'string') va = va.toLowerCase();
+                if (typeof vb === 'string') vb = vb.toLowerCase();
+                if (va < vb) return -1 * sortDir;
+                if (va > vb) return 1 * sortDir;
+                return 0;
+            });
+        }
+
+        function render() {
+            let filtered = applySearch(allPilots);
+            if (sortField !== 'rank') filtered = applySort(filtered);
+            renderTable(filtered);
+        }
+
+        async function load() {
+            const url = currentPark === 'ALL' ? '/api/v1/fleet/legion-data' : '/api/v1/fleet/legion-data?park=' + encodeURIComponent(currentPark);
+            const r = await fetch(url, { credentials: 'include' });
+            if (!r.ok) return;
+            const { pilots, counts, kpi } = await r.json();
+
+            // Update counts
+            ['ALL','PRO','GO','PLUS','EXPRESS'].forEach(p => {
+                const el = document.getElementById('count' + p);
+                if (el) el.textContent = counts[p] !== undefined ? `(${counts[p]})` : '';
+            });
+
+            // KPI
+            if (kpi) {
+                document.getElementById('kpiRevenue').textContent = fmtK(kpi.total_revenue) + ' ₽';
+                document.getElementById('kpiTrips').textContent = fmt(kpi.total_trips);
+                document.getElementById('kpiPilots').textContent = kpi.pilots_total;
+                document.getElementById('kpiAvg').textContent = fmtK(kpi.avg_revenue) + ' ₽';
+                document.getElementById('kpiOnline').textContent = kpi.pilots_online;
+            }
+
+            allPilots = pilots || [];
+            renderPodium(allPilots);
+            render();
+        }
+
+        // Park tab clicks
+        document.querySelectorAll('.park-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.park-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPark = btn.dataset.park || 'ALL';
+                load();
+            });
+        });
+
+        // Sort
+        document.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const f = th.dataset.sort;
+                if (sortField === f) sortDir *= -1;
+                else { sortField = f; sortDir = f === 'revenue_month' ? -1 : 1; }
+                render();
+            });
+        });
+
+        // Search
+        let searchTimer;
+        document.getElementById('searchInput').addEventListener('input', e => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => { searchQ = e.target.value.trim(); render(); }, 200);
+        });
+
+        load();
+    </script>
+
+    <nav style="position:fixed;bottom:0;left:0;right:0;height:48px;background:#0D0C0B;border-top:1px solid rgba(212,175,55,0.2);display:flex;align-items:center;justify-content:center;gap:16px;z-index:100;">
+        <a href="/fleet" style="color:var(--muted);text-decoration:none;font-size:11px;">БАШНЯ</a>
+        <a href="/fleet/legion" style="color:var(--accent);text-decoration:none;font-size:11px;font-weight:600;">ЛЕГИОН</a>
+        <a href="/fleet/drivers-list" style="color:var(--muted);text-decoration:none;font-size:11px;">ВОДИТЕЛИ</a>
+        <a href="/fleet/vehicles-list" style="color:var(--muted);text-decoration:none;font-size:11px;">АВТОМОБИЛИ</a>
+        <a href="/neural-core" style="color:var(--muted);text-decoration:none;font-size:11px;">AI CORE</a>
+    </nav>
+    <script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Водители | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👥 Водители</h1>
+    <p class="muted-text">Управление персоналом</p>
+</div>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl gold-text">Реестр водителей</h2>
+        <button class="btn-gold">+ Добавить водителя</button>
+    </div>
+    <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Список водителей пуст или данные ещё не загружены</p>
+    </div>
+</div>
+{% endblock %}

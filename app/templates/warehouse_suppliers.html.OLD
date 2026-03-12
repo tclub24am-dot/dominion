@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Поставщики | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🏭 Поставщики</h1>
+    <p class="muted-text">Управление поставщиками и подрядчиками</p>
+</div>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl gold-text">Список поставщиков</h2>
+        <button class="btn-gold">+ Добавить поставщика</button>
+    </div>
+    <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Список поставщиков пуст или данные ещё не загружены</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Command • T-CLUB24</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{
+            --bg:#0b0b12;--panel:#121528;--glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+            --text:#e8eaf6;--muted:#9aa5ce;--accent:#1d8cf8;--accent-2:#21f3c7;--warn:#ffb347;--danger:#ff5252;
+            --live:#26f2a0;--reserve:#d1a84a;--repair:#ff4b4b;--archive:#454a5e;
+            --imperial:#f7f4ee;--obsidian:#0D0C0B;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;position:relative;overflow-x:hidden;overflow-y:auto;}
+        body.cosmos-bg::before{
+            content:"";position:fixed;inset:0;z-index:0;background-image:var(--cosmos-bg);
+            background-size:cover;background-position:center;filter:blur(10px) brightness(0.7);opacity:0.6;
+        }
+        .wrap{position:relative;z-index:1;}
+        .wrap{padding:24px 28px;padding-left:100px;padding-bottom:120px;}  /* Отступ под имперскую консоль */
+        @media (max-width: 768px) {
+            .wrap{padding-left:24px;}  /* На мобильных кнопка Назад скрыта */
+        }
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.2em;font-size:16px;margin-bottom:14px;}
+        .summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;}
+        .summary-card{position:relative;}
+        .sync-card{display:flex;flex-direction:column;gap:8px;justify-content:space-between;}
+        .sync-btn{border:1px solid #d4af37;background:rgba(212,175,55,0.18);color:#f7f4ee;border-radius:12px;padding:10px 14px;font-size:12px;letter-spacing:0.08em;display:flex;align-items:center;gap:8px;justify-content:center;}
+        .sync-btn .sync-icon{display:inline-block;animation: syncPulse 1.4s ease-in-out infinite;}
+        .sync-btn.loading{box-shadow:0 0 14px rgba(229,228,226,0.6), inset 0 0 8px rgba(229,228,226,0.35);}
+        .sync-btn.loading .sync-icon{animation: syncSpin 1s linear infinite;}
+        @keyframes syncPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+        @keyframes syncSpin { to { transform: rotate(360deg); } }
+        .api-health{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
+        .api-dot{width:8px;height:8px;border-radius:50%;background:rgba(120,120,120,0.5);box-shadow:0 0 6px rgba(0,0,0,0.4);}
+        .api-dot.ok{background:#26f2a0;box-shadow:0 0 8px rgba(38,242,160,0.6);}
+        .api-dot.error{background:#ff5252;box-shadow:0 0 8px rgba(255,82,82,0.6);}
+        .toast{position:fixed;right:24px;top:24px;background:rgba(12,12,12,0.9);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:12px;font-size:12px;opacity:0;transform:translateY(-8px);transition:opacity 0.3s ease, transform 0.3s ease;z-index:20;}
+        .toast.show{opacity:1;transform:translateY(0);}
+        .card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px;}
+        .kpi{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--accent);margin-top:6px;}
+        .tabs{display:flex;gap:10px;margin:12px 0;}
+        .tab{border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:11px;cursor:pointer;}
+        .tab.active{border-color:var(--accent);color:var(--accent);}
+        .filters{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px;}
+        .filters-left{display:flex;gap:10px;align-items:center;flex:1;}
+        .filters-right{display:flex;gap:10px;align-items:center;}
+        .filters input{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:6px 10px;font-size:12px;}
+        .ownership-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+        .ownership-btn{background:#0a0a0f;border:1px solid #d4af37;color:#f7f4ee;border-radius:999px;padding:6px 12px;font-size:11px;letter-spacing:0.04em;}
+        .ownership-btn.active{background:#f7f4ee;color:#0a0a0f;box-shadow:0 0 10px rgba(212,175,55,0.45), inset 0 0 6px rgba(212,175,55,0.25);}
+        .park-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+        .park-btn{background:#0a0a0f;border:1px solid #d4af37;color:#f7f4ee;border-radius:999px;padding:6px 14px;font-size:12px;letter-spacing:0.06em;}
+        .park-btn.active{background:#f7f4ee;color:#0a0a0f;}
+        .park-btn.active[data-park="PRO"]{box-shadow:0 0 12px rgba(212,175,55,0.7), inset 0 0 8px rgba(212,175,55,0.35);}
+        .park-btn.active[data-park="GO"]{box-shadow:0 0 12px rgba(192,192,192,0.7), inset 0 0 8px rgba(192,192,192,0.35);}
+        .park-btn.active[data-park="PLUS"]{box-shadow:0 0 12px rgba(229,228,226,0.7), inset 0 0 8px rgba(229,228,226,0.35);}
+        .park-btn.active[data-park="EXPRESS"]{box-shadow:0 0 12px rgba(205,127,50,0.7), inset 0 0 8px rgba(205,127,50,0.35);}
+        .park-btn.active[data-park="ALL"]{box-shadow:0 0 12px rgba(160,64,255,0.7), inset 0 0 8px rgba(160,64,255,0.35);}
+        .nav-tiles{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+        .nav-tile{background:rgba(247,244,238,0.08);border:1px solid rgba(247,244,238,0.25);border-radius:14px;padding:14px 22px;font-size:14px;letter-spacing:0.08em;color:rgba(247,244,238,0.7);text-decoration:none;transition:background 0.2s,border-color 0.2s,color 0.2s;}
+        .nav-tile:hover{background:rgba(247,244,238,0.15);color:var(--imperial);border-color:rgba(212,175,55,0.5);}
+        .nav-tile.active{background:rgba(212,175,55,0.25);border-color:#d4af37;color:#FFD700;}
+        .imperial-console{position:fixed;bottom:0;left:0;right:0;height:48px;background:#0D0C0B;border-top:1px solid var(--imperial);display:flex;align-items:center;justify-content:center;gap:8px;z-index:1000;padding:0 12px;}
+        .imperial-console .console-btn{color:rgba(247,244,238,0.85);text-decoration:none;font-size:12px;letter-spacing:0.06em;padding:8px 14px;border-radius:8px;border:1px solid rgba(247,244,238,0.3);transition:background 0.2s,color 0.2s,border-color 0.2s;}
+        .imperial-console .console-btn:hover{background:rgba(247,244,238,0.1);color:var(--imperial);border-color:var(--imperial);}
+        .ops-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;margin-top:8px;max-width:1400px;margin-left:auto;margin-right:auto;position:relative;z-index:10;opacity:1;visibility:visible;scroll-margin-bottom:80px;}
+        .ops-card{background:var(--obsidian);border:1px solid rgba(247,244,238,0.2);border-radius:12px;padding:12px 14px;}
+        .ops-card-link{display:block;text-decoration:none;color:inherit;transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;}
+        .ops-card-link:hover{background:rgba(247,244,238,0.06);border-color:rgba(212,175,55,0.4);box-shadow:0 0 12px rgba(212,175,55,0.15);}
+        .ops-label{font-size:11px;color:var(--muted);letter-spacing:0.06em;margin-bottom:4px;}
+        .ops-value{font-size:18px;font-weight:700;color:var(--imperial);}
+        .ops-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+        /* Триада Власти — S-GLOBAL DOMINION */
+        .triad-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;max-width:1400px;margin-left:auto;margin-right:auto;}
+        .triad-card{background:var(--obsidian);border:1px solid var(--imperial);border-radius:14px;padding:14px;font-family:'Montserrat',sans-serif;}
+        .triad-title{font-size:12px;color:var(--imperial);letter-spacing:0.08em;margin-bottom:10px;}
+        .triad-kpi{font-size:22px;color:var(--imperial);font-weight:700;}
+        .triad-muted{font-size:11px;color:var(--muted);}
+        .matrix-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:16px;transform:scale(0.9);transform-origin:center top;margin:0 auto 16px;max-width:1400px;}
+        .matrix-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:12px;}
+        .matrix-title{font-size:12px;color:var(--muted);letter-spacing:0.08em;margin-bottom:8px;}
+        .rain-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:10px;margin-bottom:16px;overflow:hidden;}
+        .rain-title{font-size:11px;color:var(--muted);letter-spacing:0.08em;margin-bottom:6px;}
+        .rain-track{display:flex;gap:18px;white-space:nowrap;animation: rainScroll 28s linear infinite;}
+        .rain-item{font-size:12px;color:#e8eaf6;}
+        .rain-item .pos{color:#26f2a0;}
+        .rain-item .neg{color:#ff5252;}
+        @keyframes rainScroll { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+        #activityCanvas{width:100%;height:220px;display:block;}
+        #gpsCanvas{width:100%;height:220px;display:block;}
+        .legend{display:flex;gap:10px;font-size:11px;margin-top:6px;}
+        .legend span{display:flex;align-items:center;gap:6px;}
+        .dot{width:10px;height:10px;border-radius:2px;display:inline-block;}
+        .list-wrap{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:8px;}
+        #fleetListWrap{height:calc(100vh - 460px);overflow:auto;position:relative;}
+        #fleetCanvas{width:100%;display:block;}
+        .tooltip{position:fixed;pointer-events:none;background:#111622;border:1px solid var(--border);padding:6px 8px;border-radius:8px;font-size:11px;color:var(--text);opacity:0;transition:opacity 0.1s ease;}
+        .messenger-widget{position:fixed;right:18px;bottom:20px;width:340px;height:420px;background:rgba(12,12,12,0.85);
+            border:1px solid var(--border);display:none;flex-direction:column;z-index:12;box-shadow:0 12px 30px rgba(0,0,0,0.5);}
+        .messenger-header{padding:10px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
+        .messenger-body{flex:1;padding:10px;overflow:auto;font-size:12px;}
+        .messenger-input{padding:10px;border-top:1px solid var(--border);display:flex;gap:6px;}
+        .messenger-input input{flex:1;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px;}
+        .messenger-input button{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:8px;padding:6px 8px;}
+        .attach-input{display:none;}
+        .contract-modal{position:fixed;inset:0;background:rgba(6,8,12,0.85);display:none;align-items:center;justify-content:center;z-index:14;}
+        .contract-modal.active{display:flex;}
+        .contract-card{width:520px;max-width:92vw;background:#121528;border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+        .contract-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+        .contract-title{font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:0.12em;}
+        .contract-sub{font-size:11px;color:var(--muted);}
+        .contract-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+        .contract-field{display:flex;flex-direction:column;gap:4px;}
+        .contract-field label{font-size:11px;color:var(--muted);}
+        .contract-field input{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;}
+        .toggle-row{display:flex;gap:10px;margin-top:12px;}
+        .toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding:6px 10px;border:1px solid var(--border);border-radius:999px;}
+        .history{margin-top:12px;border-top:1px solid var(--border);padding-top:10px;font-size:11px;color:var(--muted);max-height:160px;overflow:auto;}
+        .history-item{margin-bottom:8px;}
+        .btn-ghost{border:1px solid var(--border);background:transparent;color:var(--text);border-radius:10px;padding:6px 10px;font-size:11px;}
+        .create-actions{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 16px;}
+        .create-btn{background:#f7f4ee;color:#0a0a0f;border:1px solid #d4af37;border-radius:12px;padding:10px 16px;font-size:12px;letter-spacing:0.08em;}
+        .create-modal{position:fixed;inset:0;background:rgba(6,8,12,0.75);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(10px);}
+        .create-modal.active{display:flex;}
+        .create-card{width:720px;max-width:95vw;background:rgba(18,21,40,0.85);border:1px solid rgba(212,175,55,0.35);border-radius:18px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,0.5);backdrop-filter:blur(12px);}
+        .create-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+        .create-title{font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:0.12em;}
+        .create-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+        .create-field{display:flex;flex-direction:column;gap:4px;}
+        .create-field label{font-size:11px;color:var(--muted);}
+        .create-field input,.create-field select{background:transparent;border:1px solid rgba(212,175,55,0.35);color:var(--text);border-radius:10px;padding:6px 8px;font-size:12px;}
+        .create-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}
+        .field-hint{font-size:10px;color:var(--muted);}
+        .field-error{font-size:10px;color:#ff5252;}
+        .sync-status{font-size:11px;color:#f7f4ee;letter-spacing:0.06em;}
+        /* ========== SMART CARDS ========== */
+        .smart-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+        .smart-card{display:flex;align-items:flex-start;gap:12px;background:var(--obsidian);border:1px solid rgba(212,175,55,0.25);border-radius:14px;padding:16px;text-decoration:none;color:inherit;position:relative;transition:border-color 0.3s,box-shadow 0.3s;}
+        .smart-card:hover{border-color:#d4af37;box-shadow:0 0 20px rgba(212,175,55,0.15);}
+        .smart-card:hover .sc-tooltip{opacity:1;visibility:visible;transform:translateY(0);}
+        .sc-icon{font-size:26px;flex-shrink:0;margin-top:2px;}
+        .sc-body{flex:1;min-width:0;}
+        .sc-label{font-size:10px;color:var(--muted);letter-spacing:0.1em;margin-bottom:4px;}
+        .sc-value{font-family:'Orbitron',sans-serif;font-size:22px;color:var(--imperial);font-weight:700;}
+        .sc-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+        .sc-tooltip{position:absolute;top:100%;left:0;right:0;background:rgba(13,12,11,0.95);border:1px solid rgba(212,175,55,0.3);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--text);z-index:30;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity 0.2s,transform 0.2s,visibility 0.2s;max-height:200px;overflow:auto;}
+        @media (max-width: 960px){.smart-cards{grid-template-columns:repeat(2,1fr);}}
+        @media (max-width: 520px){.smart-cards{grid-template-columns:1fr;}}
+        /* ========== GLOBAL SYNC ========== */
+        .global-sync-wrap{position:fixed;top:18px;right:18px;z-index:1001;}
+        .global-sync-btn{position:relative;display:flex;align-items:center;gap:8px;padding:10px 18px;border:2px solid #d4af37;background:rgba(13,12,11,0.9);color:#f7f4ee;border-radius:14px;font-size:12px;letter-spacing:0.08em;cursor:pointer;overflow:hidden;backdrop-filter:blur(8px);}
+        .global-sync-btn:hover{background:rgba(212,175,55,0.18);}
+        .global-sync-btn.loading{border-color:#ffb347;animation:gsBorderPulse 1.2s ease-in-out infinite;}
+        .global-sync-btn.error{border-color:#ff5252;}
+        .gs-pulse{position:absolute;left:12px;width:10px;height:10px;border-radius:50%;background:#26f2a0;box-shadow:0 0 8px rgba(38,242,160,0.6);animation:gsDotPulse 2s ease-in-out infinite;}
+        .global-sync-btn.error .gs-pulse{background:#ff5252;box-shadow:0 0 8px rgba(255,82,82,0.6);}
+        .global-sync-btn.warning .gs-pulse{background:#ffb347;box-shadow:0 0 8px rgba(255,179,71,0.6);}
+        .gs-icon{font-size:16px;margin-left:14px;}
+        .gs-text{font-family:'Orbitron',sans-serif;font-size:11px;}
+        @keyframes gsDotPulse{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.3);}}
+        @keyframes gsBorderPulse{0%,100%{box-shadow:0 0 6px rgba(212,175,55,0.3);}50%{box-shadow:0 0 20px rgba(212,175,55,0.6);}}
+        .gs-fan{position:absolute;top:100%;right:0;margin-top:6px;background:rgba(13,12,11,0.95);border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:12px 14px;min-width:240px;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity 0.25s,transform 0.25s,visibility 0.25s;}
+        .global-sync-wrap:hover .gs-fan{opacity:1;visibility:visible;transform:translateY(0);}
+        .gs-fan-title{font-size:10px;color:var(--muted);letter-spacing:0.1em;margin-bottom:8px;}
+        .gs-fan-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text);padding:4px 0;}
+        .gs-fan-dot{width:8px;height:8px;border-radius:50%;background:rgba(120,120,120,0.5);flex-shrink:0;}
+        .gs-fan-dot.ok{background:#26f2a0;box-shadow:0 0 6px rgba(38,242,160,0.5);}
+        .gs-fan-dot.warn{background:#ffb347;box-shadow:0 0 6px rgba(255,179,71,0.5);}
+        .gs-fan-dot.err{background:#ff5252;box-shadow:0 0 6px rgba(255,82,82,0.5);}
+        /* ========== ORACLE MODAL ========== */
+        .oracle-modal{position:fixed;inset:0;background:rgba(6,8,12,0.88);display:none;align-items:flex-start;justify-content:center;z-index:2000;backdrop-filter:blur(12px);}
+        .oracle-modal.active{display:flex;}
+        .oracle-modal-inner{width:700px;max-width:95vw;margin-top:10vh;background:rgba(18,21,40,0.92);border:1px solid rgba(212,175,55,0.35);border-radius:18px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+        .oracle-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+        .oracle-search-input{width:100%;background:transparent;border:1px solid rgba(212,175,55,0.4);color:var(--text);border-radius:12px;padding:14px 16px;font-size:15px;letter-spacing:0.04em;outline:none;}
+        .oracle-search-input:focus{border-color:#d4af37;box-shadow:0 0 12px rgba(212,175,55,0.2);}
+        .oracle-dropdown{margin-top:8px;max-height:50vh;overflow:auto;}
+        .oracle-dropdown:empty{display:none;}
+        .oracle-result{display:block;padding:12px 14px;color:var(--text);text-decoration:none;font-size:12px;border-bottom:1px solid var(--border);transition:background 0.15s;}
+        .oracle-result:hover{background:rgba(212,175,55,0.1);}
+        /* ========== S-GLOBAL FAB ========== */
+        .sglobal-fab{position:fixed;right:24px;bottom:70px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#D4AF37,#B8860B);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1100;box-shadow:0 4px 20px rgba(212,175,55,0.4);transition:transform 0.2s,box-shadow 0.2s;}
+        .sglobal-fab:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(212,175,55,0.6);}
+        .fab-logo{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:#0D0C0B;}
+        .fab-badge{position:absolute;top:-4px;right:-4px;background:#ff5252;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;}
+        .messenger-widget{position:fixed;right:18px;bottom:130px;width:360px;height:440px;background:rgba(13,12,11,0.92);border:1px solid rgba(212,175,55,0.3);border-radius:16px;display:none;flex-direction:column;z-index:1099;box-shadow:0 12px 40px rgba(0,0,0,0.5);backdrop-filter:blur(12px);}
+    </style>
+</head>
+<body data-role="{{ current_user.role.value if current_user and current_user.role and current_user.role.value else (current_user.role if current_user else '') }}">
+    <div class="wrap">
+        <div class="title">FLEET COMMAND • T-CLUB24</div>
+        <div class="fleet-counter" id="fleetCounter" style="font-size:12px;color:#d4af37;margin:-8px 0 12px;letter-spacing:0.1em;">
+            ФЛОТ: <span id="activeDominion">—</span> (АКТИВ) / <span id="totalFleet">—</span> (ВСЕГО) · СУБАРЕНДА: <span id="subleaseCount">—</span>
+        </div>
+        <!-- СМАРТ-КАРТОЧКИ: Верхний эшелон (фокус на субаренду) -->
+        <div class="smart-cards" id="smartCards">
+            <a href="/warehouse" class="smart-card" id="scAutoservice" title="Автосервис — ТО и ремонт субарендных бортов">
+                <div class="sc-icon">🔧</div>
+                <div class="sc-body">
+                    <div class="sc-label">АВТОСЕРВИС</div>
+                    <div class="sc-value" id="scRepairCount">0</div>
+                    <div class="sc-sub">в ремонте (субаренда)</div>
+                </div>
+                <div class="sc-tooltip" id="scRepairTooltip"></div>
+            </a>
+            <a href="/warehouse" class="smart-card" id="scWarehouse" title="Склад — запчасти и расходники">
+                <div class="sc-icon">📦</div>
+                <div class="sc-body">
+                    <div class="sc-label">СКЛАД / ЗАПЧАСТИ</div>
+                    <div class="sc-value" id="scOilStock">-- л</div>
+                    <div class="sc-sub">остаток масла</div>
+                </div>
+                <div class="sc-tooltip" id="scWarehouseTooltip"></div>
+            </a>
+            <div class="smart-card" id="scGps" title="GPS Мониторинг — статус субарендных бортов" style="cursor:pointer;">
+                <div class="sc-icon">📍</div>
+                <div class="sc-body">
+                    <div class="sc-label">GPS МОНИТОРИНГ</div>
+                    <div class="sc-value" id="scGpsOnline">0</div>
+                    <div class="sc-sub" id="scGpsSub">онлайн субаренда</div>
+                </div>
+                <div class="sc-tooltip" id="scGpsTooltip"></div>
+            </div>
+            <div class="smart-card" id="scIdle" title="Простой — борты без работы">
+                <div class="sc-icon">⏸</div>
+                <div class="sc-body">
+                    <div class="sc-label">ПРОСТОЙ / ВЫХОДНЫЕ</div>
+                    <div class="sc-value"><span id="scIdleCount">0</span> / <span id="scDayoffCount">0</span></div>
+                    <div class="sc-sub">простой / выходной</div>
+                </div>
+                <div class="sc-tooltip" id="scIdleTooltip"></div>
+            </div>
+        </div>
+        <!-- PARK TABS -->
+        <div class="park-tabs" id="parkTabs">
+            <button class="park-btn active" data-park="ALL">ALL</button>
+            <button class="park-btn" data-park="PRO">PRO</button>
+            <button class="park-btn" data-park="GO">GO</button>
+            <button class="park-btn" data-park="PLUS">PLUS</button>
+            <button class="park-btn" data-park="EXPRESS">EXPRESS</button>
+        </div>
+        <!-- РЕЕСТРЫ -->
+        <label style="font-size:10px;color:var(--muted);letter-spacing:0.08em;margin-bottom:4px;">РЕЕСТРЫ</label>
+        <div class="nav-tiles" id="navTiles">
+            <a href="/fleet/vehicles-list" class="nav-tile" target="_self">🚗 АВТОМОБИЛИ</a>
+            <a href="/fleet/drivers-list" class="nav-tile" target="_self">👤 ВОДИТЕЛИ</a>
+            <a href="/fleet/calendar" class="nav-tile" target="_self">📅 КАЛЕНДАРЬ</a>
+            <a href="/fleet/periodic-charges" class="nav-tile" target="_self">💰 СПИСАНИЯ</a>
+            <a href="/fleet/legion" class="nav-tile" target="_self">⚔️ ЛЕГИОН</a>
+        </div>
+        <!-- Триада Власти: Финансы, Исполнители, Автомобили (S-GLOBAL DOMINION) -->
+        <div class="triad-wrap" id="triadWrap">
+            <div class="triad-card">
+                <div class="triad-title">ФИНАНСЫ</div>
+                <div class="triad-muted">Сумма по поездкам</div>
+                <div class="triad-kpi" id="triadSumTrips">—</div>
+                <div class="triad-muted" style="margin-top:2px;font-size:11px;opacity:0.5" id="triadSumGrossWrap">Грязный оборот: <span id="triadSumGross">—</span></div>
+                <div class="triad-muted" style="margin-top:6px;">Доход таксопарка</div>
+                <div class="triad-kpi" id="triadRevenuePark">—</div>
+                <div style="margin-top:8px;padding:8px 10px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.35);border-radius:10px;">
+                    <div class="triad-muted" style="color:#d4af37;font-weight:600;">Доход от аренды (<span id="triadSubleaseFleetSize">41</span> борт)</div>
+                    <div class="triad-kpi" id="triadRentalIncome" style="color:#d4af37;">—</div>
+                </div>
+                <div style="margin-top:6px;padding:6px 10px;background:rgba(160,160,160,0.08);border:1px solid rgba(160,160,160,0.2);border-radius:10px;">
+                    <div class="triad-muted" style="font-size:10px;">Доход подключенных (<span id="triadConnectedRate">--</span>%)</div>
+                    <div class="triad-kpi" style="font-size:16px;" id="triadConnectedIncome">—</div>
+                </div>
+                <div class="triad-muted" style="margin-top:6px;">Баланс водителей +</div>
+                <div class="triad-kpi" id="triadPayoutRemain" title="Сумма положительных балансов водителей">—</div>
+                <div id="triadFinanceChart" style="width:100%;height:160px;margin-top:10px;"></div>
+            </div>
+            <div class="triad-card">
+                <div class="triad-title">ИСПОЛНИТЕЛИ</div>
+                <div class="triad-kpi" id="triadOnLine">—</div>
+                <div class="triad-muted">на линии</div>
+                <div style="display:flex;gap:8px;margin-top:8px;font-size:11px;">
+                    <span style="color:var(--live);"><i class="dot" style="background:var(--live)"></i>Свободны <span id="triadFree">0</span></span>
+                    <span style="color:#ffb347;"><i class="dot" style="background:#ffb347"></i>В заказе <span id="triadInOrder">0</span></span>
+                    <span style="color:var(--danger);"><i class="dot" style="background:var(--danger)"></i>Заняты <span id="triadBusy">0</span></span>
+                </div>
+                <div id="triadPerformersChart" style="width:100%;height:120px;margin-top:8px;"></div>
+                <div class="triad-muted" style="margin-top:8px;">Ср. время на линии</div>
+                <div class="triad-kpi" style="font-size:14px;" id="triadAvgTime">—</div>
+                <div class="triad-muted">Новые (24ч) <span id="triadNew24">0</span> · В архиве <span id="triadChurn">0</span></div>
+            </div>
+            <div class="triad-card">
+                <div class="triad-title">АВТОМОБИЛИ</div>
+                <div class="triad-kpi" id="triadTotalActive">—</div>
+                <div class="triad-muted">активных в нашем парке</div>
+                <div style="display:flex;gap:12px;margin-top:4px;font-size:12px;">
+                    <span style="color:#d4af37;" title="Владелец: Таксопарк (субаренда)"><i class="dot" style="background:#d4af37"></i>Парк <span id="triadParkCars">0</span></span>
+                    <span style="color:#a0a0a0;" title="Владелец: Частный (подключение)"><i class="dot" style="background:#a0a0a0"></i>Подключ. <span id="triadPrivateCars">0</span></span>
+                </div>
+                <div id="triadAssetsChart" style="width:100%;height:170px;margin-top:6px;"></div>
+                <div style="display:flex;gap:8px;margin-top:6px;font-size:11px;flex-wrap:wrap;">
+                    <span style="color:var(--live);"><i class="dot" style="background:var(--live)"></i>Работает <span id="triadWorking">0</span></span>
+                    <span style="color:var(--reserve);"><i class="dot" style="background:var(--reserve)"></i>Без водителя <span id="triadNoDriver">0</span></span>
+                    <span style="color:var(--repair);"><i class="dot" style="background:var(--repair)"></i>В сервисе <span id="triadInService">0</span></span>
+                </div>
+            </div>
+        </div>
+        <div class="rain-card">
+            <div class="rain-title">DIGITAL RAIN • 5 ПОСЛЕДНИХ СОБЫТИЙ</div>
+            <div id="digitalRainTrack" class="rain-track"></div>
+        </div>
+    </div>
+
+    <!-- GLOBAL SYNC: Единая пульсирующая кнопка -->
+    <div class="global-sync-wrap" id="globalSyncWrap">
+        <button class="global-sync-btn" id="globalSyncBtn" title="GLOBAL SYNC — синхронизация всех API">
+            <span class="gs-pulse"></span>
+            <span class="gs-icon">⚡</span>
+            <span class="gs-text">GLOBAL SYNC</span>
+        </button>
+        <div class="gs-fan" id="gsSyncFan">
+            <div class="gs-fan-title">СТАТУС ПОДКЛЮЧЕНИЙ</div>
+            <div class="gs-fan-item"><span class="gs-fan-dot" data-api="yandex"></span> Яндекс Fleet API</div>
+            <div class="gs-fan-item"><span class="gs-fan-dot" data-api="gps"></span> GPS Мониторинг</div>
+            <div class="gs-fan-item"><span class="gs-fan-dot" data-api="warehouse"></span> Склад / Запчасти</div>
+            <div class="gs-fan-item"><span class="gs-fan-dot" data-api="alarm"></span> Сигнализация</div>
+        </div>
+    </div>
+
+    <!-- ORACLE SEARCH: Полноэкранный модал -->
+    <div class="oracle-modal" id="oracleModal">
+        <div class="oracle-modal-inner">
+            <div class="oracle-modal-header">
+                <span style="font-family:'Orbitron';font-size:14px;letter-spacing:0.12em;">ГЛАЗ ОРАКУЛА</span>
+                <button class="btn-ghost" id="closeOracleModal">✕</button>
+            </div>
+            <input type="text" id="searchInput" class="oracle-search-input" placeholder="Поиск: госномер, VIN, ФИО, запчасть, план..." autofocus>
+            <div id="oracleDropdown" class="oracle-dropdown"></div>
+        </div>
+    </div>
+
+    <!-- Имперская консоль: нижний кокпит -->
+    <nav class="imperial-console" id="imperialConsole">
+        <button class="console-btn" id="consoleSearchBtn" title="Глаз Оракула — живой поиск">🔎 ПОИСК</button>
+        <a href="mailto:" class="console-btn" title="Email">📧 EMAIL</a>
+        <a href="/fleet/notes" class="console-btn" title="Записная книжка">📒 ЗАПИСНАЯ КНИЖКА</a>
+        <a href="/ai-reports" class="console-btn" title="AI Отчеты">🤖 AI ОТЧЕТЫ</a>
+        <a href="/mindmap" class="console-btn" title="MindMap Planner">🧠 MINDMAP</a>
+        <a href="/explorer" class="console-btn" title="Проводник">📂 ПРОВОДНИК</a>
+        <a href="/fleet/contract-matrix" class="console-btn">📊 МАТРИЦА</a>
+        <a href="/settings" class="console-btn">⚙️</a>
+    </nav>
+
+    <div class="tooltip" id="riskTooltip"></div>
+
+    <!-- S-GLOBAL FAB: Плавающий брендовый мессенджер -->
+    <div class="sglobal-fab" id="sglobalFab" title="S-GLOBAL Messenger">
+        <span class="fab-logo">S</span>
+        <span class="fab-badge" id="fabBadge" style="display:none;">0</span>
+    </div>
+    <div class="messenger-widget" id="messengerWidget">
+        <div class="messenger-header">
+            <strong id="messengerTitle">S-GLOBAL Messenger</strong>
+            <div>
+                <button class="msg-btn" id="aiButton" title="AI помощник">AI</button>
+                <button class="msg-btn" id="closeMessenger">✕</button>
+            </div>
+        </div>
+        <div class="messenger-body" id="messengerBody">
+            <div>Контекстный канал активен. AI-интеграция готова.</div>
+        </div>
+        <div class="messenger-input">
+            <input id="messengerInput" placeholder="Сообщение...">
+            <button id="micButton">🎙️</button>
+            <button id="attachButton">📎</button>
+            <button id="sendMessage">→</button>
+            <input type="file" id="attachInput" class="attach-input" multiple>
+            <input type="file" id="photoInput" class="attach-input" accept="image/*">
+        </div>
+    </div>
+
+    <div class="create-modal" id="driverCreateModal">
+        <div class="create-card">
+            <div class="create-header">
+                <div class="create-title">НОВЫЙ ПИЛОТ</div>
+                <button class="btn-ghost" id="closeDriverCreate">✕</button>
+            </div>
+            <div class="create-grid">
+                <div class="create-field">
+                    <label>Парк</label>
+                    <select id="driverPark">
+                        <option value="PRO">PRO</option>
+                        <option value="GO">GO</option>
+                        <option value="PLUS">PLUS</option>
+                        <option value="EXPRESS">EXPRESS</option>
+                    </select>
+                </div>
+                <div class="create-field">
+                    <label>Тип занятости</label>
+                    <select id="driverEmployment">
+                        <option value="selfemployed">selfemployed</option>
+                        <option value="park_employee">park_employee</option>
+                        <option value="individual_entrepreneur">individual_entrepreneur</option>
+                    </select>
+                </div>
+                <div class="create-field">
+                    <label>Фамилия</label>
+                    <input id="driverLastName">
+                </div>
+                <div class="create-field">
+                    <label>Имя</label>
+                    <input id="driverFirstName">
+                </div>
+                <div class="create-field">
+                    <label>Отчество</label>
+                    <input id="driverMiddleName">
+                </div>
+                <div class="create-field">
+                    <label>Телефон</label>
+                    <input id="driverPhone">
+                    <div class="field-hint" id="driverPhoneHint"></div>
+                </div>
+                <div class="create-field">
+                    <label>Дата рождения (YYYY-MM-DD)</label>
+                    <input id="driverBirthDate">
+                </div>
+                <div class="create-field">
+                    <label>Стаж с (YYYY-MM-DD)</label>
+                    <input id="driverExperienceSince">
+                </div>
+                <div class="create-field">
+                    <label>Номер ВУ</label>
+                    <input id="driverLicenseNumber">
+                </div>
+                <div class="create-field">
+                    <label>ВУ выдан (YYYY-MM-DD)</label>
+                    <input id="driverLicenseIssue">
+                </div>
+                <div class="create-field">
+                    <label>ВУ до (YYYY-MM-DD)</label>
+                    <input id="driverLicenseExpiry">
+                </div>
+                <div class="create-field">
+                    <label>ИНН</label>
+                    <input id="driverTaxId">
+                </div>
+                <div class="create-field">
+                    <label>Адрес</label>
+                    <input id="driverAddress">
+                </div>
+                <div class="create-field">
+                    <label>Email</label>
+                    <input id="driverEmail">
+                </div>
+                <div class="create-field">
+                    <label>Car ID (опционально)</label>
+                    <input id="driverCarId">
+                </div>
+            </div>
+            <div class="create-footer">
+                <span class="sync-status" id="driverSyncStatus"></span>
+                <span class="field-error" id="driverCreateError"></span>
+                <button class="btn-ghost" id="submitDriverCreate">СОЗДАТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="create-modal" id="vehicleCreateModal">
+        <div class="create-card">
+            <div class="create-header">
+                <div class="create-title">НОВЫЙ БОРТ</div>
+                <button class="btn-ghost" id="closeVehicleCreate">✕</button>
+            </div>
+            <div class="create-grid">
+                <div class="create-field">
+                    <label>Парк</label>
+                    <select id="vehiclePark">
+                        <option value="PRO">PRO</option>
+                        <option value="GO">GO</option>
+                        <option value="PLUS">PLUS</option>
+                        <option value="EXPRESS">EXPRESS</option>
+                    </select>
+                </div>
+                <div class="create-field">
+                    <label>Тип владения</label>
+                    <select id="vehicleOwnership">
+                        <option value="sublease">sublease</option>
+                        <option value="connected">connected</option>
+                        <option value="owned_5t">owned_5t</option>
+                        <option value="partner">partner</option>
+                    </select>
+                </div>
+                <div class="create-field">
+                    <label>Госномер</label>
+                    <input id="vehiclePlate">
+                    <div class="field-hint" id="vehiclePlateHint"></div>
+                </div>
+                <div class="create-field">
+                    <label>VIN</label>
+                    <input id="vehicleVin">
+                    <div class="field-hint" id="vehicleVinHint"></div>
+                </div>
+                <div class="create-field">
+                    <label>Марка</label>
+                    <input id="vehicleBrand">
+                </div>
+                <div class="create-field">
+                    <label>Модель</label>
+                    <input id="vehicleModel">
+                </div>
+                <div class="create-field">
+                    <label>Год</label>
+                    <input id="vehicleYear" type="number">
+                </div>
+                <div class="create-field">
+                    <label>Цвет</label>
+                    <input id="vehicleColor">
+                </div>
+                <div class="create-field">
+                    <label>СТС номер</label>
+                    <input id="vehicleSts">
+                </div>
+                <div class="create-field">
+                    <label>Позывной</label>
+                    <input id="vehicleCallsign">
+                </div>
+            </div>
+            <div class="create-footer">
+                <span class="sync-status" id="vehicleSyncStatus"></span>
+                <span class="field-error" id="vehicleCreateError"></span>
+                <button class="btn-ghost" id="submitVehicleCreate">СОЗДАТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="contract-modal" id="contractModal">
+        <div class="contract-card">
+            <div class="contract-header">
+                <div>
+                    <div class="contract-title">ОБЪЕКТ УПРАВЛЕНИЯ</div>
+                    <div class="contract-sub" id="contractMeta">—</div>
+                </div>
+                <button class="btn-ghost" id="closeContract">✕</button>
+            </div>
+            <div class="toggle-row">
+                <label class="toggle"><input type="checkbox" id="toggleRepair"> В РЕМОНТЕ</label>
+                <label class="toggle"><input type="checkbox" id="toggleDayOff"> ВЫХОДНОЙ</label>
+                <label class="toggle"><input type="checkbox" id="toggleIdle"> ПРОСТОЙ</label>
+            </div>
+            <div class="contract-grid">
+                <div class="contract-field">
+                    <label>% комиссии</label>
+                    <input id="commissionInput" type="number" step="0.001" min="0" max="1">
+                </div>
+                <div class="contract-field">
+                    <label>Аренда партнеру</label>
+                    <input id="partnerRentInput" type="number" step="1" min="0">
+                </div>
+                <div class="contract-field">
+                    <label>Субаренда водителю</label>
+                    <input id="driverRentInput" type="number" step="1" min="0">
+                </div>
+                <div class="contract-field">
+                    <label>Льготная ставка (выходной)</label>
+                    <input id="dayOffRateInput" type="number" step="1" min="0">
+                </div>
+            </div>
+            <div class="history" id="contractHistory">История пуста.</div>
+            <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <button class="btn-accent" id="goToVehicleCard" style="flex: 1; padding: 10px; border-radius: 6px; background: linear-gradient(135deg, #D4AF37, #B8860B); color: #0D0C0B; font-weight: 600; border: none; cursor: pointer;">
+                    🚗 Перейти в карточку
+                </button>
+                <button class="btn-ghost" id="goToDriverCard" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #D4AF37; color: #D4AF37; background: transparent; cursor: pointer;">
+                    👤 Карточка водителя
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="toast" id="syncToast">Синхронизация завершена. Казна обновлена.</div>
+    <div class="toast" id="errorToast" style="border-color: #ff5252; color: #ff5252;">ОШИБКА СИНХРОНИЗАЦИИ: Яндекс не ответил вовремя или данные повреждены. Повторите попытку через 1 минуту.</div>
+
+    <script src="/static/vendor/apexcharts.min.js"></script>
+    <script>
+        const cosmosBg = sessionStorage.getItem('cosmos_bg');
+        if (cosmosBg) {
+            document.body.classList.add('cosmos-bg');
+            document.body.style.setProperty('--cosmos-bg', `url(${cosmosBg})`);
+        }
+        let fleetData = null;
+        const dpr = window.devicePixelRatio || 1;
+        const state = { tab: 'live', park: 'ALL', ownership: 'ALL', query: '', lastWasArchive: false };  // Default: Живой парк
+        const layout = { cardW: 280, cardH: 140, gap: 12 };
+        let hitMap = [];
+        let gpsFocus = null;
+        let pendingPhotoDriverId = null;
+        let currentContractVehicleId = null;
+        let contractPatchTimer = null;
+
+        const activityCanvas = document.getElementById('activityCanvas');
+        const fleetCanvas = document.getElementById('fleetCanvas');  // v200.4: список карточек удалён, элемент может отсутствовать
+        const gpsCanvas = document.getElementById('gpsCanvas');
+        const listWrap = document.getElementById('fleetListWrap');
+        const tooltip = document.getElementById('riskTooltip');
+        let globalSyncBtn = null;
+        const syncToast = document.getElementById('syncToast');
+        let fleetApiDots = [];
+
+        function formatNum(value){
+            const num = Number(value || 0);
+            return num.toLocaleString('ru-RU');
+        }
+
+        /* Smart Cards заменили buildSummary — данные обновляются через updateSmartCards() */
+        function updateSmartCards(data){
+            const ops = data._ops || {};
+            const sublease = data._sublease || {};
+            // АВТОСЕРВИС: число субарендных в ремонте
+            const repairEl = document.getElementById('scRepairCount');
+            if (repairEl) repairEl.textContent = sublease.repair_count || ops.repair_count || 0;
+            const repairTip = document.getElementById('scRepairTooltip');
+            if (repairTip) {
+                const items = (sublease.repair_list || []).slice(0, 8);
+                repairTip.innerHTML = items.length
+                    ? items.map(v => `<div>${v.plate || '—'} · ${v.brand || ''} ${v.model || ''}</div>`).join('')
+                    : '<div style="color:var(--muted);">Нет машин в ремонте</div>';
+            }
+            // СКЛАД: остаток масла
+            const oilEl = document.getElementById('scOilStock');
+            if (oilEl) oilEl.textContent = (ops.oil_stock != null ? ops.oil_stock : '--') + ' л';
+            const whTip = document.getElementById('scWarehouseTooltip');
+            if (whTip) {
+                const top5 = (ops.top_consumables || []).slice(0, 5);
+                whTip.innerHTML = top5.length
+                    ? '<div style="font-weight:600;margin-bottom:4px;">ТОП-5 расходников:</div>' + top5.map(c => `<div>${c.name}: ${c.qty} шт</div>`).join('')
+                    : '<div style="color:var(--muted);">Данные склада загружаются...</div>';
+            }
+            // GPS: онлайн субаренда
+            const gpsEl = document.getElementById('scGpsOnline');
+            if (gpsEl) gpsEl.textContent = sublease.engines_on || 0;
+            const gpsSub = document.getElementById('scGpsSub');
+            if (gpsSub) gpsSub.textContent = `Двиг.выкл: ${sublease.engines_off || 0} · Низк.АКБ: ${sublease.low_battery || 0}`;
+            const gpsTip = document.getElementById('scGpsTooltip');
+            if (gpsTip) {
+                gpsTip.innerHTML = `<div>Геозоны: ${sublease.geofence_alerts || 0} нарушений</div><div>Сеть: ${sublease.network_status || 'OK'}</div>`;
+            }
+            // ПРОСТОЙ
+            const idleEl = document.getElementById('scIdleCount');
+            const dayoffEl = document.getElementById('scDayoffCount');
+            if (idleEl) idleEl.textContent = sublease.idle_count || 0;
+            if (dayoffEl) dayoffEl.textContent = sublease.dayoff_count || 0;
+            const idleTip = document.getElementById('scIdleTooltip');
+            if (idleTip) {
+                const items = (sublease.idle_list || []).slice(0, 8);
+                idleTip.innerHTML = items.length
+                    ? items.map(v => `<div>${v.plate || '—'} · ${v.brand || ''} ${v.model || ''}</div>`).join('')
+                    : '<div style="color:var(--muted);">Нет бортов в простое</div>';
+            }
+            // Sublease counter
+            const slCountEl = document.getElementById('subleaseCount');
+            if (slCountEl) slCountEl.textContent = sublease.total || 41;
+        }
+
+        function normalizeText(value){
+            return (value || '')
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function nameMatchesQuery(name, query){
+            if (!query) return true;
+            const normalized = normalizeText(name);
+            if (!normalized) return false;
+            if (normalized.includes(query)) return true;
+            const tokens = query.split(' ').filter(Boolean);
+            if (!tokens.length) return true;
+            return tokens.every(t => normalized.includes(t));
+        }
+
+        function applyFilters(list, ignoreTab = false){
+            return list.filter(v => {
+                // Для Матрицы игнорируем таб-фильтр (показываем все статусы)
+                if (!ignoreTab && state.tab !== v.status) return false;
+                if (state.park !== 'ALL' && v.park !== state.park) return false;
+                if (state.ownership !== 'ALL' && v.ownership_type !== state.ownership) return false;
+                const q = normalizeText(state.query);
+                if (!q) return true;
+                const plate = normalizeText(v.plate);
+                const driver = normalizeText(v.driver_name);
+                const phone = normalizeText(v.driver_phone);
+                return plate.includes(q) || nameMatchesQuery(driver, q) || phone.includes(q);
+            });
+        }
+        
+        // Для Матрицы: ТОЛЬКО реальные машины (id > 0, не driver_only)
+        function allVehiclesFiltered(){
+            const vehicles = fleetData?.vehicles || [];
+            // PROTOCOL "THE LIVE 300": Фильтруем только реальные машины (id > 0)
+            const realVehicles = vehicles.filter(v => v.id > 0);
+            return applyFilters(realVehicles, true);
+        }
+
+        function groupDrivers(list){
+            const grouped = new Map();
+            const singles = [];
+            list.forEach(item => {
+                const nameKey = normalizeText(item.driver_name);
+                const phoneKey = normalizeText(item.driver_phone);
+                if (!nameKey || !phoneKey) {
+                    singles.push(item);
+                    return;
+                }
+                const key = `${nameKey}|${phoneKey}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, { key, name: item.driver_name, phone: item.driver_phone, items: [] });
+                }
+                grouped.get(key).items.push(item);
+            });
+            const result = [...singles];
+            grouped.forEach(group => {
+                if (group.items.length === 1) {
+                    result.push(group.items[0]);
+                    return;
+                }
+                const parks = Array.from(new Set(group.items.map(i => i.park).filter(Boolean)));
+                const plates = group.items.map(i => i.plate).filter(Boolean);
+                const platesPreview = plates.slice(0, 3).join(', ') + (plates.length > 3 ? ` +${plates.length - 3}` : '');
+                const status = group.items.some(i => i.status === 'live')
+                    ? 'live'
+                    : group.items.some(i => i.status === 'repair')
+                        ? 'repair'
+                        : group.items.some(i => i.status === 'archive')
+                            ? 'archive'
+                            : 'reserve';
+                const revenue = group.items.reduce((sum, i) => sum + (Number(i.revenue_48h || 0)), 0);
+                const online = group.items.reduce((sum, i) => sum + (Number(i.online_hours || 0)), 0);
+                const kpi = group.items.length
+                    ? group.items.reduce((sum, i) => sum + (Number(i.kpi || 0)), 0) / group.items.length
+                    : 0;
+                result.push({
+                    id: `group_${group.key}`,
+                    plate: `Супер-карточка ×${group.items.length}`,
+                    parks,
+                    plates_preview: platesPreview || '—',
+                    status,
+                    ownership_type: 'multi_park',
+                    driver_name: group.name,
+                    driver_phone: group.phone,
+                    user_id: group.items[0]?.user_id || null,
+                    driver_balance: group.items.reduce((sum, i) => sum + (Number(i.driver_balance || 0)), 0),
+                    stars: Math.max(...group.items.map(i => i.stars || 0)),
+                    golden_star: group.items.some(i => i.golden_star),
+                    priority_payout: group.items.some(i => i.priority_payout),
+                    has_fines: group.items.some(i => i.has_fines),
+                    is_live: group.items.some(i => i.is_live),
+                    is_archive: group.items.some(i => i.is_archive),
+                    is_repair: group.items.some(i => i.is_repair),
+                    is_free: group.items.every(i => i.is_free),
+                    online_hours: Math.round(online * 100) / 100,
+                    revenue_48h: Math.round(revenue * 100) / 100,
+                    kpi: Math.round(kpi * 100) / 100,
+                    risk: group.items.some(i => i.risk),
+                    risk_reason: null,
+                    photo_url: group.items.find(i => i.photo_url)?.photo_url || null,
+                    avatar_text: group.items.find(i => i.avatar_text)?.avatar_text || '★',
+                    avatar_hue: group.items.find(i => i.avatar_hue)?.avatar_hue || 220,
+                    contract_terms: null,
+                    grouped: true,
+                });
+            });
+            return result;
+        }
+
+        function colorByStatus(status){
+            if (status === 'live') return getComputedStyle(document.body).getPropertyValue('--live').trim();
+            if (status === 'repair') return getComputedStyle(document.body).getPropertyValue('--repair').trim();
+            if (status === 'archive') return getComputedStyle(document.body).getPropertyValue('--archive').trim();
+            return getComputedStyle(document.body).getPropertyValue('--reserve').trim();
+        }
+
+        let matrixHitMap = [];  // HitMap для матрицы активности
+        
+        function drawMatrix(list){
+            if (!activityCanvas) return;
+            const ctx = activityCanvas.getContext('2d');
+            const width = activityCanvas.clientWidth;
+            const height = 220;
+            activityCanvas.width = width * dpr;
+            activityCanvas.height = height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, width, height);
+            matrixHitMap = [];  // Очистка hitMap
+
+            const size = 6;
+            const gap = 2;
+            const cols = Math.floor((width + gap) / (size + gap));
+            const rows = Math.ceil(list.length / cols);
+            const maxRows = Math.floor(height / (size + gap));
+            const drawCount = Math.min(list.length, cols * maxRows);
+            if (!list.length) {
+                ctx.fillStyle = 'rgba(255,255,255,0.25)';
+                ctx.font = '12px Montserrat';
+                ctx.fillText('Загрузка флота...', 10, 24);
+                return;
+            }
+            for (let i = 0; i < drawCount; i++) {
+                const x = (i % cols) * (size + gap);
+                const y = Math.floor(i / cols) * (size + gap);
+                const item = list[i];
+                // Цвет зависит от realtime_status (online/busy = ярче)
+                const isOnline = item.realtime_status === 'online' || item.realtime_status === 'busy';
+                ctx.fillStyle = isOnline ? '#00FF41' : colorByStatus(item.status);
+                ctx.fillRect(x, y, size, size);
+                // DEEP MAPPING v200.1: HitMap для tooltip
+                // SUBLEASE SHIELD: Определяем текст для водителя
+                const isSublease = item.is_sublease || item.is_park_car || (item.ownership_type || '').toLowerCase() === 'sublease';
+                const driverText = item.driver_name 
+                    ? item.driver_name 
+                    : (isSublease ? 'Субаренда (Поиск...)' : 'Не закреплён');
+                matrixHitMap.push({
+                    x, y, w: size, h: size,
+                    plate: item.plate || item.license_plate,
+                    driver: driverText,
+                    park: item.park || item.park_name || 'PRO',
+                    status: item.status,
+                    realtime_status: item.realtime_status,
+                    is_sublease: isSublease,
+                    is_park_car: item.is_park_car
+                });
+            }
+            if (list.length > drawCount) {
+                ctx.fillStyle = 'rgba(255,255,255,0.45)';
+                ctx.font = '10px Montserrat';
+                ctx.fillText(`+${list.length - drawCount}`, width - 48, height - 10);
+            }
+        }
+
+        function drawGps(list){
+            if (!gpsCanvas) return;
+            const ctx = gpsCanvas.getContext('2d');
+            const width = gpsCanvas.clientWidth;
+            const height = 220;
+            gpsCanvas.width = width * dpr;
+            gpsCanvas.height = height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, width, height);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            for (let i = 0; i < 4; i++) {
+                ctx.strokeRect(i * (width / 4), 0, width / 4, height);
+                ctx.strokeRect(0, i * (height / 4), width, height / 4);
+            }
+            const livePoints = list.filter(v => v.status === 'live' && v.lat && v.lon);
+            if (!livePoints.length) {
+                ctx.fillStyle = 'rgba(255,255,255,0.45)';
+                ctx.font = '12px Montserrat';
+                ctx.fillText('GPS данные не синхронизированы', 10, 24);
+                return;
+            }
+            const lats = livePoints.map(v => v.lat);
+            const lons = livePoints.map(v => v.lon);
+            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+            livePoints.forEach(v => {
+                const x = ((v.lon - minLon) / (maxLon - minLon || 1)) * width;
+                const y = height - ((v.lat - minLat) / (maxLat - minLat || 1)) * height;
+                ctx.fillStyle = v.id === gpsFocus ? '#ffffff' : colorByStatus('live');
+                ctx.fillRect(x - 2, y - 2, 4, 4);
+            });
+        }
+        let kaznaChart = null;
+        let triadFinanceChart = null;
+        let triadPerformersChart = null;
+        let triadAssetsChart = null;
+
+        function getCurrentPark(){
+            const active = document.querySelector('#parkTabs .park-btn.active');
+            return (active && active.dataset.park) ? active.dataset.park : 'ALL';
+        }
+
+        async function refreshTriadWidgets(){
+            const park = getCurrentPark();
+            try {
+                const r = await fetch('/api/v1/fleet/triad-data?park=' + encodeURIComponent(park), { credentials: 'include' });
+                const contentType = r.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    console.warn('Triad data: response is not JSON', r.status);
+                    return;
+                }
+                const data = await r.json();
+                if (data.error) {
+                    console.warn('Triad data error:', data.error, data.detail);
+                    return;
+                }
+                if (!data.finance || !data.performers || !data.assets) return;
+                const f = data.finance;
+                const p = data.performers;
+                const a = data.assets;
+                document.getElementById('triadSumTrips').textContent = formatNum(f.sum_trips) + ' ₽';
+                if (f.sum_gross) {
+                    document.getElementById('triadSumGross').textContent = formatNum(f.sum_gross) + ' ₽';
+                }
+                document.getElementById('triadRevenuePark').textContent = formatNum(f.revenue_park) + ' ₽';
+                // АРЕНДА: Доход от субаренды (41 борт)
+                const rentalEl = document.getElementById('triadRentalIncome');
+                if (rentalEl) rentalEl.textContent = formatNum(f.rental_income || 0) + ' ₽';
+                const slSizeEl = document.getElementById('triadSubleaseFleetSize');
+                if (slSizeEl) slSizeEl.textContent = f.sublease_fleet_size || 41;
+                // ПОДКЛЮЧЕННЫЕ: Динамический доход (commission_rate из ContractTerm / API)
+                const connIncomeEl = document.getElementById('triadConnectedIncome');
+                if (connIncomeEl) connIncomeEl.textContent = formatNum(f.connected_income || 0) + ' ₽';
+                const connRateEl = document.getElementById('triadConnectedRate');
+                if (connRateEl) {
+                    const rate = f.connected_commission_rate;
+                    connRateEl.textContent = rate != null ? (rate * 100).toFixed(1).replace('.0', '') : '--';
+                }
+                document.getElementById('triadPayoutRemain').textContent = formatNum(f.payout_remain) + ' ₽';
+                document.getElementById('triadOnLine').textContent = p.on_line;
+                document.getElementById('triadFree').textContent = p.free;
+                document.getElementById('triadInOrder').textContent = p.in_order;
+                document.getElementById('triadBusy').textContent = p.busy;
+                document.getElementById('triadAvgTime').textContent = p.avg_time_online || '—';
+                document.getElementById('triadNew24').textContent = p.new_24h;
+                document.getElementById('triadChurn').textContent = p.churn;
+                document.getElementById('triadTotalActive').textContent = a.total_active;
+                document.getElementById('triadParkCars').textContent = a.park_cars || 0;
+                document.getElementById('triadPrivateCars').textContent = a.private_cars || 0;
+                document.getElementById('triadWorking').textContent = a.working;
+                document.getElementById('triadNoDriver').textContent = a.no_driver;
+                document.getElementById('triadInService').textContent = a.in_service;
+                renderTriadFinanceChart(f);
+                renderTriadPerformersChart(p);
+                renderTriadAssetsChart(a);
+                const ops = data.ops_summary || {};
+                // Feed ops data into smart cards
+                if (fleetData) {
+                    fleetData._ops = ops;
+                    fleetData._sublease = data.sublease_summary || {};
+                    updateSmartCards(fleetData);
+                }
+
+                // SYNC: Обновляем счётчик на кнопке парка чтобы совпадал с виджетом Автомобили
+                const currentPark = data.park || getCurrentPark();
+                if (currentPark && currentPark !== 'ALL') {
+                    document.querySelectorAll('#parkTabs .park-btn').forEach(btn => {
+                        if (btn.dataset.park === currentPark) {
+                            btn.textContent = `${currentPark} (${a.total_active})`;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Triad data load failed:', e);
+            }
+        }
+
+        function renderTriadFinanceChart(f){
+            if (!window.ApexCharts) return;
+            const el = document.getElementById('triadFinanceChart');
+            if (!el) return;
+            const dates = (f.weekly_dates || []).map(d => d.slice(5).replace('-','/'));
+            const tripData = f.weekly_series || [0,0,0,0,0,0,0];
+            const revData = f.weekly_revenue_series || [0,0,0,0,0,0,0];
+            const series = [
+                { name: 'Поездки', data: tripData },
+                { name: 'Доход парка', data: revData }
+            ];
+            const options = {
+                chart: { type: 'line', height: 170, toolbar: { show: false }, background: '#0D0C0B' },
+                stroke: { width: [2, 2], dashArray: [0, 5] },
+                colors: ['#d4af37', '#4CAF50'],
+                xaxis: { categories: dates, labels: { style: { colors: '#f7f4ee', fontSize: '10px' } } },
+                yaxis: [
+                    {
+                        labels: { style: { colors: '#d4af37' }, formatter: v => v >= 1000 ? (v/1000).toFixed(0) + ' тыс.' : v },
+                        title: { text: '', style: { color: '#d4af37' } }
+                    },
+                    {
+                        opposite: true,
+                        labels: { style: { colors: '#4CAF50' }, formatter: v => v >= 1000 ? (v/1000).toFixed(1) + ' тыс.' : v },
+                        title: { text: '', style: { color: '#4CAF50' } }
+                    }
+                ],
+                grid: { borderColor: 'rgba(247,244,238,0.15)' },
+                theme: { mode: 'dark' },
+                tooltip: {
+                    shared: true,
+                    y: { formatter: v => v != null ? v.toLocaleString('ru-RU') + ' ₽' : '—' }
+                },
+                legend: { show: true, labels: { colors: '#f7f4ee' }, fontSize: '10px', position: 'top' }
+            };
+            if (!triadFinanceChart) {
+                triadFinanceChart = new ApexCharts(el, { ...options, series });
+                triadFinanceChart.render();
+            } else {
+                triadFinanceChart.updateSeries(series);
+                triadFinanceChart.updateOptions({ xaxis: { categories: dates } });
+            }
+        }
+
+        function renderTriadPerformersChart(p){
+            if (!window.ApexCharts) return;
+            const el = document.getElementById('triadPerformersChart');
+            if (!el) return;
+            const series = [p.free || 0, p.in_order || 0, p.busy || 0];
+            const options = {
+                chart: { type: 'bar', height: 120, toolbar: { show: false }, background: '#0D0C0B' },
+                plotOptions: { bar: { horizontal: true, distributed: true } },
+                colors: ['#26f2a0', '#ffb347', '#ff5252'],
+                xaxis: { categories: ['Свободны', 'В заказе', 'Заняты'], labels: { style: { colors: '#f7f4ee' } } },
+                dataLabels: { enabled: true, style: { colors: ['#0D0C0B'] } },
+                theme: { mode: 'dark' }
+            };
+            if (!triadPerformersChart) {
+                triadPerformersChart = new ApexCharts(el, { ...options, series: [{ name: '', data: series }] });
+                triadPerformersChart.render();
+            } else {
+                triadPerformersChart.updateSeries([{ name: '', data: series }]);
+            }
+        }
+
+        function renderTriadAssetsChart(a){
+            if (!window.ApexCharts) return;
+            const el = document.getElementById('triadAssetsChart');
+            if (!el) return;
+            // Только 3 категории: Работает, Без водителя, В сервисе
+            // Архивные и "Подготовка" полностью исключены
+            const series = [a.working || 0, a.no_driver || 0, a.in_service || 0];
+            const labels = ['Работает', 'Без водителя', 'В сервисе'];
+            const options = {
+                chart: { type: 'donut', height: 180, background: '#0D0C0B' },
+                labels: labels,
+                colors: ['#26f2a0', '#d1a84a', '#ff5252'],
+                legend: { labels: { colors: '#f7f4ee' } },
+                dataLabels: { enabled: true },
+                theme: { mode: 'dark' }
+            };
+            if (!triadAssetsChart) {
+                triadAssetsChart = new ApexCharts(el, { ...options, series });
+                triadAssetsChart.render();
+            } else {
+                triadAssetsChart.updateSeries(series);
+                triadAssetsChart.updateOptions({ labels });
+            }
+        }
+
+        function renderKaznaChart(payload){
+            const el = document.querySelector('#kaznaChart');
+            if (!el) return;
+            if (!window.ApexCharts) {
+                el.innerHTML = '<div style="color:#9aa5ce;font-size:12px;padding:8px;">ApexCharts не загружен.</div>';
+                return;
+            }
+            if (!payload || !payload.series || !payload.series.length) {
+                payload = {
+                    series: [{name: 'PRO', data: [0,0,0,0,0,0,0]}, {name: 'GO', data: [0,0,0,0,0,0,0]}],
+                    dates: ['—','—','—','—','—','—','—']
+                };
+            }
+            const colors = {
+                PRO: '#d4af37',
+                GO: '#c0c0c0',
+                PLUS: '#e5e4e2',
+                EXPRESS: '#cd7f32'
+            };
+            // Защита от undefined data в series
+            const series = (payload.series || []).map(s => ({
+                name: s.name || 'Unknown',
+                data: Array.isArray(s.data) ? s.data : [0,0,0,0,0,0,0]
+            })).filter(s => s.data && s.data.length > 0);
+            // Если series пуст после фильтрации — добавляем пустые данные
+            if (!series.length) {
+                series.push({name: 'PRO', data: [0,0,0,0,0,0,0]});
+            }
+            // Гарантируем что dates есть и соответствует длине данных
+            const dates = Array.isArray(payload.dates) && payload.dates.length > 0 
+                ? payload.dates 
+                : series[0].data.map((_, i) => `День ${i+1}`);
+            
+            const options = {
+                chart: { type: 'line', height: 220, toolbar: { show: false }, animations: { enabled: true } },
+                series: series,  // Явно передаём series
+                stroke: { width: 2 },
+                colors: series.map(s => colors[s.name] || '#ffffff'),
+                xaxis: { categories: dates, labels: { style: { colors: '#9aa5ce' } } },
+                yaxis: { labels: { style: { colors: '#9aa5ce' } } },
+                grid: { borderColor: 'rgba(255,255,255,0.08)' },
+                legend: {
+                    labels: { colors: '#e8eaf6' },
+                    onItemClick: {
+                        toggleDataSeries: false
+                    },
+                    onItemHover: {
+                        highlightDataSeries: true
+                    }
+                }
+            };
+            if (!kaznaChart && document.querySelector("#kaznaChart")) {
+                kaznaChart = new ApexCharts(document.querySelector("#kaznaChart"), options);
+                kaznaChart.render();
+            } else if (kaznaChart) {
+                kaznaChart.updateOptions(options);
+            }
+            if (kaznaChart) {
+                const legend = document.querySelectorAll('#kaznaChart .apexcharts-legend-series');
+                legend.forEach((item, idx) => {
+                    item.onclick = () => {
+                        const target = series[idx]?.name;
+                        if (!target) return;
+                        series.forEach(s => {
+                            if (s.name === target) kaznaChart.showSeries(s.name);
+                            else kaznaChart.hideSeries(s.name);
+                        });
+                    };
+                });
+            }
+        }
+
+        function renderDigitalRain(payload){
+            const track = document.getElementById('digitalRainTrack');
+            if (!track) return;
+            const items = (payload?.items || []).slice(0, 5); // Только 5 последних событий
+            if (!items.length) {
+                track.innerHTML = '<span class="rain-item" style="color:#9aa5ce;">События обновляются каждые 30 сек...</span>';
+                return;
+            }
+            track.innerHTML = items.map(item => {
+                const amount = Number(item.amount || 0);
+                const cls = amount >= 0 ? 'pos' : 'neg';
+                const sign = amount >= 0 ? '+' : '';
+                const name = item.driver_name || 'Событие';
+                const note = item.note || item.entry_type || '';
+                const suffix = note ? ` (${note})` : '';
+                return `<span class="rain-item">${name}: <span class="${cls}">${sign}${formatNum(amount)}₽</span>${suffix}</span>`;
+            }).join('');
+        }
+
+        function calcCanvasLayout(){
+            if (!listWrap || !fleetCanvas) return { width: 0, cols: 0, totalHeight: 0 };
+            const width = listWrap.clientWidth - 8;
+            const cols = Math.max(1, Math.floor((width + layout.gap) / (layout.cardW + layout.gap)));
+            const rows = Math.ceil(filtered().length / cols);
+            const totalHeight = rows * (layout.cardH + layout.gap);
+            fleetCanvas.width = width * dpr;
+            fleetCanvas.height = totalHeight * dpr;
+            fleetCanvas.style.height = `${totalHeight}px`;
+            fleetCanvas.style.width = `${width}px`;
+            return { width, cols, totalHeight };
+        }
+
+        function filteredRaw(){
+            return applyFilters(fleetData?.vehicles || []);
+        }
+
+        function filtered(){
+            return groupDrivers(filteredRaw());
+        }
+
+        function drawRoundedRect(ctx, x, y, w, h, r){
+            const radius = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.arcTo(x + w, y, x + w, y + h, radius);
+            ctx.arcTo(x + w, y + h, x, y + h, radius);
+            ctx.arcTo(x, y + h, x, y, radius);
+            ctx.arcTo(x, y, x + w, y, radius);
+            ctx.closePath();
+        }
+        function drawPill(ctx, x, y, text, bg, color){
+            const padX = 6;
+            const padY = 3;
+            ctx.font = '10px Montserrat';
+            const textWidth = ctx.measureText(text).width;
+            const w = textWidth + padX * 2;
+            const h = 16;
+            ctx.fillStyle = bg;
+            drawRoundedRect(ctx, x, y, w, h, 8);
+            ctx.fill();
+            ctx.fillStyle = color;
+            ctx.fillText(text, x + padX, y + 11);
+            return w;
+        }
+
+        function drawList(){
+            if (!fleetData || !fleetCanvas || !listWrap) return;
+            const { width, cols } = calcCanvasLayout();
+            if (width <= 0) return;
+            const ctx = fleetCanvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, width, fleetCanvas.height / dpr);
+            hitMap = [];
+            const list = filtered();
+            const scrollTop = listWrap.scrollTop;
+            const viewHeight = listWrap.clientHeight;
+            const rowHeight = layout.cardH + layout.gap;
+            const startRow = Math.floor(scrollTop / rowHeight);
+            const endRow = Math.ceil((scrollTop + viewHeight) / rowHeight);
+
+            ctx.font = '12px Montserrat';
+            for (let row = startRow; row <= endRow; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const idx = row * cols + col;
+                    if (idx >= list.length) continue;
+                    const item = list[idx];
+                    const x = col * (layout.cardW + layout.gap);
+                    const y = row * rowHeight;
+                    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+                    const isSublease = String(item.ownership_type || '').toLowerCase() === 'sublease';
+                    if (isSublease) {
+                        ctx.strokeStyle = 'rgba(212,175,55,0.8)';
+                        ctx.shadowColor = 'rgba(212,175,55,0.35)';
+                        ctx.shadowBlur = 8;
+                    } else {
+                        ctx.strokeStyle = item.status === 'live' ? 'rgba(33,243,199,0.4)' : item.status === 'repair' ? 'rgba(255,82,82,0.4)' : 'rgba(255,255,255,0.12)';
+                    }
+                    ctx.lineWidth = 1;
+                    drawRoundedRect(ctx, x, y, layout.cardW, layout.cardH, 12);
+                    ctx.fill();
+                    ctx.stroke();
+                    if (isSublease) {
+                        ctx.shadowBlur = 0;
+                    }
+                    if (item.risk) {
+                        ctx.shadowColor = 'rgba(255,179,71,0.4)';
+                        ctx.shadowBlur = 12;
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.fillStyle = '#e8eaf6';
+                    ctx.font = '14px Orbitron';
+                    const plateLabel = (item.plate || 'N/A') + (isSublease ? ' 👑' : '');
+                    ctx.fillText(plateLabel, x + 56, y + 22);
+                    ctx.font = '11px Montserrat';
+                    ctx.fillStyle = '#9aa5ce';
+                    if (item.grouped) {
+                        const parksText = `Парки: ${(item.parks || []).join(', ')}`;
+                        const platesText = `ТС: ${item.plates_preview || '—'}`;
+                        ctx.fillText(parksText, x + 56, y + 42);
+                        ctx.fillText(`${item.driver_name || 'Водитель'} • ${item.driver_phone || '—'}`, x + 56, y + 58);
+                        ctx.fillText(platesText, x + 56, y + 74);
+                    } else {
+                        ctx.fillText(`${item.park} • ${item.ownership_type || ''}`, x + 56, y + 42);
+                        // NAVIGATION: Имя водителя с иконкой ссылки
+                        // SUBLEASE SHIELD: Для субаренды без водителя показываем "Поиск пилота..."
+                        let driverDisplay;
+                        let driverColor;
+                        if (item.driver_name) {
+                            driverDisplay = `${item.driver_name} 🔗`;
+                            driverColor = '#00FF41';  // Ярко-изумрудный
+                        } else if (item.is_sublease || item.is_park_car || (item.ownership_type || '').toLowerCase() === 'sublease') {
+                            driverDisplay = 'Субаренда (Поиск пилота...)';
+                            driverColor = '#FFD700';  // Золотой для поиска
+                        } else {
+                            driverDisplay = 'Свободный борт';
+                            driverColor = '#9aa5ce';
+                        }
+                        ctx.fillStyle = driverColor;
+                        ctx.fillText(driverDisplay, x + 56, y + 58);
+                        ctx.fillStyle = '#9aa5ce';
+                    }
+                    const stars = '★★★★★'.slice(0, item.stars || 0) + (item.golden_star ? ' ✨' : '');
+                    ctx.fillStyle = '#f7d774';
+                    if (!item.grouped) ctx.fillText(stars, x + 56, y + 74);
+                    ctx.fillStyle = '#21f3c7';
+                    ctx.fillText(`КПД: ${formatNum(item.kpi)}`, x + 56, y + 92);
+                    ctx.fillText(`Выручка 48ч: ${formatNum(item.revenue_48h)} ₽`, x + 56, y + 108);
+                    ctx.fillStyle = '#9aa5ce';
+                    ctx.fillText(`Онлайн: ${formatNum(item.online_hours)} ч`, x + 56, y + 124);
+
+                    if (!item.grouped) {
+                        const terms = item.contract_terms || {};
+                        const rentValue = formatNum(terms.driver_daily_rent || 0);
+                        const feeValue = ((terms.commission_rate || 0) * 100).toFixed(1).replace('.0', '');
+                        const statusIcon = terms.is_repair ? '🔧' : terms.is_day_off ? '🌴' : (item.status === 'live' ? '⚡' : '•');
+                        const badgeY = y + 106;
+                        let badgeX = x + 10;
+                        badgeX += drawPill(ctx, badgeX, badgeY, `Rent ${rentValue}`, 'rgba(212,175,55,0.18)', '#f7f4ee') + 6;
+                        badgeX += drawPill(ctx, badgeX, badgeY, `Fee ${feeValue}%`, 'rgba(255,255,255,0.08)', '#e8eaf6') + 6;
+                        drawPill(ctx, badgeX, badgeY, `Status ${statusIcon}`, 'rgba(33,243,199,0.12)', '#e8eaf6');
+                    }
+
+                    if (item.photo_url) {
+                        const img = new Image();
+                        img.src = item.photo_url;
+                        img.onload = () => {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(x + 28, y + 28, 18, 0, Math.PI * 2);
+                            ctx.clip();
+                            ctx.drawImage(img, x + 10, y + 10, 36, 36);
+                            ctx.restore();
+                        };
+                    } else {
+                        ctx.fillStyle = `hsl(${item.avatar_hue || 220},70%,45%)`;
+                        ctx.beginPath();
+                        ctx.arc(x + 28, y + 28, 18, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '10px Orbitron';
+                        ctx.fillText(item.avatar_text || '★', x + 20, y + 32);
+                    }
+
+                    // PULSE: Индикатор "На линии" (online/busy)
+                    if (item.realtime_status === 'online' || item.realtime_status === 'busy' || item.is_live) {
+                        const pulseX = x + 42;
+                        const pulseY = y + 12;
+                        ctx.fillStyle = item.realtime_status === 'busy' ? '#00FF41' : '#21f3c7';
+                        ctx.beginPath();
+                        ctx.arc(pulseX, pulseY, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                        // Glow effect
+                        ctx.shadowColor = item.realtime_status === 'busy' ? '#00FF41' : '#21f3c7';
+                        ctx.shadowBlur = 8;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+
+                    const msgX = x + layout.cardW - 30;
+                    const msgY = y + 14;
+                    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                    ctx.beginPath();
+                    ctx.arc(msgX, msgY, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#e8eaf6';
+                    ctx.fillText('💬', msgX - 6, msgY + 4);
+
+                    hitMap.push({ x, y, w: layout.cardW, h: layout.cardH, item, msgX, msgY, avatarX: x + 28, avatarY: y + 28, avatarR: 18 });
+                }
+            }
+        }
+
+        let currentChatDriverId = null;
+        function openMessenger(driver, item){
+            const widget = document.getElementById('messengerWidget');
+            const title = document.getElementById('messengerTitle');
+            if (title) title.textContent = `Imperial Messenger • ${driver}`;
+            const body = document.getElementById('messengerBody');
+            if (body && item) {
+                const summary = `AI Summary: ${driver || 'Водитель'}, ⭐ ${item.stars || 0}${item.golden_star ? ' + ✨' : ''}, КПД ${formatNum(item.kpi)}, ожидает выплату ${formatNum(item.driver_balance)}₽.`;
+                body.innerHTML = `<div>${summary}</div>`;
+            }
+            currentChatDriverId = item?.user_id || null;
+            if (widget) widget.style.display = 'flex';
+        }
+        document.getElementById('closeMessenger').onclick = () => {
+            const widget = document.getElementById('messengerWidget');
+            if (widget) widget.style.display = 'none';
+        };
+        // S-GLOBAL FAB: toggle messenger
+        const sglobalFab = document.getElementById('sglobalFab');
+        if (sglobalFab) {
+            sglobalFab.onclick = () => {
+                const widget = document.getElementById('messengerWidget');
+                if (!widget) return;
+                if (widget.style.display === 'flex') {
+                    widget.style.display = 'none';
+                } else {
+                    widget.style.display = 'flex';
+                }
+            };
+        }
+
+        const contractModal = document.getElementById('contractModal');
+        const contractMeta = document.getElementById('contractMeta');
+        const toggleRepair = document.getElementById('toggleRepair');
+        const toggleDayOff = document.getElementById('toggleDayOff');
+        const toggleIdle = document.getElementById('toggleIdle');
+        const commissionInput = document.getElementById('commissionInput');
+        const partnerRentInput = document.getElementById('partnerRentInput');
+        const driverRentInput = document.getElementById('driverRentInput');
+        const dayOffRateInput = document.getElementById('dayOffRateInput');
+        const contractHistory = document.getElementById('contractHistory');
+
+        function openContractModal(item){
+            currentContractVehicleId = item?.id || null;
+            if (!currentContractVehicleId) return;
+            if (contractMeta) {
+                const driver = item?.driver_name ? ` • ${item.driver_name}` : '';
+                contractMeta.textContent = `${item.plate || 'N/A'} • ${item.park || 'PRO'}${driver}`;
+            }
+            if (contractModal) contractModal.classList.add('active');
+            fetch(`/api/v1/fleet/vehicles/${currentContractVehicleId}/contract-terms`)
+                .then(r => r.json())
+                .then(data => {
+                    const term = data.term || {};
+                    if (toggleRepair) toggleRepair.checked = !!term.is_repair;
+                    if (toggleDayOff) toggleDayOff.checked = !!term.is_day_off;
+                    if (toggleIdle) toggleIdle.checked = !!term.is_idle;
+                    if (commissionInput) commissionInput.value = term.commission_rate ?? '';
+                    if (partnerRentInput) partnerRentInput.value = term.partner_daily_rent ?? '';
+                    if (driverRentInput) driverRentInput.value = term.driver_daily_rent ?? '';
+                    if (dayOffRateInput) dayOffRateInput.value = term.day_off_rate ?? '';
+                    renderContractHistory(data.history || []);
+                })
+                .catch(() => {
+                    if (contractHistory) contractHistory.textContent = 'Ошибка загрузки условий.';
+                });
+        }
+
+        function closeContractModal(){
+            if (contractModal) contractModal.classList.remove('active');
+            currentContractVehicleId = null;
+        }
+
+        function renderContractHistory(items){
+            if (!contractHistory) return;
+            if (!items.length) {
+                contractHistory.textContent = 'История пуста.';
+                return;
+            }
+            contractHistory.innerHTML = items.map(item => {
+                const when = item.changed_at ? new Date(item.changed_at).toLocaleString('ru-RU') : '';
+                const who = item.changed_by || 'System';
+                const changes = Object.keys(item.changes || {}).map(key => `${key}: ${item.changes[key]?.from} → ${item.changes[key]?.to}`).join(', ');
+                const note = item.note ? ` • ${item.note}` : '';
+                return `<div class="history-item">${when} • ${who} • ${changes}${note}</div>`;
+            }).join('');
+        }
+
+        function queueContractPatch(patch){
+            if (!currentContractVehicleId) return;
+            if (contractPatchTimer) clearTimeout(contractPatchTimer);
+            contractPatchTimer = setTimeout(() => {
+                fetch(`/api/v1/fleet/vehicles/${currentContractVehicleId}/contract-terms`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(patch)
+                }).then(() => {
+                    return fetch(`/api/v1/fleet/vehicles/${currentContractVehicleId}/contract-terms`);
+                }).then(r => r.json()).then(data => {
+                    renderContractHistory(data.history || []);
+                }).catch(() => {});
+            }, 250);
+        }
+
+        if (toggleRepair) toggleRepair.onchange = () => queueContractPatch({ is_repair: toggleRepair.checked });
+        if (toggleDayOff) toggleDayOff.onchange = () => queueContractPatch({ is_day_off: toggleDayOff.checked });
+        if (toggleIdle) toggleIdle.onchange = () => queueContractPatch({ is_idle: toggleIdle.checked });
+        if (commissionInput) commissionInput.onchange = () => queueContractPatch({ commission_rate: Number(commissionInput.value || 0) });
+        if (partnerRentInput) partnerRentInput.onchange = () => queueContractPatch({ partner_daily_rent: Number(partnerRentInput.value || 0) });
+        if (driverRentInput) driverRentInput.onchange = () => queueContractPatch({ driver_daily_rent: Number(driverRentInput.value || 0) });
+        if (dayOffRateInput) dayOffRateInput.onchange = () => queueContractPatch({ day_off_rate: Number(dayOffRateInput.value || 0) });
+        const closeContract = document.getElementById('closeContract');
+        if (closeContract) closeContract.onclick = () => closeContractModal();
+        if (contractModal) contractModal.onclick = (e) => {
+            if (e.target === contractModal) closeContractModal();
+        };
+        
+        // PASSPORT DATA INJECTION: Кнопки навигации в модальном окне
+        const goToVehicleCard = document.getElementById('goToVehicleCard');
+        const goToDriverCard = document.getElementById('goToDriverCard');
+        
+        if (goToVehicleCard) {
+            goToVehicleCard.onclick = () => {
+                if (currentContractVehicleId && currentContractVehicleId > 0) {
+                    window.location.href = `/fleet/vehicle/${currentContractVehicleId}`;
+                }
+            };
+        }
+        
+        if (goToDriverCard) {
+            goToDriverCard.onclick = () => {
+                // Ищем водителя по текущей машине
+                const vehicle = (fleetData?.vehicles || []).find(v => v.id === currentContractVehicleId);
+                if (vehicle && vehicle.user_id) {
+                    window.location.href = `/fleet/driver/${vehicle.user_id}`;
+                } else if (vehicle && vehicle.driver_id) {
+                    // Если есть только driver_id (Yandex), ищем по нему
+                    alert('Водитель не привязан к системе');
+                }
+            };
+        }
+
+        const driverCreateModal = document.getElementById('driverCreateModal');
+        const vehicleCreateModal = document.getElementById('vehicleCreateModal');
+        const openDriverCreate = document.getElementById('openDriverCreate');
+        const openVehicleCreate = document.getElementById('openVehicleCreate');
+        const closeDriverCreate = document.getElementById('closeDriverCreate');
+        const closeVehicleCreate = document.getElementById('closeVehicleCreate');
+
+        if (openDriverCreate) openDriverCreate.onclick = () => driverCreateModal.classList.add('active');
+        if (openVehicleCreate) openVehicleCreate.onclick = () => vehicleCreateModal.classList.add('active');
+        if (location.hash === '#open-driver-create' && driverCreateModal) driverCreateModal.classList.add('active');
+        if (location.hash === '#open-vehicle-create' && vehicleCreateModal) vehicleCreateModal.classList.add('active');
+        if (closeDriverCreate) closeDriverCreate.onclick = () => driverCreateModal.classList.remove('active');
+        if (closeVehicleCreate) closeVehicleCreate.onclick = () => vehicleCreateModal.classList.remove('active');
+        if (driverCreateModal) driverCreateModal.onclick = (e) => {
+            if (e.target === driverCreateModal) driverCreateModal.classList.remove('active');
+        };
+        if (vehicleCreateModal) vehicleCreateModal.onclick = (e) => {
+            if (e.target === vehicleCreateModal) vehicleCreateModal.classList.remove('active');
+        };
+
+        let driverLookupTimer = null;
+        let vehicleLookupTimer = null;
+
+        function debounceLookup(timerRef, cb) {
+            if (timerRef) clearTimeout(timerRef);
+            return setTimeout(cb, 300);
+        }
+
+        const driverPhoneInput = document.getElementById('driverPhone');
+        const driverPhoneHint = document.getElementById('driverPhoneHint');
+        if (driverPhoneInput) {
+            driverPhoneInput.addEventListener('input', () => {
+                driverLookupTimer = debounceLookup(driverLookupTimer, async () => {
+                    const phone = driverPhoneInput.value || '';
+                    if (!phone) {
+                        if (driverPhoneHint) driverPhoneHint.textContent = '';
+                        return;
+                    }
+                    const res = await fetch(`/api/v1/fleet/drivers/lookup?phone=${encodeURIComponent(phone)}`);
+                    const data = await res.json();
+                    if (driverPhoneHint) {
+                        driverPhoneHint.textContent = data.exists ? 'Телефон уже используется' : 'Телефон свободен';
+                    }
+                });
+            });
+        }
+
+        const vehiclePlateInput = document.getElementById('vehiclePlate');
+        const vehiclePlateHint = document.getElementById('vehiclePlateHint');
+        const vehicleVinInput = document.getElementById('vehicleVin');
+        const vehicleVinHint = document.getElementById('vehicleVinHint');
+        function runVehicleLookup() {
+            vehicleLookupTimer = debounceLookup(vehicleLookupTimer, async () => {
+                const plate = vehiclePlateInput?.value || '';
+                const vin = vehicleVinInput?.value || '';
+                if (!plate && !vin) {
+                    if (vehiclePlateHint) vehiclePlateHint.textContent = '';
+                    if (vehicleVinHint) vehicleVinHint.textContent = '';
+                    return;
+                }
+                const res = await fetch(`/api/v1/fleet/vehicles/lookup?plate=${encodeURIComponent(plate)}&vin=${encodeURIComponent(vin)}`);
+                const data = await res.json();
+                if (vehiclePlateHint) vehiclePlateHint.textContent = data.exists ? 'Найдено совпадение' : 'Госномер свободен';
+                if (vehicleVinHint) vehicleVinHint.textContent = data.exists ? 'Найдено совпадение' : 'VIN свободен';
+            });
+        }
+        if (vehiclePlateInput) vehiclePlateInput.addEventListener('input', runVehicleLookup);
+        if (vehicleVinInput) vehicleVinInput.addEventListener('input', runVehicleLookup);
+
+        const submitDriverCreate = document.getElementById('submitDriverCreate');
+        if (submitDriverCreate) {
+            submitDriverCreate.onclick = async () => {
+                const errorEl = document.getElementById('driverCreateError');
+                const statusEl = document.getElementById('driverSyncStatus');
+                if (errorEl) errorEl.textContent = '';
+                if (statusEl) statusEl.textContent = 'УСТАНОВКА СВЯЗИ С ЯНДЕКС-ОБЛАКОМ...';
+                const payload = {
+                    park_name: document.getElementById('driverPark')?.value,
+                    employment_type: document.getElementById('driverEmployment')?.value,
+                    last_name: document.getElementById('driverLastName')?.value,
+                    first_name: document.getElementById('driverFirstName')?.value,
+                    middle_name: document.getElementById('driverMiddleName')?.value,
+                    phone: document.getElementById('driverPhone')?.value,
+                    birth_date: document.getElementById('driverBirthDate')?.value,
+                    driver_license_experience_since: document.getElementById('driverExperienceSince')?.value,
+                    license_number: document.getElementById('driverLicenseNumber')?.value,
+                    license_issue_date: document.getElementById('driverLicenseIssue')?.value,
+                    license_expiry_date: document.getElementById('driverLicenseExpiry')?.value,
+                    tax_identification_number: document.getElementById('driverTaxId')?.value,
+                    address: document.getElementById('driverAddress')?.value,
+                    email: document.getElementById('driverEmail')?.value,
+                    car_id: document.getElementById('driverCarId')?.value,
+                };
+                try {
+                    const res = await fetch('/api/v1/fleet/drivers/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        if (errorEl) errorEl.textContent = err.detail || 'Ошибка создания водителя';
+                        if (statusEl) statusEl.textContent = '';
+                        return;
+                    }
+                    driverCreateModal.classList.remove('active');
+                    if (statusEl) statusEl.textContent = '';
+                    await refreshFleetData();
+                } catch {
+                    if (errorEl) errorEl.textContent = 'Ошибка сети';
+                    if (statusEl) statusEl.textContent = '';
+                }
+            };
+        }
+
+        const submitVehicleCreate = document.getElementById('submitVehicleCreate');
+        if (submitVehicleCreate) {
+            submitVehicleCreate.onclick = async () => {
+                const errorEl = document.getElementById('vehicleCreateError');
+                const statusEl = document.getElementById('vehicleSyncStatus');
+                if (errorEl) errorEl.textContent = '';
+                if (statusEl) statusEl.textContent = 'УСТАНОВКА СВЯЗИ С ЯНДЕКС-ОБЛАКОМ...';
+                const payload = {
+                    park_name: document.getElementById('vehiclePark')?.value,
+                    ownership_type: document.getElementById('vehicleOwnership')?.value,
+                    license_plate: document.getElementById('vehiclePlate')?.value,
+                    vin: document.getElementById('vehicleVin')?.value,
+                    brand: document.getElementById('vehicleBrand')?.value,
+                    model: document.getElementById('vehicleModel')?.value,
+                    year: Number(document.getElementById('vehicleYear')?.value || 0),
+                    color: document.getElementById('vehicleColor')?.value,
+                    sts_number: document.getElementById('vehicleSts')?.value,
+                    callsign: document.getElementById('vehicleCallsign')?.value,
+                };
+                try {
+                    const res = await fetch('/api/v1/fleet/vehicles/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(payload),
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        if (errorEl) errorEl.textContent = err.detail || 'Ошибка создания авто';
+                        if (statusEl) statusEl.textContent = '';
+                        return;
+                    }
+                    vehicleCreateModal.classList.remove('active');
+                    if (statusEl) statusEl.textContent = '';
+                    await refreshFleetData();
+                } catch {
+                    if (errorEl) errorEl.textContent = 'Ошибка сети';
+                    if (statusEl) statusEl.textContent = '';
+                }
+            };
+        }
+
+        if (fleetCanvas && listWrap) {
+        fleetCanvas.addEventListener('click', (e) => {
+            const rect = fleetCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top + listWrap.scrollTop;
+            const target = hitMap.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
+            if (!target) return;
+            if (target.item.grouped) return;
+            
+            // Клик по аватару — загрузка фото
+            const ax = x - target.avatarX;
+            const ay = y - target.avatarY;
+            if (Math.sqrt(ax * ax + ay * ay) <= target.avatarR) {
+                pendingPhotoDriverId = target.item.user_id;
+                const photoInput = document.getElementById('photoInput');
+                if (photoInput) photoInput.click();
+                return;
+            }
+            
+            // Клик по иконке мессенджера
+            const dx = x - target.msgX;
+            const dy = y - target.msgY;
+            if (Math.sqrt(dx * dx + dy * dy) <= 14) {
+                openMessenger(target.item.driver_name || 'Imperial Messenger', target.item);
+                return;
+            }
+            
+            // NAVIGATION ROUTES: Клик по верхней части карточки (госномер) — переход на страницу машины
+            const plateZoneY = target.y + 20;  // Зона госномера (верхние 40px)
+            if (y >= target.y && y <= plateZoneY + 25 && target.item.id) {
+                window.location.href = `/fleet/vehicle/${target.item.id}`;
+                return;
+            }
+            
+            // NAVIGATION ROUTES: Клик по зоне имени водителя — переход на страницу водителя
+            const driverZoneY = target.y + 50;  // Зона имени водителя (50-70px от верха)
+            if (y >= driverZoneY && y <= driverZoneY + 20 && target.item.user_id) {
+                window.location.href = `/fleet/driver/${target.item.user_id}`;
+                return;
+            }
+            
+            // Остальные клики — открыть модальное окно контракта
+            openContractModal(target.item);
+            if (target.item.lat && target.item.lon) {
+                gpsFocus = target.item.id;
+                drawGps(filteredRaw());
+            }
+        });
+
+        fleetCanvas.addEventListener('mousemove', (e) => {
+            const rect = fleetCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top + listWrap.scrollTop;
+            const target = hitMap.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h && h.item.risk);
+            if (!target || !target.item.risk_reason) {
+                tooltip.style.opacity = 0;
+                return;
+            }
+            tooltip.textContent = target.item.risk_reason;
+            tooltip.style.left = `${e.clientX + 10}px`;
+            tooltip.style.top = `${e.clientY + 10}px`;
+            tooltip.style.opacity = 1;
+        });
+        fleetCanvas.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = 0;
+        });
+        }
+
+        // DEEP MAPPING v200.1: Tooltip для Матрицы Активности (только если canvas есть)
+        if (activityCanvas) {
+            activityCanvas.addEventListener('mousemove', (e) => {
+                const rect = activityCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const target = matrixHitMap.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
+                if (!target) {
+                    tooltip.style.opacity = 0;
+                    return;
+                }
+                const parkLabel = target.park || 'PRO';
+                const ownerLabel = target.is_park_car ? '🏢 Таксопарк' : '👤 Подключка';
+                let statusLabel = '📦 Резерв';
+                if (target.realtime_status === 'busy') statusLabel = '🚗 В заказе';
+                else if (target.realtime_status === 'online') statusLabel = '🟢 На линии';
+                else if (target.status === 'live') statusLabel = '🟢 Активен';
+                else if (target.status === 'repair') statusLabel = '🔧 Ремзона';
+                tooltip.innerHTML = `
+                    <div style="font-weight:600;color:#d4af37;">${target.plate}</div>
+                    <div>🧑‍✈️ ${target.driver}</div>
+                    <div>🏷️ ${parkLabel} • ${ownerLabel}</div>
+                    <div>${statusLabel}</div>
+                `;
+                tooltip.style.left = `${e.clientX + 12}px`;
+                tooltip.style.top = `${e.clientY + 12}px`;
+                tooltip.style.opacity = 1;
+            });
+            activityCanvas.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+        }
+
+        if (listWrap) listWrap.addEventListener('scroll', () => requestAnimationFrame(drawList));
+        window.addEventListener('resize', () => {
+            if (activityCanvas) drawMatrix(allVehiclesFiltered());
+            drawGps(filteredRaw());
+            drawList();
+        });
+
+        (function(){
+            const searchInput = document.getElementById('searchInput');
+            const oracleDropdown = document.getElementById('oracleDropdown');
+            if (!searchInput) return;
+            let oracleTimer = null;
+            searchInput.addEventListener('input', (e) => {
+                state.query = e.target.value || '';
+                drawMatrix(allVehiclesFiltered());
+                drawGps(filteredRaw());
+                drawList();
+                const q = (e.target.value || '').trim();
+                if (oracleDropdown) {
+                    if (q.length < 2) { oracleDropdown.style.display = 'none'; oracleDropdown.innerHTML = ''; return; }
+                    clearTimeout(oracleTimer);
+                    oracleTimer = setTimeout(async () => {
+                        try {
+                            const r = await fetch('/api/v1/fleet/oracle-search?q=' + encodeURIComponent(q), { credentials: 'include' });
+                            const data = await r.json();
+                            const results = data.results || [];
+                            if (!results.length) { oracleDropdown.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11px;">Ничего не найдено</div>'; }
+                            else {
+                                oracleDropdown.innerHTML = results.map(item => '<a href="' + item.url + '" class="oracle-result">' + (item.type === 'vehicle' ? '🚗 ' : '👤 ') + (item.label || '') + '</a>').join('');
+                                oracleDropdown.querySelectorAll('.oracle-result').forEach(el => { el.addEventListener('click', () => { const modal = document.getElementById('oracleModal'); if (modal) modal.classList.remove('active'); }); });
+                            }
+                            oracleDropdown.style.display = 'block';
+                        } catch { oracleDropdown.style.display = 'none'; }
+                    }, 280);
+                }
+            });
+            searchInput.addEventListener('focus', () => { if (oracleDropdown && oracleDropdown.innerHTML) oracleDropdown.style.display = 'block'; });
+            searchInput.addEventListener('blur', () => { setTimeout(() => { if (oracleDropdown) oracleDropdown.style.display = 'none'; }, 180); });
+        })();
+        (function markActiveNavTile(){
+            const path = window.location.pathname || '';
+            document.querySelectorAll('#navTiles .nav-tile').forEach(a => {
+                const href = (a.getAttribute('href') || '').split('?')[0];
+                a.classList.toggle('active', href === path);
+            });
+        })();
+        // ORACLE MODAL: открытие/закрытие
+        (function initOracleModal(){
+            const btn = document.getElementById('consoleSearchBtn');
+            const modal = document.getElementById('oracleModal');
+            const closeBtn = document.getElementById('closeOracleModal');
+            const oracleInput = document.getElementById('searchInput');
+            if (btn && modal) {
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    modal.classList.add('active');
+                    if (oracleInput) setTimeout(() => oracleInput.focus(), 100);
+                });
+            }
+            if (closeBtn && modal) {
+                closeBtn.addEventListener('click', function(){ modal.classList.remove('active'); });
+            }
+            if (modal) {
+                modal.addEventListener('click', function(e){ if (e.target === modal) modal.classList.remove('active'); });
+            }
+            // ESC key closes modal
+            document.addEventListener('keydown', function(e){
+                if (e.key === 'Escape' && modal && modal.classList.contains('active')) modal.classList.remove('active');
+            });
+            if (oracleInput && window.location.hash === '#search' && modal) {
+                modal.classList.add('active');
+                setTimeout(() => oracleInput.focus(), 100);
+            }
+        })();
+        document.querySelectorAll('#parkTabs .park-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#parkTabs .park-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.park = btn.dataset.park;
+                drawGps(filteredRaw());
+                drawList();
+                refreshTriadWidgets();
+            });
+        });
+        /* Ownership/tab filters удалены — все борты отображаются в режиме live */
+
+        const micButton = document.getElementById('micButton');
+        const attachButton = document.getElementById('attachButton');
+        const attachInput = document.getElementById('attachInput');
+        const photoInput = document.getElementById('photoInput');
+        if (micButton && 'webkitSpeechRecognition' in window) {
+            micButton.onclick = () => {
+                const rec = new webkitSpeechRecognition();
+                rec.lang = 'ru-RU';
+                rec.onresult = (e) => {
+                    const text = e.results[0][0].transcript;
+                    const input = document.getElementById('messengerInput');
+                    if (input) input.value = text;
+                };
+                rec.start();
+            };
+        }
+        if (attachButton && attachInput) {
+            attachButton.onclick = () => attachInput.click();
+            attachInput.onchange = () => {
+                const body = document.getElementById('messengerBody');
+                if (!attachInput.files.length) return;
+                const form = new FormData();
+                form.append('file', attachInput.files[0]);
+                form.append('channel', 'ФЛОТ');
+                fetch('/api/v1/messenger/upload', { method: 'POST', body: form })
+                    .then(r => r.json())
+                    .then(() => {
+                        if (body) body.innerHTML += `<div>📎 Файл отправлен</div>`;
+                    });
+            };
+        }
+        if (photoInput) {
+            photoInput.onchange = () => {
+                if (!photoInput.files.length || !pendingPhotoDriverId) return;
+                const form = new FormData();
+                form.append('file', photoInput.files[0]);
+                fetch(`/api/v1/fleet/driver/${pendingPhotoDriverId}/photo`, {
+                    method: 'POST',
+                    body: form
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.photo_url) return;
+                    const list = fleetData?.vehicles || [];
+                    list.forEach(v => {
+                        if (v.user_id === pendingPhotoDriverId) v.photo_url = data.photo_url;
+                    });
+                    drawList();
+                })
+                .catch(() => {});
+            };
+        }
+        const aiButton = document.getElementById('aiButton');
+        if (aiButton) {
+            aiButton.onclick = () => {
+                if (!currentChatDriverId) return;
+                fetch(`/api/v1/messenger/driver-summary?driver_id=${currentChatDriverId}`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        const body = document.getElementById('messengerBody');
+                        if (body && data.message) {
+                            body.innerHTML = `<div>${data.message}</div>`;
+                        }
+                    });
+            };
+        }
+        async function refreshGlobalSyncHealth(){
+            const fanDots = document.querySelectorAll('#gsSyncFan .gs-fan-dot');
+            const gsBtn = document.getElementById('globalSyncBtn');
+            const fanItems = document.querySelectorAll('#gsSyncFan .gs-fan-item');
+            let hasError = false;
+            try {
+                const res = await fetch('/api/v1/fleet/parks/health', { credentials: 'include' });
+                const data = await res.json();
+                const parkStatuses = data?.parks || {};
+                // Подключённые парки = те, у кого есть ответ (200 или ошибка)
+                // Неподключённые = нет записи или null
+                const connectedParks = Object.entries(parkStatuses).filter(([,s]) => s != null);
+                const connectedOk = connectedParks.filter(([,s]) => s === 200);
+                const connectedErr = connectedParks.filter(([,s]) => s !== 200);
+                fanDots.forEach(dot => {
+                    const api = dot.getAttribute('data-api');
+                    dot.classList.remove('ok', 'warn', 'err');
+                    if (api === 'yandex') {
+                        // Яндекс: зелёный если все ПОДКЛЮЧЁННЫЕ парки OK
+                        // Неподключённые парки НЕ считаются ошибкой
+                        if (connectedOk.length > 0 && connectedErr.length === 0) {
+                            dot.classList.add('ok');
+                        } else if (connectedOk.length > 0 && connectedErr.length > 0) {
+                            // Есть и работающие, и сломанные ПОДКЛЮЧЁННЫЕ парки
+                            dot.classList.add('warn');
+                        } else if (connectedParks.length === 0) {
+                            // Нет подключённых парков вообще
+                            dot.classList.add('err');
+                            hasError = true;
+                        } else {
+                            dot.classList.add('err');
+                            hasError = true;
+                        }
+                        // Обновить подпись с деталями
+                        const parentItem = dot.closest('.gs-fan-item');
+                        if (parentItem) {
+                            const names = connectedOk.map(([p]) => p).join(', ') || '—';
+                            const notConn = ['PRO','GO','PLUS','EXPRESS'].filter(p => !parkStatuses[p]);
+                            const notConnText = notConn.length ? ` · Не подкл: ${notConn.join(', ')}` : '';
+                            parentItem.innerHTML = `<span class="gs-fan-dot ${dot.className.split(' ').filter(c=>['ok','warn','err'].includes(c)).join(' ')}" data-api="yandex"></span> Яндекс: ${names} OK${notConnText}`;
+                        }
+                    } else if (api === 'gps' || api === 'warehouse' || api === 'alarm') {
+                        // Placeholder: пока нет интеграции, серый (без класса = нейтральный)
+                        // Не зелёный — чтобы не вводить в заблуждение
+                    }
+                });
+                if (gsBtn) {
+                    gsBtn.classList.remove('error', 'warning');
+                    if (hasError) gsBtn.classList.add('error');
+                }
+            } catch {
+                fanDots.forEach(dot => { dot.classList.remove('ok','warn'); dot.classList.add('err'); });
+                if (gsBtn) gsBtn.classList.add('error');
+            }
+        }
+        setInterval(refreshGlobalSyncHealth, 60000);
+
+        function showSyncToast(){
+            if (!syncToast) return;
+            syncToast.classList.add('show');
+            setTimeout(() => syncToast.classList.remove('show'), 2600);
+        }
+        function showErrorToast(){
+            const errorToast = document.getElementById('errorToast');
+            if (!errorToast) return;
+            errorToast.classList.add('show');
+            setTimeout(() => errorToast.classList.remove('show'), 6000);
+        }
+        // ⚡ АВТООБНОВЛЕНИЕ КАЖДЫЕ 30 СЕКУНД (ЗАДАЧА 4)
+        let autoRefreshInterval = null;
+        let syncPollingInterval = null;
+        
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(async () => {
+                console.log('🔄 Auto-refresh triggered');
+                await refreshFleetData();
+            }, 30000); // Каждые 30 секунд
+        }
+        
+        async function pollSyncStatus() {
+            try {
+                const resp = await fetch('/api/v1/fleet/sync/status', { credentials: 'include' });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (!data.sync.is_running) {
+                        // Синхронизация завершена — остановить опрос, обновить данные
+                        if (syncPollingInterval) {
+                            clearInterval(syncPollingInterval);
+                            syncPollingInterval = null;
+                        }
+                        await refreshFleetData();
+                        showSyncToast();
+                        const btn = document.getElementById('globalSyncBtn');
+                        if (btn) {
+                            btn.classList.remove('loading');
+                            const textEl = btn.querySelector('.gs-text');
+                            if (textEl) textEl.textContent = 'GLOBAL SYNC';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Sync status poll error:', e);
+            }
+        }
+        
+        function bindGlobalSync(){
+            globalSyncBtn = document.getElementById('globalSyncBtn');
+            if (!globalSyncBtn || globalSyncBtn._bound) return;
+            globalSyncBtn._bound = true;
+            globalSyncBtn.onclick = async () => {
+                const textEl = globalSyncBtn.querySelector('.gs-text');
+                globalSyncBtn.classList.add('loading');
+                if (textEl) textEl.textContent = 'SYNC...';
+                try {
+                    const resp = await fetch('/api/v1/fleet/sync/full', { method: 'POST', credentials: 'include' });
+                    const result = await resp.json();
+                    
+                    if (result.status === 'processing' || result.status === 'already_running') {
+                        if (!syncPollingInterval) {
+                            syncPollingInterval = setInterval(pollSyncStatus, 5000);
+                        }
+                    } else if (!resp.ok) {
+                        showErrorToast();
+                        globalSyncBtn.classList.remove('loading');
+                        if (textEl) textEl.textContent = 'GLOBAL SYNC';
+                    } else {
+                        await refreshFleetData();
+                        showSyncToast();
+                        globalSyncBtn.classList.remove('loading');
+                        if (textEl) textEl.textContent = 'GLOBAL SYNC';
+                    }
+                } catch (e) {
+                    showErrorToast();
+                    globalSyncBtn.classList.remove('loading');
+                    if (textEl) textEl.textContent = 'GLOBAL SYNC';
+                }
+            };
+        }
+        // Bind immediately (button is static now)
+        bindGlobalSync();
+        
+        // Запуск автообновления при загрузке страницы
+        startAutoRefresh();
+        async function refreshFleetData(showArchive = false){
+            try {
+                const url = showArchive 
+                    ? '/api/v1/fleet/command-data?show_archive=true'
+                    : '/api/v1/fleet/command-data';
+                const data = await fetch(url).then(r => r.json());
+                fleetData = data;
+            } catch {
+                fleetData = { summary: { totals: { all: 0, reserve: 0, repair: 0 } }, live_300: 0, efficiency: 0, vehicles: [], active_dominion_count: 0, total_vehicles_count: 0 };
+            }
+            // Smart Cards update
+            updateSmartCards(fleetData);
+            refreshGlobalSyncHealth();
+            
+            // Счётчики
+            const activeDom = document.getElementById('activeDominion');
+            const totalFleet = document.getElementById('totalFleet');
+            if (activeDom) activeDom.textContent = fleetData.active_dominion_count || fleetData.vehicles?.length || 0;
+            if (totalFleet) totalFleet.textContent = fleetData.total_vehicles_count || 0;
+            
+            // Парки с счётчиками (park_car_counts = is_park_car=True, active_counts_by_park = все активные)
+            const parkCarCounts = fleetData.park_car_counts || {};
+            const parkActiveCounts = fleetData.active_counts_by_park || {};
+            document.querySelectorAll('#parkTabs .park-btn').forEach(btn => {
+                const park = btn.dataset.park;
+                if (park && park !== 'ALL') {
+                    const carCount = parkCarCounts[park] || 0;
+                    const activeCount = parkActiveCounts[park] || 0;
+                    btn.textContent = `${park} (${carCount})`;
+                    btn.title = `Парковых: ${carCount} / Всего активных: ${activeCount}`;
+                }
+            });
+            
+            drawGps(filteredRaw());
+            drawList();
+            refreshTriadWidgets();
+            // Digital Rain: только 5 последних значимых событий
+            fetch('/api/v1/analytics/financial-rain?limit=5')
+                .then(r => r.json())
+                .then(renderDigitalRain)
+                .catch(() => renderDigitalRain({ items: [] }));
+        }
+
+        refreshFleetData();
+    </script>
+    <script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</body>
+</html>

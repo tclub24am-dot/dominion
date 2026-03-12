@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}P&L Отчёт | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📈 P&L Отчёт</h1>
+    <p class="muted-text">Прибыли и убытки</p>
+</div>
+
+<!-- Period Selection -->
+<div class="card mb-6">
+    <div class="flex gap-4 items-center">
+        <label class="muted-text">Период:</label>
+        <select class="bg-transparent border border-gray-600 rounded-lg p-2 text-white">
+            <option value="month">Текущий месяц</option>
+            <option value="quarter">Квартал</option>
+            <option value="year">Год</option>
+        </select>
+        <button class="btn-gold">Сформировать</button>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="card text-center">
+        <div class="muted-text mb-2">Валовый доход</div>
+        <div class="text-3xl gold-text">— ₽</div>
+    </div>
+    <div class="card text-center">
+        <div class="muted-text mb-2">Валовые расходы</div>
+        <div class="text-3xl text-red-400">— ₽</div>
+    </div>
+    <div class="card text-center">
+        <div class="muted-text mb-2">Чистая прибыль</div>
+        <div class="text-3xl text-green-400">— ₽</div>
+    </div>
+</div>
+
+<!-- Income Section -->
+<div class="card mb-6">
+    <h2 class="text-xl gold-text mb-4">Доходы</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Статья</th>
+                    <th class="text-right">Сумма</th>
+                    <th class="text-right">Доля</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="muted-text">Выручка от перевозок</td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">—</td>
+                </tr>
+                <tr>
+                    <td class="muted-text">Прочие доходы</td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">—</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Expenses Section -->
+<div class="card">
+    <h2 class="text-xl gold-text mb-4">Расходы</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Статья</th>
+                    <th class="text-right">Сумма</th>
+                    <th class="text-right">Доля</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="muted-text">Аренда техники</td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">—</td>
+                </tr>
+                <tr>
+                    <td class="muted-text">Топливо</td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">—</td>
+                </tr>
+                <tr>
+                    <td class="muted-text">Ремонт и ТО</td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">—</td>
+                </tr>
+                <tr>
+                    <td class="muted-text">Фонд оплаты труда</td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">—</td>
+                </tr>
+                <tr>
+                    <td class="muted-text">Прочие расходы</td>
+                    <td class="text-right">—</td>
+                    <td class="text-right">—</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

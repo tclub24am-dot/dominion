@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Календарь Ренты • S-GLOBAL DOMINION</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{
+            --bg:#0D0C0B;--glass:rgba(16,14,12,0.72);--border:rgba(212,175,55,0.35);
+            --text:#f4efe0;--muted:#b6a77a;--accent:#D4AF37;--accent-2:#FFD700;
+            --success:#23c981;--danger:#ff6b6b;--future:#3a3a4a;
+            --imperial:#f7f4ee;--obsidian:#0D0C0B;
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:radial-gradient(ellipse at 50% 20%, rgba(212,175,55,0.08), rgba(13,12,11,0.98) 70%), var(--bg);
+             color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh;padding-bottom:64px;}
+
+        /* ── HEADER ── */
+        .cal-header{padding:20px 28px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+        .cal-header .back{color:var(--accent);text-decoration:none;font-size:12px;display:inline-flex;align-items:center;gap:6px;opacity:0.8;transition:opacity 0.2s;}
+        .cal-header .back:hover{opacity:1;}
+        .cal-title-row{display:flex;align-items:center;gap:16px;}
+        .cal-title{font-family:'Orbitron',sans-serif;font-size:18px;letter-spacing:0.14em;color:var(--accent-2);}
+        .cal-nav{display:flex;align-items:center;gap:8px;}
+        .cal-nav button{background:transparent;border:1px solid var(--border);color:var(--accent);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;transition:all 0.2s;}
+        .cal-nav button:hover{background:rgba(212,175,55,0.15);border-color:var(--accent);}
+        .cal-nav .month-label{font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:0.1em;min-width:160px;text-align:center;}
+
+        /* ── TABS ── */
+        .cal-tabs{padding:12px 28px;display:flex;gap:8px;}
+        .cal-tab{padding:8px 18px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all 0.2s;font-family:inherit;letter-spacing:0.04em;}
+        .cal-tab.active{background:rgba(212,175,55,0.18);color:var(--accent-2);border-color:var(--accent);}
+        .cal-tab:hover{border-color:var(--accent);color:var(--text);}
+
+        /* ── SUMMARY CARDS ── */
+        .cal-summary{padding:0 28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;}
+        .sum-card{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+        .sum-card .sum-label{font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;}
+        .sum-card .sum-value{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--accent-2);}
+        .sum-card .sum-value.green{color:var(--success);}
+        .sum-card .sum-value.red{color:var(--danger);}
+
+        /* ── CALENDAR GRID ── */
+        .cal-wrap{padding:0 28px 20px;overflow:auto;}
+        .cal-grid{display:grid;font-size:11px;min-width:1000px;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--glass);}
+        .cal-grid .g-head{display:contents;}
+        .cal-grid .g-head div{padding:10px 4px;border-bottom:2px solid var(--border);color:var(--muted);font-size:9px;letter-spacing:0.06em;text-align:center;position:sticky;top:0;background:rgba(13,12,11,0.95);z-index:2;}
+        .cal-grid .g-head .g-label{text-align:left;padding-left:12px;min-width:200px;position:sticky;left:0;z-index:3;}
+        .cal-grid .g-row{display:contents;}
+        .cal-grid .g-row > div{border-bottom:1px solid rgba(212,175,55,0.08);transition:background 0.15s;}
+        .cal-grid .g-row:hover > div{background:rgba(212,175,55,0.04);}
+        .cal-grid .g-plate{position:sticky;left:0;background:rgba(13,12,11,0.92);color:var(--accent-2);padding:8px 12px;font-size:11px;z-index:1;display:flex;flex-direction:column;justify-content:center;min-width:200px;border-right:1px solid var(--border);}
+        .cal-grid .g-plate .plate-num{font-weight:700;font-size:12px;}
+        .cal-grid .g-plate .plate-driver{font-size:10px;color:var(--muted);margin-top:2px;}
+        .cal-grid .g-plate .plate-rent{font-size:9px;color:var(--accent);margin-top:1px;}
+
+        /* ── CELLS ── */
+        .cal-cell{display:flex;align-items:center;justify-content:center;min-height:38px;cursor:pointer;position:relative;padding:2px;}
+        .cal-cell .cell-dot{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;transition:transform 0.15s;}
+        .cal-cell:hover .cell-dot{transform:scale(1.2);}
+        .cal-cell.paid .cell-dot{background:rgba(35,201,129,0.25);color:var(--success);border:1px solid rgba(35,201,129,0.5);}
+        .cal-cell.debt .cell-dot{background:rgba(255,107,107,0.25);color:var(--danger);border:1px solid rgba(255,107,107,0.5);}
+        .cal-cell.future .cell-dot{background:rgba(58,58,74,0.4);color:#666;border:1px solid rgba(255,255,255,0.1);}
+        .cal-cell.repair .cell-dot{background:rgba(255,165,0,0.2);color:#ffa500;border:1px solid rgba(255,165,0,0.4);}
+        .cal-cell.day_off .cell-dot{background:rgba(100,149,237,0.2);color:#6495ed;border:1px solid rgba(100,149,237,0.4);}
+        .cal-cell.idle .cell-dot{background:rgba(128,128,128,0.2);color:#888;border:1px solid rgba(128,128,128,0.4);}
+        .cal-cell.no_rent .cell-dot{background:transparent;color:#444;border:1px solid rgba(255,255,255,0.05);}
+        .cal-cell.today{outline:2px solid var(--accent);outline-offset:-2px;border-radius:4px;}
+
+        /* ── TOOLTIP ── */
+        .cal-tooltip{position:fixed;background:rgba(13,12,11,0.95);border:1px solid var(--accent);border-radius:12px;padding:14px 18px;z-index:3000;pointer-events:none;font-size:12px;box-shadow:0 8px 30px rgba(0,0,0,0.5);max-width:280px;backdrop-filter:blur(8px);}
+        .cal-tooltip .tt-title{font-weight:700;color:var(--accent-2);margin-bottom:6px;font-size:13px;}
+        .cal-tooltip .tt-line{margin:3px 0;display:flex;justify-content:space-between;gap:12px;}
+        .cal-tooltip .tt-label{color:var(--muted);}
+        .cal-tooltip .tt-val{font-weight:600;}
+        .cal-tooltip .tt-val.green{color:var(--success);}
+        .cal-tooltip .tt-val.red{color:var(--danger);}
+
+        /* ── DETAIL MODAL ── */
+        .detail-modal{position:fixed;inset:0;background:rgba(6,8,12,0.85);display:none;align-items:center;justify-content:center;z-index:2500;backdrop-filter:blur(8px);}
+        .detail-modal.active{display:flex;}
+        .detail-inner{background:rgba(18,21,40,0.95);border:1px solid var(--accent);border-radius:16px;padding:24px;width:420px;max-width:95vw;box-shadow:0 16px 50px rgba(0,0,0,0.5);}
+        .detail-inner h3{font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:0.1em;color:var(--accent-2);margin-bottom:12px;}
+        .detail-inner .d-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;}
+        .detail-inner .d-label{color:var(--muted);}
+        .detail-inner .d-close{margin-top:16px;text-align:right;}
+        .detail-inner .d-close button{background:transparent;border:1px solid var(--border);color:var(--accent);border-radius:8px;padding:8px 20px;cursor:pointer;font-size:12px;}
+
+        /* ── LEGEND ── */
+        .cal-legend{padding:8px 28px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+        .legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);}
+        .legend-dot{width:14px;height:14px;border-radius:4px;}
+        .legend-dot.paid{background:rgba(35,201,129,0.4);border:1px solid var(--success);}
+        .legend-dot.debt{background:rgba(255,107,107,0.4);border:1px solid var(--danger);}
+        .legend-dot.future{background:rgba(58,58,74,0.5);border:1px solid rgba(255,255,255,0.15);}
+        .legend-dot.repair{background:rgba(255,165,0,0.3);border:1px solid #ffa500;}
+        .legend-dot.day_off{background:rgba(100,149,237,0.3);border:1px solid #6495ed;}
+        .legend-dot.idle{background:rgba(128,128,128,0.3);border:1px solid #888;}
+
+        /* ── LOADING ── */
+        .cal-loading{text-align:center;padding:60px;color:var(--muted);font-size:13px;}
+        .cal-loading .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:768px){
+            .cal-header{padding:12px 14px 0;}
+            .cal-tabs,.cal-summary,.cal-wrap,.cal-legend{padding-left:14px;padding-right:14px;}
+            .cal-title{font-size:14px;}
+            .sum-card .sum-value{font-size:14px;}
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="cal-header">
+        <a class="back" href="/fleet">← Командная башня</a>
+        <div class="cal-title-row">
+            <div class="cal-title">КАЛЕНДАРЬ РЕНТЫ</div>
+            <div class="cal-nav">
+                <button id="prevMonth">◀</button>
+                <span class="month-label" id="monthLabel">—</span>
+                <button id="nextMonth">▶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="cal-tabs">
+        <button class="cal-tab active" data-ownership="sublease">СУБАРЕНДА (41 БОРТ)</button>
+        <button class="cal-tab" data-ownership="connected">ПОДКЛЮЧЕННЫЕ</button>
+        <button class="cal-tab" data-ownership="all">ВСЕ</button>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="cal-summary" id="calSummary">
+        <div class="sum-card"><div class="sum-label">БОРТОВ</div><div class="sum-value" id="sumVehicles">—</div></div>
+        <div class="sum-card"><div class="sum-label">СОБРАНО</div><div class="sum-value green" id="sumPaid">—</div></div>
+        <div class="sum-card"><div class="sum-label">ДОЛГ</div><div class="sum-value red" id="sumDebt">—</div></div>
+        <div class="sum-card"><div class="sum-label">ОЖИДАЛОСЬ</div><div class="sum-value" id="sumExpected">—</div></div>
+        <div class="sum-card"><div class="sum-label">СОБИРАЕМОСТЬ</div><div class="sum-value" id="sumRate">—</div></div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="cal-legend">
+        <div class="legend-item"><div class="legend-dot paid"></div> Оплачено</div>
+        <div class="legend-item"><div class="legend-dot debt"></div> Долг / Просрочка</div>
+        <div class="legend-item"><div class="legend-dot future"></div> Будущее</div>
+        <div class="legend-item"><div class="legend-dot repair"></div> Ремонт</div>
+        <div class="legend-item"><div class="legend-dot day_off"></div> Выходной</div>
+        <div class="legend-item"><div class="legend-dot idle"></div> Простой</div>
+    </div>
+
+    <!-- GRID -->
+    <div class="cal-wrap">
+        <div class="cal-loading" id="calLoading">
+            <div class="spinner"></div>
+            Загрузка данных календаря...
+        </div>
+        <div class="cal-grid" id="calGrid" style="display:none;"></div>
+    </div>
+
+    <!-- TOOLTIP -->
+    <div class="cal-tooltip" id="calTooltip" style="display:none;"></div>
+
+    <!-- DETAIL MODAL -->
+    <div class="detail-modal" id="detailModal">
+        <div class="detail-inner" id="detailInner"></div>
+    </div>
+
+    <script>
+    (function(){
+        'use strict';
+
+        /* ── STATE ── */
+        const now = new Date();
+        let curYear = now.getFullYear();
+        let curMonth = now.getMonth() + 1;
+        let curOwnership = 'sublease';
+        let gridData = null;
+
+        const MONTHS_RU = ['', 'ЯНВАРЬ','ФЕВРАЛЬ','МАРТ','АПРЕЛЬ','МАЙ','ИЮНЬ','ИЮЛЬ','АВГУСТ','СЕНТЯБРЬ','ОКТЯБРЬ','НОЯБРЬ','ДЕКАБРЬ'];
+        const WEEKDAYS_SHORT = {0:'ВС',1:'ПН',2:'ВТ',3:'СР',4:'ЧТ',5:'ПТ',6:'СБ'};
+
+        const fmt = n => Number(n).toLocaleString('ru-RU', {maximumFractionDigits: 0});
+
+        /* ── DOM ── */
+        const grid       = document.getElementById('calGrid');
+        const loading    = document.getElementById('calLoading');
+        const monthLabel = document.getElementById('monthLabel');
+        const tooltip    = document.getElementById('calTooltip');
+        const detailM    = document.getElementById('detailModal');
+        const detailIn   = document.getElementById('detailInner');
+
+        /* ── FETCH DATA ── */
+        async function loadCalendar() {
+            grid.style.display = 'none';
+            loading.style.display = 'block';
+            try {
+                const url = `/api/v1/fleet/rent-calendar-data?year=${curYear}&month=${curMonth}&ownership=${curOwnership}`;
+                const res = await fetch(url, { credentials: 'include' });
+                if (!res.ok) throw new Error('API error');
+                gridData = await res.json();
+                renderCalendar();
+                renderSummary();
+            } catch (e) {
+                grid.innerHTML = '<div style="padding:40px;color:var(--danger);text-align:center;">Ошибка загрузки: ' + e.message + '</div>';
+                grid.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        /* ── RENDER SUMMARY ── */
+        function renderSummary() {
+            if (!gridData?.summary) return;
+            const s = gridData.summary;
+            document.getElementById('sumVehicles').textContent = s.total_vehicles;
+            document.getElementById('sumPaid').textContent = fmt(s.total_paid) + ' ₽';
+            document.getElementById('sumDebt').textContent = fmt(s.total_debt) + ' ₽';
+            document.getElementById('sumExpected').textContent = fmt(s.total_expected) + ' ₽';
+            document.getElementById('sumRate').textContent = s.collection_rate + '%';
+        }
+
+        /* ── RENDER CALENDAR GRID ── */
+        function renderCalendar() {
+            if (!gridData || !gridData.days || !gridData.vehicles) return;
+            const { days, vehicles } = gridData;
+            const cols = days.length + 1; // +1 for label column
+            grid.style.gridTemplateColumns = `200px repeat(${days.length}, minmax(30px, 1fr))`;
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+
+            let html = '<div class="g-head"><div class="g-label">БОРТ / ВОДИТЕЛЬ</div>';
+            days.forEach(day => {
+                const d = new Date(day + 'T00:00:00');
+                const wd = WEEKDAYS_SHORT[d.getDay()];
+                const num = d.getDate();
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const style = isWeekend ? 'color:var(--danger);opacity:0.8;' : '';
+                html += `<div style="${style}">${wd}<br>${num}</div>`;
+            });
+            html += '</div>';
+
+            vehicles.forEach(v => {
+                html += '<div class="g-row">';
+                html += `<div class="g-plate">
+                    <span class="plate-num">${v.plate}</span>
+                    <span class="plate-driver">${v.driver_name}</span>
+                    <span class="plate-rent">${v.daily_rent > 0 ? fmt(v.daily_rent) + ' ₽/день' : '—'}</span>
+                </div>`;
+
+                days.forEach(day => {
+                    const cell = v.days[day] || {};
+                    const st = cell.status || 'no_rent';
+                    const isToday = day === todayStr;
+                    const todayCls = isToday ? ' today' : '';
+                    let dotContent = '';
+
+                    if (st === 'paid') dotContent = '✓';
+                    else if (st === 'debt') dotContent = '!';
+                    else if (st === 'future') dotContent = '·';
+                    else if (st === 'repair') dotContent = '🔧';
+                    else if (st === 'day_off') dotContent = '☀';
+                    else if (st === 'idle') dotContent = '—';
+                    else dotContent = '';
+
+                    html += `<div class="cal-cell ${st}${todayCls}" 
+                                  data-vid="${v.vehicle_id}" data-day="${day}"
+                                  data-plate="${v.plate}" data-driver="${v.driver_name}"
+                                  data-charged="${cell.charged || 0}" data-expected="${cell.expected || 0}"
+                                  data-status="${st}">
+                        <div class="cell-dot">${dotContent}</div>
+                    </div>`;
+                });
+                html += '</div>';
+            });
+
+            grid.innerHTML = html;
+            grid.style.display = 'grid';
+
+            // Bind cell events
+            grid.querySelectorAll('.cal-cell').forEach(cell => {
+                cell.addEventListener('mouseenter', showTooltip);
+                cell.addEventListener('mouseleave', hideTooltip);
+                cell.addEventListener('click', showDetail);
+            });
+        }
+
+        /* ── TOOLTIP ── */
+        function showTooltip(e) {
+            const cell = e.currentTarget;
+            const st = cell.dataset.status;
+            const plate = cell.dataset.plate;
+            const driver = cell.dataset.driver;
+            const charged = parseFloat(cell.dataset.charged) || 0;
+            const expected = parseFloat(cell.dataset.expected) || 0;
+            const day = cell.dataset.day;
+
+            const statusMap = {
+                paid: '<span style="color:var(--success);">✓ Оплачено</span>',
+                debt: '<span style="color:var(--danger);">✗ Долг</span>',
+                future: '<span style="color:#666;">◦ Запланировано</span>',
+                repair: '<span style="color:#ffa500;">🔧 Ремонт</span>',
+                day_off: '<span style="color:#6495ed;">☀ Выходной</span>',
+                idle: '<span style="color:#888;">— Простой</span>',
+                no_rent: '<span style="color:#555;">Нет тарифа</span>',
+            };
+
+            const dayFormatted = new Date(day + 'T00:00:00').toLocaleDateString('ru-RU', {
+                weekday: 'short', day: 'numeric', month: 'short'
+            });
+
+            tooltip.innerHTML = `
+                <div class="tt-title">${plate} · ${dayFormatted}</div>
+                <div class="tt-line"><span class="tt-label">Водитель</span><span class="tt-val">${driver}</span></div>
+                <div class="tt-line"><span class="tt-label">Статус</span>${statusMap[st] || st}</div>
+                ${expected > 0 ? `<div class="tt-line"><span class="tt-label">Ожидалось</span><span class="tt-val">${fmt(expected)} ₽</span></div>` : ''}
+                ${charged > 0 ? `<div class="tt-line"><span class="tt-label">Списано</span><span class="tt-val green">${fmt(charged)} ₽</span></div>` : ''}
+                ${st === 'debt' && expected > 0 ? `<div class="tt-line"><span class="tt-label">Недобор</span><span class="tt-val red">${fmt(expected)} ₽</span></div>` : ''}
+            `;
+
+            const rect = cell.getBoundingClientRect();
+            tooltip.style.display = 'block';
+            tooltip.style.left = Math.min(rect.left, window.innerWidth - 290) + 'px';
+            tooltip.style.top = (rect.bottom + 8) + 'px';
+        }
+
+        function hideTooltip() {
+            tooltip.style.display = 'none';
+        }
+
+        /* ── DETAIL MODAL ── */
+        function showDetail(e) {
+            const cell = e.currentTarget;
+            const st = cell.dataset.status;
+            const plate = cell.dataset.plate;
+            const driver = cell.dataset.driver;
+            const charged = parseFloat(cell.dataset.charged) || 0;
+            const expected = parseFloat(cell.dataset.expected) || 0;
+            const day = cell.dataset.day;
+
+            const dayFormatted = new Date(day + 'T00:00:00').toLocaleDateString('ru-RU', {
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            });
+
+            const statusLabels = {
+                paid: '✓ Аренда списана успешно',
+                debt: '✗ Просрочка / Долг',
+                future: '◦ Будущее списание',
+                repair: '🔧 Борт на ремонте — списание не требуется',
+                day_off: '☀ Выходной день — льготная ставка',
+                idle: '— Простой — списание приостановлено',
+                no_rent: 'Тариф не назначен',
+            };
+
+            detailIn.innerHTML = `
+                <h3>ДЕТАЛИ СПИСАНИЯ</h3>
+                <div class="d-row"><span class="d-label">Дата</span><span>${dayFormatted}</span></div>
+                <div class="d-row"><span class="d-label">Борт</span><span style="color:var(--accent-2);">${plate}</span></div>
+                <div class="d-row"><span class="d-label">Водитель</span><span>${driver}</span></div>
+                <div class="d-row"><span class="d-label">Статус</span><span>${statusLabels[st] || st}</span></div>
+                <div class="d-row"><span class="d-label">Суточный тариф</span><span>${expected > 0 ? fmt(expected) + ' ₽' : '—'}</span></div>
+                <div class="d-row"><span class="d-label">Фактически списано</span><span style="color:${charged > 0 ? 'var(--success)' : 'var(--danger)'};">${charged > 0 ? fmt(charged) + ' ₽' : '0 ₽'}</span></div>
+                ${st === 'debt' ? `<div class="d-row"><span class="d-label" style="color:var(--danger);">ЗАДОЛЖЕННОСТЬ</span><span style="color:var(--danger);font-weight:700;">${fmt(expected)} ₽</span></div>` : ''}
+                <div class="d-close"><button id="closeDetail">ЗАКРЫТЬ</button></div>
+            `;
+            detailM.classList.add('active');
+            document.getElementById('closeDetail').onclick = () => detailM.classList.remove('active');
+        }
+
+        detailM.addEventListener('click', e => { if (e.target === detailM) detailM.classList.remove('active'); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') detailM.classList.remove('active'); });
+
+        /* ── NAVIGATION ── */
+        function updateMonthLabel() {
+            monthLabel.textContent = `${MONTHS_RU[curMonth]} ${curYear}`;
+        }
+
+        document.getElementById('prevMonth').onclick = () => {
+            curMonth--;
+            if (curMonth < 1) { curMonth = 12; curYear--; }
+            updateMonthLabel();
+            loadCalendar();
+        };
+
+        document.getElementById('nextMonth').onclick = () => {
+            curMonth++;
+            if (curMonth > 12) { curMonth = 1; curYear++; }
+            updateMonthLabel();
+            loadCalendar();
+        };
+
+        /* ── TABS ── */
+        document.querySelectorAll('.cal-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.cal-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                curOwnership = tab.dataset.ownership;
+                loadCalendar();
+            });
+        });
+
+        /* ── INIT ── */
+        updateMonthLabel();
+        loadCalendar();
+
+    })();
+    </script>
+    <script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</body>
+</html>

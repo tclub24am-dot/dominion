@@ -1,0 +1,251 @@
+version: '3.8'
+
+# ============================================================
+# S-GLOBAL DOMINION — docker-compose.yml
+# Протокол: VERSHINA v200.15
+# Сервер: 89.169.39.111
+# Запуск: docker-compose --env-file .env up -d
+# NETWORK TIGHTENING v200.15:
+#   - SIP (5060/udp, 5061/tcp) и RTP (10000-20000/udp) привязаны
+#     ТОЛЬКО к внешнему IP 89.169.39.111 — публичный доступ «для всех» закрыт.
+# ============================================================
+
+services:
+  db:
+    image: postgres:15
+    container_name: dominion_db
+    env_file:
+      - ./.env
+    # IRON SHIELD v200.16: порт 5432 НЕ публикуется в интернет.
+    # БД доступна только внутри dominion_net по имени сервиса 'db'.
+    # ports:
+    #   - "127.0.0.1:5432:5432"  # Раскомментировать ТОЛЬКО для локальной отладки
+    volumes:
+      - dominion_data:/var/lib/postgresql/data
+    networks:
+      - dominion_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=32GB"
+      - "-c"
+      - "effective_cache_size=96GB"
+      - "-c"
+      - "work_mem=256MB"
+      - "-c"
+      - "maintenance_work_mem=2GB"
+
+  redis:
+    image: redis:7-alpine
+    container_name: dominion_redis
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - dominion_net
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: dominion_app
+    env_file:
+      - ./.env
+    environment:
+      # Переопределяем REDIS_URL: внутри Docker-сети localhost не работает.
+      # Имя сервиса 'redis' резолвится через Docker DNS автоматически.
+      - REDIS_URL=redis://redis:6379/0
+      # Ollama LLM-движок: доступен по имени сервиса внутри dominion_net
+      - OLLAMA_BASE_URL=http://ollama:11434
+    ports:
+      - "8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    networks:
+      - dominion_net
+    volumes:
+      - ./app:/app/app
+      - ./static:/app/static
+      - dominion_storage:/root/dominion/storage
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ============================================================
+  # S-АТС — Asterisk 20 (PJSIP + AMI + AGI)
+  # VERSHINA v200.14: SaaS-телефония с изоляцией по tenant_id
+  # ============================================================
+  asterisk:
+    image: andrius/asterisk:latest
+    container_name: dominion_asterisk
+    hostname: s-ats.dominion.local
+    env_file:
+      - ./.env
+    environment:
+      # Передаём секрет для CURL-уведомлений в dialplan
+      # ОБЯЗАТЕЛЬНО: ATS_WEBHOOK_SECRET должен быть задан в .env
+      - ATS_WEBHOOK_SECRET=${ATS_WEBHOOK_SECRET}
+      # URL внутреннего API (app-сервис в той же сети)
+      - DOMINION_API_URL=http://app:8001
+      # Секреты Asterisk (подставляются в конфиги через init_asterisk_secrets.sh)
+      - AMI_SECRET=${AMI_SECRET}
+      - F2B_SECRET=${F2B_SECRET}
+      - ASTERISK_SYSTEM_PASS=${ASTERISK_SYSTEM_PASS}
+      - SIP_PRO_001_PASS=${SIP_PRO_001_PASS}
+      - SIP_GO_001_PASS=${SIP_GO_001_PASS}
+      - SIP_PLUS_001_PASS=${SIP_PLUS_001_PASS}
+      - SIP_EXPRESS_001_PASS=${SIP_EXPRESS_001_PASS}
+     ports:
+       # SIP-сигнализация (UDP, порт 5060) — ТОЛЬКО внешний IP сервера
+       - "5060:5060/udp"
+       # SIP-сигнализация (TCP, порт 5061) — ТОЛЬКО внешний IP сервера
+       - "5061:5061/tcp"
+       - "8089:8089/tcp"
+       # AMI (Asterisk Manager Interface) — только внутри сети (не публикуем)
+       # - "5038:5038"  # Раскомментировать при необходимости внешнего AMI
+       # RTP медиа-поток (UDP) — ТОЛЬКО внешний IP сервера
+       - "10000-20000:10000-20000/udp"
+    # Скрипт инициализации: подставляет секреты из ENV в конфиги перед запуском Asterisk
+    entrypoint: ["/bin/sh", "-c", "/etc/asterisk/init_asterisk_secrets.sh && exec asterisk -f"]
+    volumes:
+      # Конфиги монтируются из ./asterisk/ — изменения без перезапуска контейнера
+      # ВАЖНО: монтируются как rw (не :ro) — init_asterisk_secrets.sh перезаписывает плейсхолдеры
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/logger.conf:/etc/asterisk/logger.conf:ro
+      - ./asterisk/manager.conf:/etc/asterisk/manager.conf
+      # Скрипт инициализации секретов
+      - ./asterisk/init_asterisk_secrets.sh:/etc/asterisk/init_asterisk_secrets.sh:ro
+      # Персистентные данные: CDR, voicemail, recordings
+      - asterisk_data:/var/spool/asterisk
+      - asterisk_logs:/var/log/asterisk
+    networks:
+      - dominion_net
+    depends_on:
+      - app
+    restart: unless-stopped
+    # Защита от OOM при большом числе каналов
+    mem_limit: 512m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # OLLAMA — локальный LLM-движок (VERSHINA v200.11)
+  # Доступен внутри сети по адресу: http://ollama:11434
+  # dominion_app обращается к нему через OLLAMA_BASE_URL
+  # ============================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dominion_ollama
+    # IRON SHIELD v200.16: порт 11434 НЕ публикуется в интернет.
+    # Ollama доступен только внутри dominion_net по имени сервиса 'ollama'.
+    # ports:
+    #   - "127.0.0.1:11434:11434"  # Раскомментировать ТОЛЬКО для локальной отладки
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - dominion_net
+    restart: unless-stopped
+    runtime: nvidia
+    environment:
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=2
+      - OLLAMA_FLASH_ATTENTION=1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  synapse:
+    image: matrixdotorg/synapse:v1.98.0
+    container_name: dominion_synapse
+    env_file:
+      - ./.env
+    environment:
+      - SYNAPSE_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.dominion.local}
+      - SYNAPSE_REPORT_STATS=no
+      - SYNAPSE_CONFIG_DIR=/data
+      - SYNAPSE_HTTP_PORT=8008
+    command: >
+      /bin/sh -c "if [ ! -f /data/homeserver.yaml ]; then
+      python -m synapse.app.homeserver --server-name $${SYNAPSE_SERVER_NAME} --config-path /data/homeserver.yaml --data-directory /data --generate-config --report-stats=no;
+      fi && exec python -m synapse.app.homeserver --config-path /data/homeserver.yaml"
+    ports:
+      # SECURITY FIX v200.16.4: Synapse Admin API НЕ должен быть доступен из интернета.
+      # Привязка к 127.0.0.1 — доступ только через Docker-сеть и localhost.
+      # Для внешнего доступа к Matrix — настроить Nginx reverse proxy с аутентификацией.
+      - "127.0.0.1:8008:8008"
+    volumes:
+      - synapse_data:/data
+    networks:
+      - dominion_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8008/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # FRONTEND — Nginx Production Build (IRON SHIELD v200.16)
+  # Сборка: docker-compose build frontend
+  # Доступен: http://89.169.39.111:5173
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: dominion_frontend
+    ports:
+      - "5173:80"
+    networks:
+      - dominion_net
+    depends_on:
+      - app
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  dominion_data:
+  redis_data:
+  dominion_storage:
+  asterisk_data:
+  asterisk_logs:
+  ollama_data:
+  synapse_data:
+  # frontend_node_modules: # Удалён — frontend теперь собирается через Dockerfile.frontend
+
+networks:
+  dominion_net:
+    driver: bridge

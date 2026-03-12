@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partners & Payouts</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{--bg:#0b0b12;--glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.12);--text:#e8eaf6;--muted:#9aa5ce;--accent:#fd5d93;--gold:#f7d774;}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;}
+        .wrap{padding:24px;}
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.2em;margin-bottom:12px;}
+        .panel{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+        .fire{border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:12px;padding:10px 16px;font-family:'Orbitron',sans-serif;}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:12px;}
+        .card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:12px;}
+        .card.gold{border-color:var(--gold);box-shadow:0 0 16px rgba(247,215,116,0.3);}
+        .muted{color:var(--muted);font-size:11px;}
+        .kpi{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--accent);margin-top:6px;}
+        .pill{font-size:10px;border:1px solid var(--border);border-radius:999px;padding:3px 8px;}
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="title">ПАРТНЕРЫ И ВЫПЛАТЫ</div>
+        <div class="panel">
+            <div>
+                <div>B2B кабинет</div>
+                <div class="muted">Банки • Партнеры • Выплаты</div>
+            </div>
+            <button class="fire" id="firePay">🔥 МОМЕНТАЛЬНАЯ ВЫПЛАТА</button>
+        </div>
+        <div class="grid" id="b2bGrid"></div>
+        <div class="title" style="margin-top:18px;">ПРИОРИТЕТНЫЕ ВЫПЛАТЫ</div>
+        <div class="grid" id="priorityGrid"></div>
+    </div>
+    <script>
+        function formatNum(value){
+            const num = Number(value || 0);
+            return num.toLocaleString('ru-RU');
+        }
+
+        function renderPriority(list){
+            const grid = document.getElementById('priorityGrid');
+            if (!grid) return;
+            if (!list.length) {
+                grid.innerHTML = '<div class="card"><div class="muted">Нет приоритетных выплат</div></div>';
+                return;
+            }
+            grid.innerHTML = list.map(d => `
+                <div class="card gold">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        ${d.photo_url ? `<img src="${d.photo_url}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">` :
+                        `<div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(from 0deg,hsl(${d.avatar_hue || 220},70%,55%),hsl(${d.avatar_hue || 220},70%,35%));font-size:11px;">${d.avatar_text || '★'}</div>`}
+                        <span>${d.driver_name || 'Водитель'}</span>
+                    </div>
+                    <div class="muted">${d.park} • ⭐ ${d.stars}</div>
+                    <div class="kpi">${formatNum(d.driver_balance)} ₽</div>
+                    <button class="fire" data-driver="${d.user_id}">FIRE PAY</button>
+                </div>
+            `).join('');
+            grid.querySelectorAll('.fire').forEach(btn => {
+                btn.onclick = () => firePayDriver(btn.dataset.driver);
+            });
+        }
+
+        function firePayDriver(driverId){
+            fetch('/api/v1/partners/fire-pay', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({driver_id: Number(driverId)})
+            }).then(r => r.json()).then(data => {
+                alert(data.message || 'Запрос отправлен');
+            });
+        }
+
+        fetch('/api/v1/partners/list')
+            .then(r => r.text())
+            .then(html => {
+                const grid = document.getElementById('b2bGrid');
+                if (grid) grid.innerHTML = html;
+            });
+
+        fetch('/api/v1/fleet/command-data')
+            .then(r => r.json())
+            .then(data => {
+                const priority = (data.vehicles || []).filter(v => v.priority_payout);
+                renderPriority(priority);
+            });
+    </script>
+</body>
+<script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</html>

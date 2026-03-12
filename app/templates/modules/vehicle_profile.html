@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карточка автомобиля • T-CLUB24</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{
+            --bg:#0b0b12;--panel:#121528;--glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+            --text:#e8eaf6;--muted:#9aa5ce;--gold:#d4af37;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;}
+        .wrap{padding:24px 28px;}
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.2em;font-size:16px;margin-bottom:16px;}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+        .card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px;}
+        .label{font-size:11px;color:var(--muted);letter-spacing:0.08em;}
+        .value{font-size:14px;margin-top:6px;}
+        table{width:100%;border-collapse:collapse;font-size:12px;}
+        th,td{padding:6px;border-bottom:1px solid var(--border);text-align:left;}
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="title">КАРТОЧКА АВТОМОБИЛЯ</div>
+        <div class="grid">
+            <div class="card">
+                <div class="label">Госномер</div>
+                <div class="value">{{ vehicle.license_plate }}</div>
+                <div class="label">Марка / Модель</div>
+                <div class="value">{{ vehicle.brand }} {{ vehicle.model }}</div>
+                <div class="label">VIN</div>
+                <div class="value">{{ vehicle.vin }}</div>
+                <div class="label">Парк</div>
+                <div class="value">{{ vehicle.park_name }}</div>
+            </div>
+            <div class="card">
+                <div class="label">Статус</div>
+                <div class="value">{{ vehicle.status }}</div>
+                <div class="label">Тип владения</div>
+                <div class="value">{{ vehicle.ownership_type }}</div>
+                <div class="label">Yandex Car ID</div>
+                <div class="value">{{ vehicle.yandex_car_id }}</div>
+            </div>
+        </div>
+        <div class="card" style="margin-top:14px;">
+            <div class="label">История водителей (по транзакциям)</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Водитель</th>
+                        <th>Последний раз</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in driver_history %}
+                    <tr>
+                        <td>{{ item.driver.full_name if item.driver else item.driver_id }}</td>
+                        <td>{{ item.last_seen }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not driver_history %}
+                    <tr><td colspan="2">История пуста</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card" style="margin-top:14px;">
+            <div class="label">Лог ремонтов</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Описание</th>
+                        <th>Стоимость</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in repairs %}
+                    <tr>
+                        <td>{{ log.created_at }}</td>
+                        <td>{{ log.description }}</td>
+                        <td>{{ "%.2f"|format(log.repair_cost or 0) }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not repairs %}
+                    <tr><td colspan="3">Ремонтов нет</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</body>
+</html>

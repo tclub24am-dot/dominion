@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Казна | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>💰 Казна</h1>
+    <p class="muted-text">Финансовый центр</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="card text-center">
+        <div class="text-3xl gold-text">— ₽</div>
+        <div class="muted-text">Общий баланс</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-green-400">— ₽</div>
+        <div class="muted-text">Доход за период</div>
+    </div>
+    <div class="card text-center">
+        <div class="text-3xl text-red-400">— ₽</div>
+        <div class="muted-text">Расход за период</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="text-xl gold-text mb-4">Последние транзакции</h2>
+    <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Транзакции не найдены</p>
+    </div>
+</div>
+{% endblock %}

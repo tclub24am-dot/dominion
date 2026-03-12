@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistics</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{--bg:#0b0b12;--panel:#121528;--glass:rgba(255,255,255,0.04);--border:rgba(225,78,202,0.35);--text:#e8eaf6;--muted:#9aa5ce;--accent:#1d8cf8;}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;}
+        .wrap{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:24px;}
+        .sidebar{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:14px;}
+        .map{min-height:520px;background:linear-gradient(145deg,rgba(20,24,40,0.9),rgba(8,10,20,0.9));border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;}
+        .title{font-family:'Orbitron',sans-serif;letter-spacing:0.2em;margin-bottom:10px;}
+        .kpi{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--accent);margin:8px 0;}
+        .chip{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);font-size:10px;margin-right:6px;}
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="sidebar">
+            <div class="title">ЛОГИСТИКА</div>
+            <div class="kpi">T24‑CARGO</div>
+            <div class="kpi">ВкусВилл</div>
+            <div class="chip">Маршруты</div><div class="chip">GPS</div><div class="chip">Слоты</div>
+        </div>
+        <div class="map">КАРТА ПЕРЕВОЗОК (Mapbox)</div>
+    </div>
+</body>
+<script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</html>

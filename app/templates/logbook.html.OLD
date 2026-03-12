@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Журнал путевых листов | S-GLOBAL DOMINION{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📋 Журнал путевых листов</h1>
+    <p class="muted-text">Документация и отчётность</p>
+</div>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl gold-text">Путевые листы</h2>
+        <button class="btn-gold">+ Создать путевой лист</button>
+    </div>
+    
+    <!-- Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <select class="bg-transparent border border-gray-600 rounded-lg p-2 text-white">
+            <option value="">Все парки</option>
+            <option value="PRO">PRO</option>
+            <option value="GO">GO</option>
+            <option value="PLUS">PLUS</option>
+        </select>
+        <input type="date" class="bg-transparent border border-gray-600 rounded-lg p-2 text-white">
+        <input type="date" class="bg-transparent border border-gray-600 rounded-lg p-2 text-white">
+        <button class="btn-gold">Применить</button>
+    </div>
+
+    <div class="empty-state">
+        <h3>Нет данных</h3>
+        <p>Путевые листы не найдены или данные ещё не загружены</p>
+    </div>
+</div>
+{% endblock %}

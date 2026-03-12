@@ -1,0 +1,40 @@
+# === PYTHON CACHE ===
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# === GIT ===
+.git/
+
+# === LOGS & TEMP ===
+*.log
+*.tmp
+*.bak
+*.swp
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === NODE / FRONTEND BUILD ===
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# === ARCHIVES (большие файлы) ===
+*.tar
+*.tar.gz
+dominion_backup_feb2026.tar
+static/Hiddify-Windows-Setup-x64.exe
+
+# === STORAGE ===
+storage/
+
+# === DOCS (не индексировать) ===
+docs/
+
+# === DEBUG ===
+DEBUG_PROFILE.json

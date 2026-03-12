@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imperial Messenger</title>
+    <link rel="stylesheet" href="/static/css/fonts.css">
+    <style>
+        :root{--bg:#F7F4EE;--glass:rgba(255,255,240,0.9);--border:rgba(212,175,55,0.6);--text:#2C2C2C;--muted:#5a5248;--gold:#D4AF37;}
+        body{margin:0;background:radial-gradient(circle at 50% 45%, rgba(212,175,55,0.12), rgba(13,12,11,0.96) 65%), #0D0C0B;color:var(--text);font-family:'Montserrat',sans-serif;}
+        .layout{display:grid;grid-template-columns:260px 1fr 280px;height:100vh;}
+        .panel{border-right:1px solid rgba(212,175,55,0.2);padding:14px;}
+        .chat{display:flex;flex-direction:column;}
+        .bubble{background:#FDFCF0;border:1px solid var(--border);border-radius:12px;padding:10px;margin:8px 0;font-size:13px;line-height:1.6;font-weight:600;color:#1A1A1A;box-shadow:0 20px 50px rgba(0,0,0,0.5);}
+        .bubble.ai{background:rgba(255,215,0,0.22);border-color:#D4AF37;color:#1A1A1A;}
+        .bubble .ai-title{font-family:'Cinzel',serif;color:#8B6508;margin-bottom:4px;}
+        .input{margin-top:auto;display:flex;gap:8px;}
+        input{flex:1;background:#fff;border:1px solid var(--border);border-radius:10px;color:#1A1A1A;padding:8px;font-weight:600;}
+        input::placeholder{color:#6a5b3b;}
+        button{border:1px solid var(--border);background:#fff;color:#8B6508;border-radius:10px;padding:8px 10px;}
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="panel">
+            <strong style="font-family:'Cinzel',serif;">Каналы</strong>
+            <div class="bubble">Master</div>
+            <div class="bubble">Склад</div>
+            <div class="bubble">Казна</div>
+        </div>
+        <div class="panel chat">
+            <strong style="font-family:'Cinzel',serif;">Диалог</strong>
+            <div id="chatBody">
+                <div class="bubble ai"><div class="ai-title">Oracle AI</div>Контур стабилен.</div>
+                <div class="bubble">Мастер: Подключить объект А111АА.</div>
+            </div>
+            <div class="input">
+                <input id="chatInput" placeholder="Сообщение...">
+                <button id="chatMic">🎤</button>
+                <button id="chatSend">→</button>
+            </div>
+        </div>
+        <div class="panel">
+            <strong style="font-family:'Cinzel',serif;">Контекст</strong>
+            <div class="bubble">Объект: Машина А111АА</div>
+            <div class="bubble">Транзакция: #2041</div>
+        </div>
+    </div>
+</body>
+<script src="/static/js/imperial_messenger.js"></script>
+<script src="/static/js/global_back.js"></script>
+    <script src="/static/js/global_ui.js"></script>
+</html>
