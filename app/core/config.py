@@ -134,14 +134,14 @@ class Settings(BaseSettings):
     MODULES_DISABLED: Optional[str] = os.getenv("MODULES_DISABLED")  # "security,ai_analyst"
     TRIAL_DAYS: int = int(os.getenv("TRIAL_DAYS", "30"))
     TRIAL_BASE_MODULES: str = os.getenv("TRIAL_BASE_MODULES", "core,messenger")
-    
+
     # --- REDIS CACHE ---
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    
+
     # --- ORACLE AI (GEMINI 3 FLASH via Ollama Bridge) ---
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-3-flash-preview:cloud"
-    OLLAMA_BASE_URL: str = "http://127.0.0.1:11434/v1"
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434/v1")
     ORACLE_TIMEOUT: int = 60
     ORACLE_UPLOAD_DIR: str = "/root/dominion/storage/uploads"
 
@@ -154,9 +154,9 @@ class Settings(BaseSettings):
     MATRIX_MIKS_ROOM_ID: Optional[str] = None
     MATRIX_OLLAMA_TAG_MODEL: str = "llama3.1:8b"
     MATRIX_ADMIN_SHARED_SECRET: Optional[str] = None
-    ASTERISK_WS_URL: str = "wss://89.169.39.111:8089/ws"
-    ASTERISK_SIP_REALM: str = "89.169.39.111"
-    ASTERISK_SIP_WEBSOCKET_ENDPOINT: str = "sip:system@89.169.39.111"
+    ASTERISK_WS_URL: str = "ws://asterisk:8089/ws"
+    ASTERISK_SIP_REALM: str = "asterisk"
+    ASTERISK_SIP_WEBSOCKET_ENDPOINT: str = "sip:system@asterisk"
 
     # Настройка Pydantic v2
     model_config = SettingsConfigDict(

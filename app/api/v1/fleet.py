@@ -468,6 +468,7 @@ async def sync_driver_cars_post(
 
 @router.get("/vehicles/active")
 async def get_active_vehicles(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -487,8 +488,15 @@ async def get_active_vehicles(
         
         from fastapi.responses import HTMLResponse
         
+        # v200.14: Изоляция тенанта — только машины текущего тенанта
+        tenant_id = getattr(request.state, "tenant_id", "s-global")
+        
         # Получаем машины
-        result = await db.execute(select(Vehicle).order_by(Vehicle.license_plate))
+        result = await db.execute(
+            select(Vehicle)
+            .where(Vehicle.tenant_id == tenant_id)
+            .order_by(Vehicle.license_plate)
+        )
         vehicles = result.scalars().all()
         
         logger.info(f"✓ Fleet query: found {len(vehicles)} vehicles")
@@ -812,6 +820,7 @@ async def create_repair_log(
 
 @router.get("/vehicles/table")
 async def get_vehicles_table(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -821,14 +830,18 @@ async def get_vehicles_table(
     try:
         from fastapi.responses import HTMLResponse
         from fastapi.templating import Jinja2Templates
-        from fastapi import Request
         from sqlalchemy import func, and_
         from datetime import timedelta
         
         templates = Jinja2Templates(directory="app/templates")
         
+        # v200.14: Изоляция тенанта — только машины текущего тенанта
+        tenant_id = getattr(request.state, "tenant_id", "s-global")
+        
         # Получаем все активные машины
-        stmt = select(Vehicle).where(Vehicle.is_active == True).order_by(Vehicle.license_plate)
+        stmt = select(Vehicle).where(
+            and_(Vehicle.is_active == True, Vehicle.tenant_id == tenant_id)
+        ).order_by(Vehicle.license_plate)
         result = await db.execute(stmt)
         vehicles = result.scalars().all()
         
@@ -955,6 +968,7 @@ async def get_vehicles_table(
 
 @router.get("/vehicles/list")
 async def get_vehicles_list_json(
+    request: Request,
     show_archive: bool = False,  # True = показать все машины (архив)
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -968,15 +982,22 @@ async def get_vehicles_list_json(
     try:
         from app.models.all_models import Transaction
         
+        # v200.14: Изоляция тенанта — только машины текущего тенанта
+        tenant_id = getattr(request.state, "tenant_id", "s-global")
+        
         # PROTOCOL "THE LIVE 300": Фильтрация по is_active_dominion
         if show_archive:
             # Архив: все машины
-            where_clause = Vehicle.is_active == True
+            where_clause = and_(
+                Vehicle.is_active == True,
+                Vehicle.tenant_id == tenant_id
+            )
         else:
             # Боевой режим: только "Живые 300"
             where_clause = and_(
                 Vehicle.is_active == True,
-                Vehicle.is_active_dominion == True
+                Vehicle.is_active_dominion == True,
+                Vehicle.tenant_id == tenant_id
             )
         
         stmt = (
@@ -1369,16 +1390,19 @@ async def update_default_contract_terms(
 
 @router.get("/vehicles/lookup")
 async def lookup_vehicle(
+    request: Request,
     vin: Optional[str] = None,
     plate: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # v200.14: Изоляция тенанта — поиск только в рамках текущего тенанта
+    tenant_id = getattr(request.state, "tenant_id", "s-global")
     vin_value = (vin or "").upper()
     plate_value = _normalize_plate(plate or "")
     if not vin_value and not plate_value:
         return {"exists": False, "matches": []}
-    stmt = select(Vehicle)
+    stmt = select(Vehicle).where(Vehicle.tenant_id == tenant_id)
     if vin_value and plate_value:
         stmt = stmt.where(or_(Vehicle.vin == vin_value, Vehicle.license_plate == plate_value))
     elif vin_value:
@@ -1400,16 +1424,19 @@ async def lookup_vehicle(
 
 @router.get("/drivers/lookup")
 async def lookup_driver(
+    request: Request,
     phone: Optional[str] = None,
     name: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # v200.14: Изоляция тенанта — поиск водителей только в рамках текущего тенанта
+    tenant_id = getattr(request.state, "tenant_id", "s-global")
     phone_value = _normalize_phone(phone or "")
     name_value = (name or "").strip()
     if not phone_value and not name_value:
         return {"exists": False, "matches": []}
-    stmt = select(User)
+    stmt = select(User).where(User.tenant_id == tenant_id)
     if phone_value and name_value:
         stmt = stmt.where(
             or_(

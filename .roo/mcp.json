@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "mcp-server-postgres",
+      "args": [
+        "postgresql://dominion_user:X7Jpgw9FP3SkRER@127.0.0.1:5432/dominion_db"
+      ]
+    }
+  }
+}

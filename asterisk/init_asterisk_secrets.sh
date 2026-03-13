@@ -1,11 +1,18 @@
 #!/bin/bash
 # ============================================================
 # S-GLOBAL DOMINION — asterisk/init_asterisk_secrets.sh
-# Протокол: VERSHINA v200.14
+# Протокол: VERSHINA v200.16.5
 # Скрипт инициализации секретов Asterisk при старте контейнера.
 #
 # Заменяет плейсхолдеры %%VAR%% в конфигах на реальные значения
 # из переменных окружения. Если переменная не задана — АВАРИЙНЫЙ СТОП.
+#
+# NAT-TRAVERSAL:
+#   Если задана переменная EXTERNAL_IP (например, 89.169.39.111),
+#   в pjsip.conf будут подставлены external_media_address и
+#   external_signaling_address для всех транспортов.
+#   Если EXTERNAL_IP не задана — плейсхолдеры заменяются пустыми строками
+#   (локальная разработка, Asterisk использует локальный IP).
 # ============================================================
 set -euo pipefail
 
@@ -65,12 +72,38 @@ log_replacement "%%SIP_PRO_001_PASS%%" "/etc/asterisk/pjsip.conf"
 log_replacement "%%SIP_GO_001_PASS%%" "/etc/asterisk/pjsip.conf"
 log_replacement "%%SIP_PLUS_001_PASS%%" "/etc/asterisk/pjsip.conf"
 log_replacement "%%SIP_EXPRESS_001_PASS%%" "/etc/asterisk/pjsip.conf"
+
+# NAT-traversal: подставляем EXTERNAL_IP если задан, иначе убираем плейсхолдеры
+if [ -n "${EXTERNAL_IP:-}" ]; then
+    echo "🌐 [Asterisk Init] EXTERNAL_IP=${EXTERNAL_IP} — включаем NAT-traversal для всех транспортов"
+    EXT_MEDIA_UDP="external_media_address=${EXTERNAL_IP}"
+    EXT_SIGNAL_UDP="external_signaling_address=${EXTERNAL_IP}"
+    EXT_MEDIA_TCP="external_media_address=${EXTERNAL_IP}"
+    EXT_SIGNAL_TCP="external_signaling_address=${EXTERNAL_IP}"
+    EXT_MEDIA_WSS="external_media_address=${EXTERNAL_IP}"
+    EXT_SIGNAL_WSS="external_signaling_address=${EXTERNAL_IP}"
+else
+    echo "🏠 [Asterisk Init] EXTERNAL_IP не задан — локальный режим, NAT-traversal отключён"
+    EXT_MEDIA_UDP=""
+    EXT_SIGNAL_UDP=""
+    EXT_MEDIA_TCP=""
+    EXT_SIGNAL_TCP=""
+    EXT_MEDIA_WSS=""
+    EXT_SIGNAL_WSS=""
+fi
+
 sed \
     -e "s|%%SYSTEM_PASS%%|${ASTERISK_SYSTEM_PASS}|g" \
     -e "s|%%SIP_PRO_001_PASS%%|${SIP_PRO_001_PASS}|g" \
     -e "s|%%SIP_GO_001_PASS%%|${SIP_GO_001_PASS}|g" \
     -e "s|%%SIP_PLUS_001_PASS%%|${SIP_PLUS_001_PASS}|g" \
     -e "s|%%SIP_EXPRESS_001_PASS%%|${SIP_EXPRESS_001_PASS}|g" \
+    -e "s|%%EXTERNAL_MEDIA_UDP%%|${EXT_MEDIA_UDP}|g" \
+    -e "s|%%EXTERNAL_SIGNALING_UDP%%|${EXT_SIGNAL_UDP}|g" \
+    -e "s|%%EXTERNAL_MEDIA_TCP%%|${EXT_MEDIA_TCP}|g" \
+    -e "s|%%EXTERNAL_SIGNALING_TCP%%|${EXT_SIGNAL_TCP}|g" \
+    -e "s|%%EXTERNAL_MEDIA_WSS%%|${EXT_MEDIA_WSS}|g" \
+    -e "s|%%EXTERNAL_SIGNALING_WSS%%|${EXT_SIGNAL_WSS}|g" \
     /etc/asterisk/pjsip.conf > /tmp/pjsip.conf.rendered
 cp /tmp/pjsip.conf.rendered /etc/asterisk/pjsip.conf
 

@@ -21,9 +21,9 @@ engine = create_async_engine(
     DATABASE_URL, 
     echo=False,  # 🔒 Отключено (убивает CPU!)
     future=True,
-    # 🔒 POOL OPTIMIZATION ДЛЯ СТАБИЛЬНОСТИ
-    pool_size=5,              # Минимум 5 соединений
-    max_overflow=10,          # Максимум 15 одновременных
+    # 🔒 POOL OPTIMIZATION v200.16 (128GB RAM Tuning)
+    pool_size=50,             # Увеличено для высокой нагрузки
+    max_overflow=20,          # Максимум 70 одновременных соединений
     pool_pre_ping=True,       # Проверка живых соединений
     pool_recycle=3600,        # Переиспользование каждый час
     connect_args={"timeout": 30}  # Timeout 30 сек на соединение

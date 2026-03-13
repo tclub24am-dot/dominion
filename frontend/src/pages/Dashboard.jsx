@@ -14,6 +14,8 @@ import WorldMapBackground from '../components/dashboard/WorldMapBackground'
 import ScanLinesOverlay from '../components/dashboard/ScanLinesOverlay'
 import MIKSTerminal from '../components/miks/MIKSTerminal'
 import HRMetricsWidget from '../components/dashboard/HRMetricsWidget'
+import SecurityAuditPanel from '../components/dashboard/SecurityAuditPanel'
+import LiveFleetCounter from '../components/dashboard/LiveFleetCounter'
 
 /**
  * S-GLOBAL DOMINION — Main Dashboard v7.2 (Level 5++)
@@ -173,6 +175,20 @@ export default function Dashboard({ onLogout }) {
         <div className="mt-6 max-w-[1440px] mx-auto">
           <HRMetricsWidget />
         </div>
+
+        {/* ЖИВОЙ ФЛОТ + АУДИТ БЕЗОПАСНОСТИ — двухколоночная сетка */}
+        <motion.div
+          className="mt-6 max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+        >
+          {/* Левая колонка: LiveFleetCounter */}
+          <LiveFleetCounter parkName="PRO" />
+
+          {/* Правая колонка: SecurityAuditPanel */}
+          <SecurityAuditPanel collapsed={false} />
+        </motion.div>
 
         {/* СТАТУС-БАР — приподнят, ровно выровнен (mt-6) */}
         <motion.div

@@ -132,10 +132,14 @@ async def get_transactions(
         # ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ СЕССИИ
         db.expire_all()
         
+        # v200.14: Изоляция тенанта — только транзакции текущего тенанта
+        tenant_id = getattr(request.state, "tenant_id", "s-global")
+        
         # Базовый запрос
         stmt = (
             select(Transaction, User.id, User.full_name)
             .outerjoin(User, User.yandex_driver_id == Transaction.yandex_driver_id)
+            .where(Transaction.tenant_id == tenant_id)
             .order_by(desc(Transaction.date))
         )
         
@@ -229,13 +233,21 @@ async def get_transactions(
 
 @router.get("/transactions/recent")
 async def get_recent_transactions(
+    request: Request,
     limit: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # v200.14: Изоляция тенанта — только транзакции текущего тенанта
+    tenant_id = getattr(request.state, "tenant_id", "s-global")
     stmt = (
         select(Transaction)
-        .where(Transaction.amount > 0)
+        .where(
+            and_(
+                Transaction.amount > 0,
+                Transaction.tenant_id == tenant_id
+            )
+        )
         .order_by(desc(Transaction.date))
         .limit(limit)
     )
@@ -414,6 +426,7 @@ async def get_transactions_filtered(
 
 @router.get("/transactions/export")
 async def export_transactions(
+    request: Request,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
     category: Optional[str] = None,
@@ -431,8 +444,13 @@ async def export_transactions(
         
         db.expire_all()
         
+        # v200.14: Изоляция тенанта — только транзакции текущего тенанта
+        tenant_id = getattr(request.state, "tenant_id", "s-global")
+        
         # Базовый запрос
-        stmt = select(Transaction).order_by(desc(Transaction.date))
+        stmt = select(Transaction).where(
+            Transaction.tenant_id == tenant_id
+        ).order_by(desc(Transaction.date))
         
         # Применяем те же фильтры
         if from_date:

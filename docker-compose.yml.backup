@@ -1,3 +1,4 @@
+version: '3.8'
 
 # ============================================================
 # S-GLOBAL DOMINION — docker-compose.yml
@@ -6,29 +7,13 @@
 # Запуск: docker-compose --env-file .env up -d
 # NETWORK TIGHTENING v200.15:
 #   - SIP (5060/udp, 5061/tcp) и RTP (10000-20000/udp) привязаны
-#     ТОЛЬКО к внешнему IP 127.0.0.1 — публичный доступ «для всех» закрыт.
+#     ТОЛЬКО к внешнему IP 89.169.39.111 — публичный доступ «для всех» закрыт.
 # ============================================================
 
 services:
   db:
     image: postgres:15
     container_name: dominion_db
-    command:
-      - "postgres"
-      - "-c"
-      - "shared_buffers=32GB"
-      - "-c"
-      - "effective_cache_size=96GB"
-      - "-c"
-      - "maintenance_work_mem=2GB"
-      - "-c"
-      - "work_mem=64MB"
-      - "-c"
-      - "max_connections=500"
-      - "-c"
-      - "random_page_cost=1.1"
-      - "-c"
-      - "effective_io_concurrency=200"
     env_file:
       - ./.env
     # IRON SHIELD v200.16: порт 5432 НЕ публикуется в интернет.
@@ -45,11 +30,21 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=32GB"
+      - "-c"
+      - "effective_cache_size=96GB"
+      - "-c"
+      - "work_mem=256MB"
+      - "-c"
+      - "maintenance_work_mem=2GB"
 
   redis:
     image: redis:7-alpine
     container_name: dominion_redis
-    command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--maxmemory", "8gb", "--maxmemory-policy", "allkeys-lru"]
+    command: ["redis-server", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--maxmemory-policy", "allkeys-lru"]
     networks:
       - dominion_net
     volumes:
@@ -147,8 +142,8 @@ services:
     depends_on:
       - app
     restart: unless-stopped
-    # Защита от OOM при большом числе каналов (Tuned for 128GB RAM)
-    mem_limit: 2g
+    # Защита от OOM при большом числе каналов
+    mem_limit: 512m
     logging:
       driver: "json-file"
       options:
@@ -221,7 +216,7 @@ services:
   # ============================================================
   # FRONTEND — Nginx Production Build (IRON SHIELD v200.16)
   # Сборка: docker-compose build frontend
-  # Доступен: http://127.0.0.1:5173
+  # Доступен: http://89.169.39.111:5173
   # ============================================================
   frontend:
     build:

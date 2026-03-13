@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Shield, LogOut } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import ThemeSwitcher from './ThemeSwitcher'
+import TenantSecurityBadge from './TenantSecurityBadge'
 
 /**
  * S-GLOBAL DOMINION — Top Bar v3.1 (HQ Status Panel)
@@ -144,8 +145,13 @@ export default function TopBar({ onLogout }) {
         </div>
       </div>
 
-      {/* Правая часть: ThemeSwitcher + Время + LogOut */}
-      <div className="flex items-center gap-4">
+      {/* Правая часть: SecurityBadge + ThemeSwitcher + Время + LogOut */}
+      <div className="flex items-center gap-3">
+        {/* Бейдж безопасности тенанта — компактный режим */}
+        <div className="hidden lg:block">
+          <TenantSecurityBadge compact={true} />
+        </div>
+
         {/* Переключатель тем */}
         <ThemeSwitcher />
 

@@ -63,14 +63,8 @@ async def migrate_call_logs(conn):
             END IF;
         END $$;
         """,
-        """
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'ix_call_logs_timestamp') THEN
-                CREATE INDEX ix_call_logs_timestamp ON call_logs (timestamp);
-            END IF;
-        END $$;
-        """,
+        # Индекс ix_call_logs_timestamp будет создан автоматически через Base.metadata.create_all
+        # во втором шаге, поэтому здесь его создавать не нужно во избежание конфликтов.
     ]
 
     for sql in migrations:

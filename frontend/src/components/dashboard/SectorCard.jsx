@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { SECTOR_COLORS } from './sectorColors'
 
 /**
@@ -16,15 +16,34 @@ import { SECTOR_COLORS } from './sectorColors'
  * VERSHINA v200.13 Protocol — Level 5++
  */
 
+// Статические данные активности для каждого сектора (заглушки — подключить к API)
+const SECTOR_ACTIVITY = {
+  FL: { load: 78, trend: '+3%', metric: '41 авто' },
+  LG: { load: 62, trend: '+1%', metric: 'ВКУСВИЛЛ' },
+  IT: { load: 95, trend: '0%',  metric: 'v30.6' },
+  WH: { load: 45, trend: '-2%', metric: 'Склад OK' },
+  AI: { load: 88, trend: '+5%', metric: 'GPT-4o' },
+  FN: { load: 71, trend: '+2%', metric: '₽ Активно' },
+  GP: { load: 55, trend: '0%',  metric: 'GPS Live' },
+  TS: { load: 40, trend: '+1%', metric: 'Задачи' },
+  MR: { load: 82, trend: '+4%', metric: 'Рейтинг' },
+  IV: { load: 33, trend: '-1%', metric: 'Портфель' },
+  FP: { load: 60, trend: '+2%', metric: 'Партнёры' },
+  AC: { load: 25, trend: '0%',  metric: 'Обучение' },
+}
+
 export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, liveCount = null }) {
   const [isHovered, setIsHovered] = useState(false)
   const [glintTriggered, setGlintTriggered] = useState(false)
+  const [loadAnimated, setLoadAnimated] = useState(false)
   const colors = SECTOR_COLORS[code] || SECTOR_COLORS.FL
+  const activity = SECTOR_ACTIVITY[code] || { load: 50, trend: '0%', metric: '—' }
 
   // Запуск стеклянного блика при наведении
   const handleMouseEnter = () => {
     setIsHovered(true)
     setGlintTriggered(false)
+    setLoadAnimated(true)
     // Небольшая задержка перед запуском блика
     requestAnimationFrame(() => setGlintTriggered(true))
   }
@@ -33,6 +52,12 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
     setIsHovered(false)
     setGlintTriggered(false)
   }
+
+  // Запускаем анимацию прогресс-бара при монтировании
+  useEffect(() => {
+    const t = setTimeout(() => setLoadAnimated(true), index * 80 + 400)
+    return () => clearTimeout(t)
+  }, [index])
 
   return (
     <motion.div
@@ -100,7 +125,7 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
 
       {/* Карточка — ФИКСИРОВАННАЯ ВЫСОТА */}
       <div
-        className="sector-card relative overflow-hidden rounded-xl border p-5 h-[160px] flex flex-col transition-colors duration-300 cursor-pointer backdrop-blur-2xl hover:border-white/[0.15]"
+        className="sector-card relative overflow-hidden rounded-xl border p-4 h-[190px] flex flex-col transition-colors duration-300 cursor-pointer backdrop-blur-2xl hover:border-white/[0.15]"
         style={{
           borderColor: isHovered ? `${colors.glow}60` : `${colors.glow}20`,
           boxShadow: isHovered
@@ -209,12 +234,12 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
 
         {/* Подзаголовок — всегда внизу */}
         <div className="flex items-center gap-2 mt-2">
-          <p className="text-xs font-montserrat text-dominion-muted">
+          <p className="text-xs font-montserrat text-dominion-muted truncate">
             {subtitle}
           </p>
           {/* Пульсирующий индикатор активных машин (для LG и других секторов с liveCount) */}
           {liveCount !== null && (
-            <span className="flex items-center gap-1 ml-auto">
+            <span className="flex items-center gap-1 ml-auto flex-shrink-0">
               <span
                 className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
                 style={{ backgroundColor: colors.glow, boxShadow: `0 0 6px ${colors.glow}80` }}
@@ -227,6 +252,46 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
               </span>
             </span>
           )}
+        </div>
+
+        {/* Прогресс-бар активности сектора */}
+        <div className="mt-2.5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[8px] font-montserrat text-white/25 tracking-wider uppercase">
+              Активность
+            </span>
+            <div className="flex items-center gap-1">
+              <span
+                className="text-[9px] font-orbitron font-bold"
+                style={{ color: `${colors.glow}cc` }}
+              >
+                {activity.load}%
+              </span>
+              <span
+                className="text-[8px] font-montserrat"
+                style={{
+                  color: activity.trend.startsWith('+') ? '#00ff88' : activity.trend.startsWith('-') ? '#ef4444' : '#8888aa',
+                }}
+              >
+                {activity.trend}
+              </span>
+            </div>
+          </div>
+          <div
+            className="h-[3px] rounded-full overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.06)' }}
+          >
+            <motion.div
+              className="h-full rounded-full"
+              style={{
+                background: `linear-gradient(90deg, ${colors.glow}cc, ${colors.glow})`,
+                boxShadow: `0 0 6px ${colors.glow}60`,
+              }}
+              initial={{ width: 0 }}
+              animate={{ width: loadAnimated ? `${activity.load}%` : 0 }}
+              transition={{ duration: 1.2, ease: 'easeOut' }}
+            />
+          </div>
         </div>
 
         {/* Нижняя линия-акцент */}

@@ -4,29 +4,33 @@ import JsSIP from 'jssip'
 
 import api from '../../api/client'
 
-const FALLBACK_BOOTSTRAP = {
-  user: {
-    full_name: 'Оператор MIKS',
-    role: 'manager',
-    park_name: 'PRO',
-  },
-  matrix: {
-    homeserver_url: 'http://synapse:8008',
-    server_name: 'matrix.dominion.local',
-    room_id: null,
-    ready: false,
-  },
-  webrtc: {
-    provider: 'jssip',
-    wss_url: 'wss://89.169.39.111:8089/ws',
-    sip_uri: 'sip:system@89.169.39.111',
-    realm: '89.169.39.111',
-    ice_servers: [],
-  },
-}
+const getFallbackBootstrap = () => {
+  const host = window.location.hostname;
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  return {
+    user: {
+      full_name: 'Оператор MIKS',
+      role: 'manager',
+      park_name: 'PRO',
+    },
+    matrix: {
+      homeserver_url: 'http://synapse:8008',
+      server_name: 'matrix.dominion.local',
+      room_id: null,
+      ready: false,
+    },
+    webrtc: {
+      provider: 'jssip',
+      wss_url: `${wsProtocol}://${host}:8089/ws`,
+      sip_uri: `sip:system@${host}`,
+      realm: host,
+      ice_servers: [],
+    },
+  };
+};
 
 export default function MIKSTerminal() {
-  const [bootstrap, setBootstrap] = useState(FALLBACK_BOOTSTRAP)
+  const [bootstrap, setBootstrap] = useState(getFallbackBootstrap())
   const [message, setMessage] = useState('')
   const [tagging, setTagging] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -42,7 +46,7 @@ export default function MIKSTerminal() {
       })
       .catch(() => {
         if (mounted) {
-          setBootstrap(FALLBACK_BOOTSTRAP)
+          setBootstrap(getFallbackBootstrap())
         }
       })
       .finally(() => {
