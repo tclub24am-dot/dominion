@@ -167,3 +167,71 @@ async def miks_matrix_health(current_user: User = Depends(get_current_user_from_
         "matrix": data,
         "checked_by": current_user.full_name,
     }
+
+
+@router.post("/ai-chat")
+async def miks_ai_chat(
+    payload: dict[str, Any],
+    current_user: User = Depends(get_current_user_from_cookie),
+):
+    """
+    ИЗМЕНЕНИЕ 4: AI-чат Mix — эндпоинт для чата с ИИ-помощником Mix.
+    Использует oracle_service.send_message() через Ollama Bridge.
+    """
+    message = (payload.get("message") or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="message is required")
+
+    system_prompt = payload.get("system_prompt") or (
+        "Ты — Mix, эксперт-советник S-GLOBAL DOMINION. "
+        "Помогай сотрудникам планировать рейсы, проверять штрафы и давать советы по логистике. "
+        "Отвечай кратко, по делу, на русском языке. "
+        "Тарифы ВкусВилл: ДС (7622/7985 ₽), Магазин (6795 ₽), Шмель (4483 ₽), Жук (2434 ₽)."
+    )
+
+    try:
+        from app.services.oracle_service import oracle_service
+
+        # Передаём system_prompt как контекст группы
+        result = await oracle_service.send_message(
+            message=message,
+            group="ОБЩАЯ",
+            context={"system_override": system_prompt},
+        )
+        reply = result.get("message") or "Mix AI не смог сформировать ответ."
+    except Exception as exc:
+        logger.warning(f"Mix AI oracle fallback: {exc}")
+        # Fallback: прямой запрос к VseGPT/Ollama
+        try:
+            vsegpt_url = getattr(settings, "VSEGPT_BASE_URL", None) or getattr(settings, "OLLAMA_BASE_URL", "http://localhost:11434")
+            vsegpt_key = getattr(settings, "VSEGPT_API_KEY", None) or getattr(settings, "GEMINI_API_KEY", "")
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    f"{vsegpt_url.rstrip('/')}/api/chat",
+                    headers={"Authorization": f"Bearer {vsegpt_key}"} if vsegpt_key else {},
+                    json={
+                        "model": getattr(settings, "GEMINI_MODEL", "llama3"),
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": message},
+                        ],
+                        "stream": False,
+                    },
+                )
+                resp_data = resp.json()
+                reply = (
+                    resp_data.get("message", {}).get("content")
+                    or resp_data.get("choices", [{}])[0].get("message", {}).get("content")
+                    or "Mix AI временно недоступен."
+                )
+        except Exception as fallback_exc:
+            logger.error(f"Mix AI fallback failed: {fallback_exc}")
+            reply = "⚠️ Mix AI временно недоступен. Попробуйте позже."
+
+    return {
+        "status": "ok",
+        "reply": reply,
+        "chat_id": payload.get("chat_id", "mix-ai"),
+        "timestamp": datetime.utcnow().isoformat(),
+        "answered_for": current_user.full_name,
+    }

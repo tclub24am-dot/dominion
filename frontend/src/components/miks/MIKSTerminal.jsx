@@ -33,8 +33,29 @@ const TAG_COLORS = {
   ОБЩЕЕ:     { bg: 'rgba(255,255,255,0.06)', border: '#ffffff40', text: '#ffffff80' },
 }
 
+// ─── Fallback SIP конфигурация (если bootstrap недоступен) ────────────────────
+const FALLBACK_SIP_CONFIG = {
+  wss_url: 'wss://localhost:8089/ws',
+  sip_uri: 'sip:miks@localhost',
+  password: 'miks_secret',
+  realm: 'localhost',
+}
+
 // Статические чаты (в реальном проекте — из API)
 const STATIC_CHATS = [
+  {
+    id: 'mix-ai',
+    name: 'Mix — AI Советник',
+    role: 'ai',
+    type: 'ai',
+    avatar: '🤖',
+    lastMsg: 'Готов помочь с логистикой и планированием рейсов',
+    time: 'сейчас',
+    unread: 0,
+    online: true,
+    isAI: true,
+    systemPrompt: 'Ты — Mix, эксперт-советник S-GLOBAL DOMINION. Твоя цель — помогать сотрудникам планировать рейсы, проверять штрафы и давать советы по логистике. Отвечай кратко, по делу, на русском языке. Используй данные о тарифах ВкусВилл: ДС (7622/7985 ₽), Магазин (6795 ₽), Шмель (4483 ₽), Жук (2434 ₽).',
+  },
   {
     id: 'ОБЩАЯ',
     name: 'Общий канал',
@@ -236,6 +257,7 @@ export default function MIKSTerminal() {
   const [bootstrap, setBootstrap] = useState(null)
   const [micMuted, setMicMuted] = useState(false)
   const [speakerMuted, setSpeakerMuted] = useState(false)
+  const [uaRegistered, setUaRegistered] = useState(false)
   const uaRef = useRef(null)
   const remoteAudioRef = useRef(null)
 
@@ -261,6 +283,19 @@ export default function MIKSTerminal() {
   useEffect(() => {
     if (!activeChat) return
     setMessages([])
+
+    // AI-чат Mix: показываем приветствие без запроса к API
+    if (activeChat.isAI) {
+      setMessages([{
+        id: 'mix-welcome',
+        role: 'assistant',
+        content: '👋 Привет! Я Mix — AI советник S-GLOBAL DOMINION. Помогу с планированием рейсов, тарифами ВкусВилл и логистикой. Спрашивай!',
+        created_at: new Date().toISOString(),
+        author: 'Mix AI',
+      }])
+      return
+    }
+
     setLoading(true)
     api.get('/api/v1/messenger/messages', { params: { channel: activeChat.id, limit: 50 } })
       .then(({ data }) => {
@@ -281,7 +316,8 @@ export default function MIKSTerminal() {
 
   // ── WebSocket для real-time сообщений ──────────────────────────────────────
   useEffect(() => {
-    if (!activeChat) return
+    // AI-чат не использует WebSocket
+    if (!activeChat || activeChat.isAI) return
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const wsUrl = `${protocol}://${window.location.host}/api/v1/ws/messenger?channel=${encodeURIComponent(activeChat.id)}`
 
@@ -310,28 +346,47 @@ export default function MIKSTerminal() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ── Инициализация JsSIP UA ──────────────────────────────────────────────────
+  // ── Инициализация JsSIP UA (ИЗМЕНЕНИЕ 3: register: true + fallback config) ──
   useEffect(() => {
-    if (!bootstrap?.webrtc?.wss_url) return
+    // Используем bootstrap данные или fallback конфигурацию
+    const sipCfg = bootstrap?.webrtc?.wss_url
+      ? bootstrap.webrtc
+      : FALLBACK_SIP_CONFIG
+
     try {
-      const socket = new JsSIP.WebSocketInterface(bootstrap.webrtc.wss_url)
+      const socket = new JsSIP.WebSocketInterface(sipCfg.wss_url)
       const ua = new JsSIP.UA({
         sockets: [socket],
-        uri: bootstrap.webrtc.sip_uri,
-        password: bootstrap.webrtc.password || '',
-        realm: bootstrap.webrtc.realm,
-        register: false,
+        uri: sipCfg.sip_uri,
+        password: sipCfg.password || '',
+        realm: sipCfg.realm,
+        display_name: 'MIKS Terminal',
+        register: true,
+        register_expires: 300,
+        session_timers: false,
       })
+
+      ua.on('registered', () => {
+        setUaRegistered(true)
+      })
+      ua.on('unregistered', () => {
+        setUaRegistered(false)
+      })
+      ua.on('registrationFailed', () => {
+        setUaRegistered(false)
+      })
+
       ua.start()
       uaRef.current = ua
       return () => {
         ua.stop()
         uaRef.current = null
+        setUaRegistered(false)
       }
     } catch {}
   }, [bootstrap])
 
-  // ── Отправка сообщения ──────────────────────────────────────────────────────
+  // ── Отправка сообщения (ИЗМЕНЕНИЕ 4: AI-чат Mix) ───────────────────────────
   const sendMessage = useCallback(async () => {
     const text = inputText.trim()
     if (!text || sending) return
@@ -349,6 +404,43 @@ export default function MIKSTerminal() {
     }
     setMessages((prev) => [...prev, optimistic])
 
+    // ── AI-чат Mix: запрос к /api/v1/miks/ai-chat ──────────────────────────
+    if (activeChat?.isAI) {
+      try {
+        const { data } = await api.post('/api/v1/miks/ai-chat', {
+          message: text,
+          system_prompt: activeChat.systemPrompt,
+          chat_id: activeChat.id,
+        })
+        // Заменяем оптимистичное сообщение реальным
+        setMessages((prev) =>
+          prev.map((m) => (m.id === optimistic.id ? { ...optimistic, _optimistic: false } : m))
+        )
+        // Добавляем ответ Mix AI
+        setMessages((prev) => [...prev, {
+          id: `mix-${Date.now()}`,
+          role: 'assistant',
+          content: data.reply,
+          created_at: new Date().toISOString(),
+          author: 'Mix AI',
+        }])
+      } catch {
+        // Fallback: показываем ошибку в чате
+        setMessages((prev) => [...prev, {
+          id: `mix-err-${Date.now()}`,
+          role: 'assistant',
+          content: '⚠️ Mix AI временно недоступен. Проверьте подключение к серверу.',
+          created_at: new Date().toISOString(),
+          author: 'Mix AI',
+        }])
+      } finally {
+        setSending(false)
+        inputRef.current?.focus()
+      }
+      return
+    }
+
+    // ── Обычный чат: отправка через API ────────────────────────────────────
     try {
       const { data } = await api.post('/api/v1/messenger/messages', {
         channel: activeChat.id,
@@ -407,10 +499,14 @@ export default function MIKSTerminal() {
     }
   }, [inputText])
 
-  // ── WebRTC Звонок ───────────────────────────────────────────────────────────
+  // ── WebRTC Звонок (ИЗМЕНЕНИЕ 3: активация при uaRegistered) ────────────────
   const startCall = useCallback(() => {
     if (!uaRef.current || callState !== 'idle') return
-    const target = `sip:${activeChat.id.toLowerCase()}@${bootstrap?.webrtc?.realm || window.location.hostname}`
+    // Для AI-чата звонок не поддерживается
+    if (activeChat?.isAI) return
+    // Используем sip:system@localhost как внутренний номер логиста
+    const realm = bootstrap?.webrtc?.realm || FALLBACK_SIP_CONFIG.realm
+    const target = `sip:system@${realm}`
     setCallState('calling')
 
     try {
@@ -458,9 +554,9 @@ export default function MIKSTerminal() {
 
   // ── Рендер ──────────────────────────────────────────────────────────────────
   return (
-    <section className="mt-8 max-w-[1440px] mx-auto">
+    <section className="flex flex-col h-full overflow-hidden">
       {/* Заголовок секции */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4 px-4 pt-4 flex-shrink-0">
         <div className="h-px flex-1 max-w-8" style={{ background: 'linear-gradient(90deg, #d4a843, transparent)' }} />
         <span className="font-orbitron text-[10px] tracking-[0.4em] uppercase text-[#d4a843]/60">
           MIKS DOMINION MESSENGER
@@ -483,13 +579,13 @@ export default function MIKSTerminal() {
 
       {/* Основной контейнер мессенджера */}
       <div
-        className="rounded-2xl overflow-hidden border"
+        className="flex-1 overflow-hidden border"
         style={{
           borderColor: '#d4a84320',
           background: 'linear-gradient(135deg, #0a0d14, #0d1020)',
           boxShadow: '0 24px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,168,67,0.08)',
-          height: '600px',
           display: 'flex',
+          minHeight: 0,
         }}
       >
         {/* ═══ ЛЕВАЯ ПАНЕЛЬ: Список чатов ═══════════════════════════════════ */}
@@ -635,20 +731,26 @@ export default function MIKSTerminal() {
 
             {/* Кнопки управления звонком */}
             <div className="flex items-center gap-2">
-              {callState === 'idle' && (
+              {callState === 'idle' && !activeChat?.isAI && (
                 <motion.button
                   onClick={startCall}
+                  disabled={!uaRegistered}
+                  title={uaRegistered ? 'Позвонить' : 'SIP не зарегистрирован'}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-orbitron font-bold tracking-wider uppercase transition-all"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,200,100,0.08))',
-                    border: '1px solid rgba(0,255,136,0.3)',
-                    color: '#00ff88',
+                    background: uaRegistered
+                      ? 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,200,100,0.08))'
+                      : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${uaRegistered ? 'rgba(0,255,136,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                    color: uaRegistered ? '#00ff88' : '#ffffff30',
+                    cursor: uaRegistered ? 'pointer' : 'not-allowed',
+                    opacity: uaRegistered ? 1 : 0.5,
                   }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={uaRegistered ? { scale: 1.03 } : {}}
+                  whileTap={uaRegistered ? { scale: 0.97 } : {}}
                 >
                   <Phone size={13} />
-                  Позвонить
+                  {uaRegistered ? 'Позвонить' : 'SIP...'}
                 </motion.button>
               )}
 

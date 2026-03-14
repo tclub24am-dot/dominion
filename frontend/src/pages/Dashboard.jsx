@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Car, Truck, Monitor, Wrench, Brain, Wallet,
@@ -121,6 +121,8 @@ const SECTORS = [
 ]
 
 export default function Dashboard({ onLogout }) {
+  const [miksOpen, setMiksOpen] = useState(false)
+
   return (
     <div className="min-h-screen relative">
       {/* Фоновые частицы */}
@@ -245,7 +247,6 @@ export default function Dashboard({ onLogout }) {
           </div>
         </motion.div>
 
-        <MIKSTerminal />
       </main>
 
       {/* 3D Messenger */}
@@ -253,6 +254,53 @@ export default function Dashboard({ onLogout }) {
 
       {/* Нижняя выдвижная панель */}
       <BottomDrawer />
+
+      {/* ── MIKS: кнопка-триггер (fixed, bottom-left) ── */}
+      <button
+        onClick={() => setMiksOpen(true)}
+        title="MIKS Dominion Messenger"
+        style={{
+          position: 'fixed', bottom: '24px', left: '24px', zIndex: 1000,
+          width: '56px', height: '56px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+          border: '2px solid rgba(139,92,246,0.5)',
+          boxShadow: '0 0 20px rgba(139,92,246,0.4)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '24px',
+        }}
+      >💬</button>
+
+      {/* ── MIKS: модальное окно ── */}
+      {miksOpen && (
+        <div
+          onClick={(e) => e.target === e.currentTarget && setMiksOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 2000,
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          <div style={{
+            position: 'relative', width: '900px', maxWidth: '95vw',
+            height: '80vh', maxHeight: '700px',
+            background: '#0D0C0B', border: '1px solid rgba(139,92,246,0.3)',
+            borderRadius: '12px', overflow: 'hidden',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+          }}>
+            <button
+              onClick={() => setMiksOpen(false)}
+              style={{
+                position: 'absolute', top: '12px', right: '12px', zIndex: 10,
+                background: 'rgba(255,255,255,0.1)', border: 'none',
+                color: '#fff', width: '32px', height: '32px', borderRadius: '50%',
+                cursor: 'pointer', fontSize: '18px', lineHeight: 1,
+              }}
+            >×</button>
+            <MIKSTerminal />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
