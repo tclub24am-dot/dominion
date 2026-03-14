@@ -8,7 +8,6 @@ import {
   Database, CheckCircle2, XCircle, Clock
 } from 'lucide-react'
 import api from '../api/client'
-import MIKSTerminal from '../components/miks/MIKSTerminal'
 
 /**
  * S-GLOBAL DOMINION — Logistics Page v200.29.2
@@ -180,19 +179,28 @@ function RoutesTable({ routes, loading }) {
   }
 
   const inputStyle = {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(212,168,67,0.2)',
+    background: '#1A1A1A',
+    border: '1px solid rgba(212,168,67,0.3)',
     borderRadius: '6px',
-    color: '#f5f0e8',
+    color: '#E0E0E0',
     padding: '6px 10px',
     fontSize: '11px',
     fontFamily: 'Montserrat, sans-serif',
     outline: 'none',
+    colorScheme: 'dark',
   }
 
   const selectStyle = {
     ...inputStyle,
     cursor: 'pointer',
+    backgroundColor: '#1A1A1A',
+    color: '#E0E0E0',
+    WebkitAppearance: 'none',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4a843' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 8px center',
+    paddingRight: '28px',
   }
 
   return (
@@ -315,9 +323,21 @@ function RoutesTable({ routes, loading }) {
                   </td>
                   <td className="px-4 py-3 font-montserrat whitespace-nowrap" style={{ color: '#f5f0e8' }}>
                     <div>{route.driver_name || '—'}</div>
-                    {route.driver_group && (
+                    {route.driver_group === 'AZAT' ? (
+                      <div
+                        className="text-[10px] font-orbitron tracking-wider"
+                        style={{
+                          color: '#FFD700',
+                          textShadow: '0 0 8px rgba(255,215,0,0.6)',
+                          letterSpacing: '0.2em',
+                          fontWeight: 700,
+                        }}
+                      >
+                        S-GLOBAL
+                      </div>
+                    ) : route.driver_group ? (
                       <div className="text-[10px]" style={{ color: '#ffffff40' }}>{route.driver_group}</div>
-                    )}
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 font-orbitron whitespace-nowrap" style={{ color: '#d4a843' }}>
                     {fmt(route.revenue)}
@@ -419,14 +439,26 @@ function RouteCalculator() {
 
   const inputCls = {
     width: '100%',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(212,168,67,0.2)',
+    background: '#1A1A1A',
+    border: '1px solid rgba(212,168,67,0.3)',
     borderRadius: '6px',
-    color: '#f5f0e8',
+    color: '#E0E0E0',
     padding: '8px 12px',
     fontSize: '12px',
     fontFamily: 'Montserrat, sans-serif',
     outline: 'none',
+    colorScheme: 'dark',
+  }
+
+  const selectCls = {
+    ...inputCls,
+    cursor: 'pointer',
+    WebkitAppearance: 'none',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4a843' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 10px center',
+    paddingRight: '30px',
   }
 
   const labelCls = {
@@ -462,7 +494,7 @@ function RouteCalculator() {
         {/* Тип рейса */}
         <div>
           <label style={labelCls}>Тип рейса</label>
-          <select name="route_type" value={form.route_type} onChange={handleChange} style={inputCls}>
+          <select name="route_type" value={form.route_type} onChange={handleChange} style={selectCls}>
             <option value="darkstore">Даркстор (ДС)</option>
             <option value="store">Магазин (МГ)</option>
             <option value="shmel">Шмель (ШМ)</option>
@@ -473,7 +505,7 @@ function RouteCalculator() {
         {/* Группа водителя */}
         <div>
           <label style={labelCls}>Группа водителя</label>
-          <select name="driver_group" value={form.driver_group} onChange={handleChange} style={inputCls}>
+          <select name="driver_group" value={form.driver_group} onChange={handleChange} style={selectCls}>
             <option value="BNYAN">БНЯН (BNYAN)</option>
             <option value="AZAT">АЗАТ (AZAT)</option>
           </select>
@@ -913,19 +945,23 @@ export default function LogisticsPage({ onLogout }) {
           </motion.div>
         )}
 
-        {/* ── ДВУХКОЛОНОЧНАЯ СЕТКА ────────────────────────────────────────── */}
+        {/* ── ТАБЛИЦА РЕЙСОВ — на всю ширину ──────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="w-full"
+        >
+          <RoutesTable routes={routes} loading={routesLoading} />
+        </motion.div>
+
+        {/* ── КАЛЬКУЛЯТОР И СТАТИСТИКА ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-6">
 
-          {/* Левая колонка — Таблица рейсов */}
-          <motion.div
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <RoutesTable routes={routes} loading={routesLoading} />
-          </motion.div>
+          {/* Пустая левая колонка — резерв */}
+          <div />
 
-          {/* Правая колонка — Калькулятор */}
+          {/* Правая колонка — Калькулятор + Статистика */}
           <motion.div
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1035,47 +1071,6 @@ export default function LogisticsPage({ onLogout }) {
             )}
           </motion.div>
         </div>
-
-        {/* ── MIKS ТЕРМИНАЛ ───────────────────────────────────────────────── */}
-        <motion.div
-          className="rounded-xl border overflow-hidden"
-          style={{
-            borderColor: 'rgba(212,168,67,0.15)',
-            background: 'rgba(0,0,0,0.3)',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          {/* Заголовок MIKS */}
-          <div
-            className="px-5 py-3 border-b flex items-center gap-3"
-            style={{ borderColor: 'rgba(212,168,67,0.1)', background: 'rgba(0,0,0,0.2)' }}
-          >
-            <div
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ backgroundColor: '#d4a843', boxShadow: '0 0 8px #d4a843' }}
-            />
-            <span className="text-[11px] font-orbitron tracking-[0.25em] uppercase" style={{ color: '#d4a843' }}>
-              СВЯЗЬ С ЛОГИСТОМ · MIKS TERMINAL
-            </span>
-            <span
-              className="ml-auto text-[9px] font-orbitron tracking-wider px-2 py-0.5 rounded-full"
-              style={{
-                background: 'rgba(0,255,136,0.08)',
-                border: '1px solid rgba(0,255,136,0.2)',
-                color: '#00ff88',
-              }}
-            >
-              КАНАЛ: ЛОГИСТИКА
-            </span>
-          </div>
-
-          {/* MIKS Terminal — самодостаточный компонент */}
-          <div style={{ height: '420px', overflow: 'hidden' }}>
-            <MIKSTerminal />
-          </div>
-        </motion.div>
 
       </main>
     </div>

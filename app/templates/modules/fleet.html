@@ -1271,9 +1271,9 @@
                         const statusIcon = terms.is_repair ? '🔧' : terms.is_day_off ? '🌴' : (item.status === 'live' ? '⚡' : '•');
                         const badgeY = y + 106;
                         let badgeX = x + 10;
-                        badgeX += drawPill(ctx, badgeX, badgeY, `Rent ${rentValue}`, 'rgba(212,175,55,0.18)', '#f7f4ee') + 6;
-                        badgeX += drawPill(ctx, badgeX, badgeY, `Fee ${feeValue}%`, 'rgba(255,255,255,0.08)', '#e8eaf6') + 6;
-                        drawPill(ctx, badgeX, badgeY, `Status ${statusIcon}`, 'rgba(33,243,199,0.12)', '#e8eaf6');
+                        badgeX += drawPill(ctx, badgeX, badgeY, `Аренда ${rentValue}`, 'rgba(212,175,55,0.18)', '#f7f4ee') + 6;
+                        badgeX += drawPill(ctx, badgeX, badgeY, `Комиссия ${feeValue}%`, 'rgba(255,255,255,0.08)', '#e8eaf6') + 6;
+                        drawPill(ctx, badgeX, badgeY, `Статус ${statusIcon}`, 'rgba(33,243,199,0.12)', '#e8eaf6');
                     }
 
                     if (item.photo_url) {

@@ -169,68 +169,167 @@ async def miks_matrix_health(current_user: User = Depends(get_current_user_from_
     }
 
 
+# ── Системный промпт для логиста ВкусВилл ──────────────────────────────────────
+LOGIST_SYSTEM_PROMPT = """Ты — Mix, ИИ-советник S-GLOBAL DOMINION для логиста.
+Твои задачи:
+1. Помогать считать маржу рейсов ВкусВилл (тарифы: ДС 7622/7985₽, Магазин 6795₽, Шмель 4483₽, Жук 2434₽)
+2. Следить за опозданиями водителей (Азат — Mercedes Atego, Группа Бнян — Шахзод/Зариф/Шавкат)
+3. Рассчитывать выплаты: Азат 2000₽/точка, Бнян по тарифам (ДС 4900₽, М 4100₽, Ш 2570₽, Ж 1050₽)
+4. Алгоритм 50/50: маржа делится поровну между ООО С-ГЛОБАЛ и ИП Мкртчян
+Отвечай кратко, по делу, на русском языке."""
+
+# ── URL локального Ollama ───────────────────────────────────────────────────────
+OLLAMA_BASE_URL = "http://ollama:11434"  # Docker сервис dominion_ollama
+# Модель по умолчанию — локальная, данные не уходят в облако
+OLLAMA_DEFAULT_MODEL = "gpt-oss:20b"
+
+
 @router.post("/ai-chat")
 async def miks_ai_chat(
     payload: dict[str, Any],
     current_user: User = Depends(get_current_user_from_cookie),
 ):
     """
-    ИЗМЕНЕНИЕ 4: AI-чат Mix — эндпоинт для чата с ИИ-помощником Mix.
-    Использует oracle_service.send_message() через Ollama Bridge.
+    AI-чат Mix — эндпоинт для чата с ИИ-помощником Mix.
+    Приоритет 1: Gemini API (если GEMINI_API_KEY задан в .env)
+    Приоритет 2: Локальный Ollama (http://172.27.192.1:11434)
+    Приоритет 3: oracle_service (VseGPT/Ollama Bridge)
+    Приоритет 4: Прямой запрос к VseGPT/Ollama через VSEGPT_BASE_URL
     """
     message = (payload.get("message") or "").strip()
     if not message:
         raise HTTPException(status_code=400, detail="message is required")
 
-    system_prompt = payload.get("system_prompt") or (
-        "Ты — Mix, эксперт-советник S-GLOBAL DOMINION. "
-        "Помогай сотрудникам планировать рейсы, проверять штрафы и давать советы по логистике. "
-        "Отвечай кратко, по делу, на русском языке. "
-        "Тарифы ВкусВилл: ДС (7622/7985 ₽), Магазин (6795 ₽), Шмель (4483 ₽), Жук (2434 ₽)."
+    # Определяем системный промпт: для логиста — специализированный
+    user_role = (current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)).lower()
+    default_system_prompt = (
+        LOGIST_SYSTEM_PROMPT
+        if user_role == "logist" or (current_user.park_name or "").upper() == "EXPRESS"
+        else (
+            "Ты — Mix, эксперт-советник S-GLOBAL DOMINION. "
+            "Помогай сотрудникам планировать рейсы, проверять штрафы и давать советы по логистике. "
+            "Отвечай кратко, по делу, на русском языке. "
+            "Тарифы ВкусВилл: ДС (7622/7985 ₽), Магазин (6795 ₽), Шмель (4483 ₽), Жук (2434 ₽)."
+        )
     )
+    system_prompt = payload.get("system_prompt") or default_system_prompt
 
+    # ── Приоритет 1: Gemini API ─────────────────────────────────────────────────
+    if settings.GEMINI_API_KEY:
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+                    f"?key={settings.GEMINI_API_KEY}",
+                    json={
+                        "contents": [
+                            {
+                                "parts": [
+                                    {"text": f"{system_prompt}\n\nПользователь: {message}"}
+                                ]
+                            }
+                        ],
+                        "generationConfig": {
+                            "temperature": 0.7,
+                            "maxOutputTokens": 1024,
+                        },
+                    },
+                )
+                if resp.status_code == 200:
+                    result = resp.json()
+                    reply = result["candidates"][0]["content"]["parts"][0]["text"]
+                    return {
+                        "status": "ok",
+                        "reply": reply,
+                        "provider": "gemini",
+                        "chat_id": payload.get("chat_id", "mix-ai"),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "answered_for": current_user.full_name,
+                    }
+                logger.warning(f"Gemini API returned {resp.status_code}: {resp.text[:200]}")
+        except Exception as gemini_exc:
+            logger.warning(f"Mix AI Gemini fallback: {gemini_exc}")
+
+    # ── Приоритет 2: Локальный Ollama (172.27.192.1:11434) ─────────────────────
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json={
+                    "model": OLLAMA_DEFAULT_MODEL,
+                    "prompt": f"{system_prompt}\n\nПользователь: {message}\nMix:",
+                    "stream": False,
+                    "options": {"temperature": 0.7, "num_predict": 512},
+                },
+            )
+            if resp.status_code == 200:
+                result = resp.json()
+                reply = result.get("response", "").strip()
+                if reply:
+                    return {
+                        "status": "ok",
+                        "reply": reply,
+                        "provider": "ollama",
+                        "chat_id": payload.get("chat_id", "mix-ai"),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "answered_for": current_user.full_name,
+                    }
+            logger.warning(f"Ollama returned {resp.status_code}: {resp.text[:200]}")
+    except Exception as ollama_exc:
+        logger.warning(f"Mix AI Ollama fallback: {ollama_exc}")
+
+    # ── Приоритет 3: oracle_service (VseGPT/Ollama Bridge) ─────────────────────
     try:
         from app.services.oracle_service import oracle_service
 
-        # Передаём system_prompt как контекст группы
         result = await oracle_service.send_message(
             message=message,
             group="ОБЩАЯ",
             context={"system_override": system_prompt},
         )
         reply = result.get("message") or "Mix AI не смог сформировать ответ."
+        return {
+            "status": "ok",
+            "reply": reply,
+            "provider": "oracle",
+            "chat_id": payload.get("chat_id", "mix-ai"),
+            "timestamp": datetime.utcnow().isoformat(),
+            "answered_for": current_user.full_name,
+        }
     except Exception as exc:
         logger.warning(f"Mix AI oracle fallback: {exc}")
-        # Fallback: прямой запрос к VseGPT/Ollama
-        try:
-            vsegpt_url = getattr(settings, "VSEGPT_BASE_URL", None) or getattr(settings, "OLLAMA_BASE_URL", "http://localhost:11434")
-            vsegpt_key = getattr(settings, "VSEGPT_API_KEY", None) or getattr(settings, "GEMINI_API_KEY", "")
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.post(
-                    f"{vsegpt_url.rstrip('/')}/api/chat",
-                    headers={"Authorization": f"Bearer {vsegpt_key}"} if vsegpt_key else {},
-                    json={
-                        "model": getattr(settings, "GEMINI_MODEL", "llama3"),
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": message},
-                        ],
-                        "stream": False,
-                    },
-                )
-                resp_data = resp.json()
-                reply = (
-                    resp_data.get("message", {}).get("content")
-                    or resp_data.get("choices", [{}])[0].get("message", {}).get("content")
-                    or "Mix AI временно недоступен."
-                )
-        except Exception as fallback_exc:
-            logger.error(f"Mix AI fallback failed: {fallback_exc}")
-            reply = "⚠️ Mix AI временно недоступен. Попробуйте позже."
+
+    # ── Приоритет 4: Прямой запрос к VseGPT/Ollama через VSEGPT_BASE_URL ───────
+    try:
+        vsegpt_url = getattr(settings, "VSEGPT_BASE_URL", None) or settings.OLLAMA_BASE_URL
+        vsegpt_key = getattr(settings, "VSEGPT_API_KEY", None) or ""
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{vsegpt_url.rstrip('/')}/api/chat",
+                headers={"Authorization": f"Bearer {vsegpt_key}"} if vsegpt_key else {},
+                json={
+                    "model": settings.GEMINI_MODEL,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": message},
+                    ],
+                    "stream": False,
+                },
+            )
+            resp_data = resp.json()
+            reply = (
+                resp_data.get("message", {}).get("content")
+                or resp_data.get("choices", [{}])[0].get("message", {}).get("content")
+                or "Mix AI временно недоступен."
+            )
+    except Exception as fallback_exc:
+        logger.error(f"Mix AI fallback failed: {fallback_exc}")
+        reply = "⚠️ Mix AI временно недоступен. Попробуйте позже."
 
     return {
         "status": "ok",
         "reply": reply,
+        "provider": "fallback",
         "chat_id": payload.get("chat_id", "mix-ai"),
         "timestamp": datetime.utcnow().isoformat(),
         "answered_for": current_user.full_name,

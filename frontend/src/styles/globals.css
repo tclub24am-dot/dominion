@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -16,7 +16,7 @@
   --card-bg-rgb: 10, 10, 10;
   --accent: #FFD700;
   --accent-rgb: 255, 215, 0;
-  --text-primary: #e8e8f0;
+  --text-primary: #E0E0E0;
   --text-secondary: rgba(255,255,255,0.6);
   --text-label: #00FFFF;
   --border-glow: rgba(255, 215, 0, 0.2);
@@ -101,7 +101,7 @@
     --bg-dark: #080810;
     --bg-card: #111128;
     --border-dark: #1e1e3f;
-    --text-primary: #e8e8f0;
+    --text-primary: #E0E0E0;
     --text-muted: #8888aa;
   }
 
@@ -118,7 +118,7 @@
   body {
     background: var(--bg-main, var(--bg-dark));
     color: var(--text-primary);
-    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-family: 'Montserrat', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -129,7 +129,14 @@
   /* Dark theme body (default) */
   .dark body {
     background: #080810; /* shorthand — не background-color, чтобы не конфликтовать с gradient в --bg-main */
-    color: #e8e8f0;
+    color: #E0E0E0;
+  }
+
+  /* Цифры и денежные значения — всегда Bold */
+  .font-bold-nums,
+  [data-type="money"],
+  [data-type="number"] {
+    font-weight: 700;
   }
 
   /* IVORY LUXE 2.0 — Grain texture overlay (усиленная, эффект дорогой бумаги) */
@@ -146,6 +153,78 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 200px 200px;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     SELECT / OPTION — DOMINION DARK STYLE (100% читаемость)
+     Браузер игнорирует rgba-фон на option, поэтому жёсткий #1A1A1A
+     ═══════════════════════════════════════════════════════ */
+  select {
+    background-color: #1A1A1A !important;
+    color: #E0E0E0 !important;
+    font-family: 'Montserrat', sans-serif !important;
+    border: 1px solid rgba(212, 168, 67, 0.3) !important;
+    border-radius: 6px;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  select:focus {
+    border-color: rgba(212, 168, 67, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(212, 168, 67, 0.15) !important;
+  }
+
+  /* option — браузер рендерит нативно, нужен явный фон и цвет */
+  option {
+    background-color: #1A1A1A !important;
+    color: #E0E0E0 !important;
+    font-family: 'Montserrat', sans-serif !important;
+    padding: 6px 10px;
+  }
+
+  option:hover,
+  option:checked,
+  option:focus {
+    background-color: #2A2A2A !important;
+    color: #FFD700 !important;
+  }
+
+  /* input[type=date] — тёмный стиль */
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"] {
+    background-color: #1A1A1A !important;
+    color: #E0E0E0 !important;
+    font-family: 'Montserrat', sans-serif !important;
+    border: 1px solid rgba(212, 168, 67, 0.3) !important;
+    border-radius: 6px;
+    outline: none;
+    color-scheme: dark;
+  }
+
+  input[type="date"]:focus,
+  input[type="datetime-local"]:focus,
+  input[type="time"]:focus {
+    border-color: rgba(212, 168, 67, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(212, 168, 67, 0.15) !important;
+  }
+
+  /* Ivory Luxe — светлая тема: инвертируем */
+  .theme-ivory select,
+  .theme-ivory option,
+  .theme-ivory input[type="date"],
+  .theme-ivory input[type="datetime-local"],
+  .theme-ivory input[type="time"] {
+    background-color: #FDFCF0 !important;
+    color: #1A1A1B !important;
+    border-color: rgba(139, 105, 20, 0.3) !important;
+    color-scheme: light;
+  }
+
+  .theme-ivory option {
+    background-color: #FDFCF0 !important;
+    color: #1A1A1B !important;
   }
 
   /* Scrollbar styling — Dark */
@@ -423,8 +502,9 @@
   }
 
   /* === FONT UTILITIES === */
-  .font-cinzel   { font-family: 'Cinzel', serif; }
-  .font-orbitron { font-family: 'Orbitron', sans-serif; }
+  .font-cinzel      { font-family: 'Cinzel', serif; }
+  .font-orbitron    { font-family: 'Orbitron', sans-serif; }
+  .font-montserrat  { font-family: 'Montserrat', sans-serif; }
 
   /* === BACKDROP BLUR UTILITIES === */
   .backdrop-blur-xs { backdrop-filter: blur(2px); }
@@ -444,6 +524,12 @@
 @keyframes pulse-online {
   0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
   50%       { opacity: 0.8; transform: scale(1.2); box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
+}
+
+/* REC-индикатор звонка — пульсация красного */
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
 }
 
 @keyframes scanLine {

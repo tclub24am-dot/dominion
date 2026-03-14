@@ -107,7 +107,7 @@ async def login(
                 "id": user.id,
                 "username": user.username,
                 "full_name": user.full_name,
-                "role": str(user.role) if user.role else "manager",
+                "role": user.role.value if hasattr(user.role, 'value') else str(user.role).split('.')[-1].lower() if user.role else "manager",
                 "permissions": {
                     "treasury": user.can_see_treasury,
                     "fleet": user.can_see_fleet,

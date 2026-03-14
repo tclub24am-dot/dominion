@@ -6,6 +6,9 @@ import IntroSequence from './components/intro/IntroSequence'
 import Dashboard from './pages/Dashboard'
 import ModulePage from './pages/ModulePage'
 import LogisticsPage from './pages/LogisticsPage'
+import CallArchivePage from './pages/CallArchivePage'
+import DominionWidget from './components/miks/DominionWidget'
+import BottomDrawer from './components/dashboard/BottomDrawer'
 import api from './api/client'
 
 /**
@@ -106,28 +109,38 @@ function AppCore() {
   }
 
   // Стадия 3: Дашборд + маршруты модулей
+  // DominionWidget и BottomDrawer — ГЛОБАЛЬНЫЙ МАКЕТ (присутствуют на всех страницах)
   return (
-    <Routes>
-      {/* Главный дашборд */}
-      <Route path="/" element={<Dashboard onLogout={handleLogout} />} />
+    <>
+      <Routes>
+        {/* Главный дашборд */}
+        <Route path="/" element={<Dashboard onLogout={handleLogout} />} />
 
-      {/* 12 секторов империи */}
-      <Route path="/fleet"       element={<ModulePage code="FL" title="ТАКСОПАРК T-CLUB24"              apiPath="/api/v1/fleet/vehicles"         onLogout={handleLogout} />} />
-      <Route path="/logistics"   element={<LogisticsPage onLogout={handleLogout} />} />
-      <Route path="/consulting"  element={<ModulePage code="IT" title="КОНСАЛТИНГ И IT"                 apiPath="/api/v1/consulting/clients"     onLogout={handleLogout} />} />
-      <Route path="/warehouse"   element={<ModulePage code="WH" title="АВТОСЕРВИС И СТРАХОВАНИЕ"        apiPath="/api/v1/warehouse/items"        onLogout={handleLogout} />} />
-      <Route path="/ai-analyst"  element={<ModulePage code="AI" title="AI АНАЛИТИК"                     apiPath="/api/v1/analytics/overlay"      onLogout={handleLogout} />} />
-      <Route path="/finance"     element={<ModulePage code="FN" title="ФИНАНСЫ И БУХГАЛТЕРИЯ"           apiPath="/api/v1/kazna/summary"          onLogout={handleLogout} />} />
-      <Route path="/gps"         element={<ModulePage code="GP" title="GPS МОНИТОРИНГ"                  apiPath="/api/v1/gps/live"               onLogout={handleLogout} />} />
-      <Route path="/tasks"       element={<ModulePage code="TS" title="AI ОТЧЁТЫ И ЗАДАЧИ"              apiPath="/api/v1/tasks/list"             onLogout={handleLogout} />} />
-      <Route path="/merit"       element={<ModulePage code="MR" title="ГАРНИЗОН ПОЧЁТА"                 apiPath="/api/v1/merit/leaderboard"      onLogout={handleLogout} />} />
-      <Route path="/investments" element={<ModulePage code="IV" title="ИНВЕСТИЦИИ И БЛАГОТВОРИТЕЛЬНОСТЬ" apiPath="/api/v1/investments/portfolio"  onLogout={handleLogout} />} />
-      <Route path="/partners"    element={<ModulePage code="FP" title="ПАРТНЁРЫ И ВЫПЛАТЫ"              apiPath="/api/v1/partner/list"           onLogout={handleLogout} />} />
-      <Route path="/academy"     element={<ModulePage code="AC" title="S-GLOBAL ACADEMY & LEGAL"        apiPath="/api/v1/academy/courses"        onLogout={handleLogout} />} />
+        {/* 12 секторов империи */}
+        <Route path="/fleet"       element={<ModulePage code="FL" title="ТАКСОПАРК T-CLUB24"              apiPath="/api/v1/fleet/vehicles"         onLogout={handleLogout} />} />
+        <Route path="/logistics"   element={<LogisticsPage onLogout={handleLogout} />} />
+        <Route path="/consulting"  element={<ModulePage code="IT" title="КОНСАЛТИНГ И IT"                 apiPath="/api/v1/consulting/clients"     onLogout={handleLogout} />} />
+        <Route path="/warehouse"   element={<ModulePage code="WH" title="АВТОСЕРВИС И СТРАХОВАНИЕ"        apiPath="/api/v1/warehouse/items"        onLogout={handleLogout} />} />
+        <Route path="/ai-analyst"  element={<ModulePage code="AI" title="AI АНАЛИТИК"                     apiPath="/api/v1/analytics/overlay"      onLogout={handleLogout} />} />
+        <Route path="/finance"     element={<ModulePage code="FN" title="ФИНАНСЫ И БУХГАЛТЕРИЯ"           apiPath="/api/v1/kazna/summary"          onLogout={handleLogout} />} />
+        <Route path="/gps"         element={<ModulePage code="GP" title="GPS МОНИТОРИНГ"                  apiPath="/api/v1/gps/live"               onLogout={handleLogout} />} />
+        <Route path="/tasks"       element={<ModulePage code="TS" title="AI ОТЧЁТЫ И ЗАДАЧИ"              apiPath="/api/v1/tasks/list"             onLogout={handleLogout} />} />
+        <Route path="/merit"       element={<ModulePage code="MR" title="ГАРНИЗОН ПОЧЁТА"                 apiPath="/api/v1/merit/leaderboard"      onLogout={handleLogout} />} />
+        <Route path="/investments" element={<ModulePage code="IV" title="ИНВЕСТИЦИИ И БЛАГОТВОРИТЕЛЬНОСТЬ" apiPath="/api/v1/investments/portfolio"  onLogout={handleLogout} />} />
+        <Route path="/partners"    element={<ModulePage code="FP" title="ПАРТНЁРЫ И ВЫПЛАТЫ"              apiPath="/api/v1/partner/list"           onLogout={handleLogout} />} />
+        <Route path="/academy"     element={<ModulePage code="AC" title="S-GLOBAL ACADEMY & LEGAL"        apiPath="/api/v1/academy/courses"        onLogout={handleLogout} />} />
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Архив звонков */}
+        <Route path="/calls" element={<CallArchivePage onLogout={handleLogout} />} />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* ── ГЛОБАЛЬНЫЕ КОМПОНЕНТЫ (присутствуют на всех страницах) ── */}
+      <DominionWidget />
+      <BottomDrawer />
+    </>
   )
 }
 

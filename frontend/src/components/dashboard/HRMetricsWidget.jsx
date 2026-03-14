@@ -105,7 +105,7 @@ export default function HRMetricsWidget() {
         <div className="flex items-center gap-1.5">
           {error === 'offline' && (
             <span className="text-[9px] font-montserrat text-amber-400/60 tracking-wider">
-              OFFLINE
+              НЕТ СВЯЗИ
             </span>
           )}
           <span className="text-[9px] font-montserrat text-white/30 tracking-wider">

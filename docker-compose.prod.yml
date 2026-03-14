@@ -1,0 +1,314 @@
+
+# ============================================================
+# S-GLOBAL DOMINION — docker-compose.prod.yml
+# Протокол: VERSHINA v200.17 PRODUCTION
+# Сервер: 89.169.39.111 / s-global.space
+# Запуск: docker-compose -f docker-compose.prod.yml --env-file .env up -d
+#
+# ОТЛИЧИЯ ОТ DEV:
+#   - Ollama: runtime nvidia убран (если нет GPU на сервере — см. комментарий)
+#   - Порты app/frontend НЕ публикуются наружу — только через Nginx
+#   - PostgreSQL: параметры памяти адаптированы под типовой VPS (8-16GB RAM)
+#   - Asterisk: SIP/RTP привязаны к EXTERNAL_IP сервера
+#   - Все секреты берутся из .env (не хардкодятся)
+# ============================================================
+
+services:
+  db:
+    image: postgres:15
+    container_name: dominion_db
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "effective_cache_size=6GB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+    env_file:
+      - ./.env
+    # IRON SHIELD: порт 5432 НЕ публикуется в интернет.
+    # БД доступна только внутри dominion_net по имени сервиса 'db'.
+    volumes:
+      - dominion_data:/var/lib/postgresql/data
+    networks:
+      - dominion_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: dominion_redis
+    command:
+      - "redis-server"
+      - "--save"
+      - "900"
+      - "1"
+      - "--save"
+      - "300"
+      - "10"
+      - "--maxmemory"
+      - "1gb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"
+      - "--requirepass"
+      - "${REDIS_PASSWORD}"
+    networks:
+      - dominion_net
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dominion_app
+    env_file:
+      - ./.env
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Продакшн-флаг: отключает debug-режим FastAPI
+      - ENVIRONMENT=production
+      # Внешний домен для CORS и cookie
+      - ALLOWED_ORIGINS=https://s-global.space,https://www.s-global.space
+    # PRODUCTION: порт 8001 НЕ публикуется наружу — только через Nginx
+    # Nginx обращается к app:8001 внутри dominion_net
+    expose:
+      - "8001"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    networks:
+      - dominion_net
+    volumes:
+      - dominion_storage:/root/dominion/storage
+      # В продакшне НЕ монтируем ./app — используем образ (код зафиксирован)
+      # Статика монтируется для Nginx
+      - app_static:/app/app/static
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ============================================================
+  # S-АТС — Asterisk 20 (PJSIP + AMI + AGI)
+  # PRODUCTION: external_media_address и local_net настроены для NAT
+  # ============================================================
+  asterisk:
+    image: andrius/asterisk:latest
+    container_name: dominion_asterisk
+    hostname: s-ats.s-global.space
+    env_file:
+      - ./.env
+    environment:
+      - ATS_WEBHOOK_SECRET=${ATS_WEBHOOK_SECRET}
+      - DOMINION_API_URL=http://app:8001
+      - AMI_SECRET=${AMI_SECRET}
+      - F2B_SECRET=${F2B_SECRET}
+      - ASTERISK_SYSTEM_PASS=${ASTERISK_SYSTEM_PASS}
+      - SIP_PRO_001_PASS=${SIP_PRO_001_PASS}
+      - SIP_GO_001_PASS=${SIP_GO_001_PASS}
+      - SIP_PLUS_001_PASS=${SIP_PLUS_001_PASS}
+      - SIP_EXPRESS_001_PASS=${SIP_EXPRESS_001_PASS}
+      # КРИТИЧНО для NAT: внешний IP сервера (89.169.39.111)
+      - EXTERNAL_IP=${EXTERNAL_IP:-89.169.39.111}
+    ports:
+      # SIP-сигнализация — привязка к внешнему IP сервера
+      - "${EXTERNAL_IP:-89.169.39.111}:5060:5060/udp"
+      - "${EXTERNAL_IP:-89.169.39.111}:5061:5061/tcp"
+      # WebSocket для WebRTC (браузерные звонки через wss://s-global.space/ws-sip/)
+      # Nginx проксирует wss://s-global.space/ws-sip/ → asterisk:8089
+      - "8089:8089/tcp"
+      # RTP медиа-поток — привязка к внешнему IP
+      - "${EXTERNAL_IP:-89.169.39.111}:10000-20000:10000-20000/udp"
+    entrypoint: ["/bin/sh", "-c", "/etc/asterisk/init_asterisk_secrets.sh && exec asterisk -f"]
+    volumes:
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/logger.conf:/etc/asterisk/logger.conf:ro
+      - ./asterisk/manager.conf:/etc/asterisk/manager.conf
+      - ./asterisk/init_asterisk_secrets.sh:/etc/asterisk/init_asterisk_secrets.sh:ro
+      - asterisk_data:/var/spool/asterisk
+      - asterisk_logs:/var/log/asterisk
+    networks:
+      - dominion_net
+    depends_on:
+      - app
+    restart: unless-stopped
+    mem_limit: 2g
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # OLLAMA — локальный LLM-движок
+  # PRODUCTION: runtime nvidia закомментирован (раскомментировать если есть GPU)
+  # Без GPU: модели работают на CPU (медленнее, но функционально)
+  # ============================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dominion_ollama
+    # IRON SHIELD: порт 11434 НЕ публикуется в интернет
+    expose:
+      - "11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - dominion_net
+    restart: unless-stopped
+    # runtime: nvidia  # Раскомментировать если на сервере есть NVIDIA GPU
+    environment:
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # MATRIX SYNAPSE — мессенджер MIKS
+  # ============================================================
+  synapse:
+    image: matrixdotorg/synapse:v1.98.0
+    container_name: dominion_synapse
+    env_file:
+      - ./.env
+    environment:
+      - SYNAPSE_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.s-global.space}
+      - SYNAPSE_REPORT_STATS=no
+      - SYNAPSE_CONFIG_DIR=/data
+      - SYNAPSE_HTTP_PORT=8008
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ ! -f /data/homeserver.yaml ]; then
+          python -m synapse.app.homeserver --server-name $${SYNAPSE_SERVER_NAME} --config-path /data/homeserver.yaml --data-directory /data --generate-config --report-stats=no;
+        fi && exec python -m synapse.app.homeserver --config-path /data/homeserver.yaml
+    # PRODUCTION: Synapse НЕ публикуется наружу — только через Nginx
+    expose:
+      - "8008"
+    volumes:
+      - synapse_data:/data
+    networks:
+      - dominion_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8008/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # FRONTEND — Nginx Production Build
+  # PRODUCTION: порт 5173 НЕ публикуется — только через внешний Nginx
+  # Внешний Nginx (хостовый) проксирует / → frontend:80
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: dominion_frontend
+    # PRODUCTION: порт не публикуется наружу
+    expose:
+      - "80"
+    networks:
+      - dominion_net
+    depends_on:
+      - app
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================
+  # NGINX — внутренний reverse proxy (SSL termination)
+  # Принимает 80/443 снаружи, проксирует к frontend:80 и app:8001
+  # Сертификаты Let's Encrypt монтируются с хоста
+  # ============================================================
+  nginx:
+    image: nginx:alpine
+    container_name: dominion_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/s-global.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      # Let's Encrypt сертификаты (получить через certbot на хосте)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Статика приложения
+      - app_static:/var/www/dominion/app/static:ro
+      - dominion_storage:/var/www/dominion/storage:ro
+    networks:
+      - dominion_net
+    depends_on:
+      - app
+      - frontend
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  dominion_data:
+  redis_data:
+  dominion_storage:
+  asterisk_data:
+  asterisk_logs:
+  ollama_data:
+  synapse_data:
+  app_static:
+
+networks:
+  dominion_net:
+    driver: bridge

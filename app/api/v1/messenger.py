@@ -90,7 +90,7 @@ async def messenger_channels(
 @router.get("/api/v1/messenger/messages")
 async def messenger_messages(
     channel: str = "ОБЩАЯ",
-    limit: int = 50,
+    limit: int = 100,
     thread_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user_from_cookie)
@@ -103,6 +103,15 @@ async def messenger_messages(
     stmt = stmt.order_by(desc(ChatMessage.created_at)).limit(limit)
     result = await db.execute(stmt)
     messages = list(reversed(result.scalars().all()))
+
+    # Загружаем авторов одним запросом
+    user_ids = list({m.user_id for m in messages if m.user_id})
+    users_map = {}
+    if user_ids:
+        users_stmt = select(User).where(User.id.in_(user_ids))
+        users_result = await db.execute(users_stmt)
+        for u in users_result.scalars().all():
+            users_map[u.id] = u.full_name or u.username
 
     return {
         "channel": channel,
@@ -117,7 +126,8 @@ async def messenger_messages(
                 "user_id": m.user_id,
                 "file_path": m.file_path,
                 "attachments": m.attachments or [],
-                "created_at": m.created_at.isoformat() if m.created_at else None
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+                "author": users_map.get(m.user_id, "Oracle AI") if m.user_id else "Oracle AI",
             }
             for m in messages
         ]
@@ -260,7 +270,9 @@ async def post_message(
         "thread_id": msg.thread_id,
         "parent_id": msg.parent_id,
         "attachments": msg.attachments or [],
-        "created_at": msg.created_at.isoformat() if msg.created_at else None
+        "created_at": msg.created_at.isoformat() if msg.created_at else None,
+        "author": current_user.full_name or current_user.username,
+        "user_id": current_user.id,
     }
 
     await messenger_manager.broadcast(channel, {"type": "message", "message": response_payload})

@@ -22,10 +22,24 @@ logger = logging.getLogger("OracleEngine")
 # =================================================================
 
 class OracleConfig:
-    """Конфигурация Oracle AI через Ollama Bridge"""
+    """
+    Конфигурация Oracle AI.
+    AI_BACKEND=gemini → прямой Gemini API (сервер без GPU)
+    AI_BACKEND=ollama → Ollama Bridge (локальная разработка с GPU)
+    """
+    AI_BACKEND = getattr(settings, "AI_BACKEND", "gemini")  # "gemini" | "ollama"
     MODEL_NAME = settings.GEMINI_MODEL or "gemini-3-flash-preview:cloud"
-    OLLAMA_BASE_URL = settings.OLLAMA_BASE_URL
     API_KEY = settings.GEMINI_API_KEY
+
+    # URL зависит от бэкенда
+    if AI_BACKEND == "gemini":
+        # Прямой Gemini API (OpenAI-compatible endpoint)
+        OLLAMA_BASE_URL = getattr(settings, "GEMINI_DIRECT_URL", "https://generativelanguage.googleapis.com/v1beta/openai")
+        # Для прямого Gemini используем модель без суффикса :cloud
+        MODEL_NAME = (settings.GEMINI_MODEL or "gemini-2.0-flash").replace(":cloud", "")
+    else:
+        # Ollama Bridge (локальный)
+        OLLAMA_BASE_URL = settings.OLLAMA_BASE_URL
     
     MAX_TOKENS = 4096
     TEMPERATURE = 0.7
@@ -270,13 +284,16 @@ class OracleService:
                 "stream": False
             }
             
-            # Заголовки (для локального Ollama Authorization не нужен)
+            # Заголовки
             headers = {
                 "Content-Type": "application/json"
             }
             
-            # Если это облачная модель, добавляем Authorization
-            if ":cloud" in self.model and self.api_key and self.api_key != "local_ollama_no_key_required":
+            # Gemini API и облачные модели требуют Authorization
+            if OracleConfig.AI_BACKEND == "gemini":
+                if self.api_key and self.api_key != "local_ollama_no_key_required":
+                    headers["Authorization"] = f"Bearer {self.api_key}"
+            elif ":cloud" in self.model and self.api_key and self.api_key != "local_ollama_no_key_required":
                 headers["Authorization"] = f"Bearer {self.api_key}"
             
             logger.info(f"🔮 Sending to Ollama Bridge: {self.base_url}/chat/completions")

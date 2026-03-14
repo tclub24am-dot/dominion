@@ -21,8 +21,11 @@ static/
 # Storage (монтируется как volume)
 storage/
 
-# Scripts
+# Scripts (исключаем большинство, но включаем скрипты инициализации БД)
 scripts/
+# Включаем обратно скрипты инициализации (нужны для первого деплоя)
+!scripts/create_test_users.py
+!scripts/load_m4_march_10.py
 
 # Nginx config (копируется отдельно)
 nginx/

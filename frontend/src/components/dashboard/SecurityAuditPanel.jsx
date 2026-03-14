@@ -31,7 +31,7 @@ const AUDIT_DATA = {
       id: 'tenant_isolation',
       name: 'Изоляция тенантов',
       status: 'ok',
-      score: 15,
+      score: 40,
       maxScore: 40,
       icon: Database,
       findings: [

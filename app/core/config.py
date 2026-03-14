@@ -145,6 +145,16 @@ class Settings(BaseSettings):
     ORACLE_TIMEOUT: int = 60
     ORACLE_UPLOAD_DIR: str = "/root/dominion/storage/uploads"
 
+    # --- AI BACKEND SWITCH ---
+    # "gemini"  → прямой Gemini API (для сервера без GPU, s-global.space)
+    # "ollama"  → локальный Ollama (для локальной разработки с GPU)
+    # Управляется через .env: AI_BACKEND=gemini или AI_BACKEND=ollama
+    AI_BACKEND: str = os.getenv("AI_BACKEND", "gemini")
+
+    # Прямой Gemini API endpoint (без Ollama Bridge)
+    # Используется когда AI_BACKEND=gemini
+    GEMINI_DIRECT_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai"
+
     # --- MIKS / MATRIX / WEBRTC ---
     # VERSHINA v200.16.4: Pydantic native — SettingsConfigDict сам прочитает из .env
     MATRIX_HOMESERVER_URL: str = "http://synapse:8008"

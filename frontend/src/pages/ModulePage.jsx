@@ -6,7 +6,7 @@ import { SECTOR_COLORS } from '../components/dashboard/sectorColors'
 import api from '../api/client'
 
 /**
- * S-GLOBAL DOMINION — Universal Module Page v200.29.2
+ * S-GLOBAL DOMINION — Universal Module Page v200.30
  * =====================================================
  * Универсальная страница для каждого из 12 секторов.
  * Загружает данные из apiPath, отображает в стиле Dominion.
@@ -26,6 +26,77 @@ const SECTOR_LABELS = {
   IV: { emoji: '📈', desc: 'Инвестиционный портфель и благотворительные программы' },
   FP: { emoji: '🤝', desc: 'Партнёрские соглашения, выплаты и CRM' },
   AC: { emoji: '🎓', desc: 'Обучение персонала, юридическая база и академия S-GLOBAL' },
+}
+
+// Словарь русификации ключей API
+const KEY_TRANSLATIONS = {
+  // Финансы
+  total_revenue: 'Выручка',
+  total_income: 'Доход',
+  revenue: 'Выручка',
+  income: 'Доход',
+  total_expense: 'Расход',
+  total_expenses: 'Расходы',
+  expense: 'Расход',
+  expenses: 'Расходы',
+  fuel: 'ГСМ (Топливо)',
+  salary: 'Зарплата',
+  vkusvill: 'ВкусВилл',
+  VkusVill: 'ВкусВилл',
+  top_categories: 'ТОП КАТЕГОРИЙ',
+  category: 'Категория',
+  amount: 'Сумма',
+  balance: 'Баланс',
+  profit: 'Прибыль',
+  margin: 'Маржа',
+  net_profit: 'Чистая прибыль',
+  gross_profit: 'Валовая прибыль',
+  total_balance: 'Общий баланс',
+  transactions_count: 'Кол-во транзакций',
+  // Общие
+  name: 'Название',
+  title: 'Заголовок',
+  status: 'Статус',
+  date: 'Дата',
+  created_at: 'Создано',
+  updated_at: 'Обновлено',
+  description: 'Описание',
+  type: 'Тип',
+  count: 'Количество',
+  total: 'Итого',
+  id: 'ID',
+  park_name: 'Парк',
+  tenant_id: 'Тенант',
+  driver_name: 'Водитель',
+  vehicle: 'Автомобиль',
+  phone: 'Телефон',
+  full_name: 'ФИО',
+  license_plate: 'Гос. номер',
+  brand: 'Марка',
+  model: 'Модель',
+}
+
+function translateKey(key) {
+  return KEY_TRANSLATIONS[key] || KEY_TRANSLATIONS[key.toLowerCase()] || key
+}
+
+function formatValue(key, value) {
+  if (value === null || value === undefined) return '—'
+  const k = key.toLowerCase()
+  // Форматируем суммы
+  if (['amount', 'revenue', 'income', 'expense', 'expenses', 'salary', 'fuel', 'balance', 'profit', 'margin',
+       'total_revenue', 'total_income', 'total_expense', 'total_expenses', 'net_profit', 'gross_profit', 'total_balance'].includes(k)) {
+    const num = parseFloat(value)
+    if (!isNaN(num)) {
+      return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(num)
+    }
+  }
+  return String(value).slice(0, 60)
+}
+
+function isNegativeKey(key) {
+  const k = key.toLowerCase()
+  return ['expense', 'expenses', 'total_expense', 'total_expenses', 'fuel', 'salary'].includes(k)
 }
 
 export default function ModulePage({ code, title, apiPath, onLogout }) {
@@ -149,7 +220,7 @@ export default function ModulePage({ code, title, apiPath, onLogout }) {
               style={{ backgroundColor: colors.glow, boxShadow: `0 0 6px ${colors.glow}` }}
             />
             <span className="text-[10px] font-orbitron tracking-wider" style={{ color: `${colors.glow}80` }}>
-              МОДУЛЬ АКТИВЕН · VERSHINA v200.29.2
+              МОДУЛЬ АКТИВЕН · ВЕРСИЯ 200.30
             </span>
           </div>
         </motion.div>
@@ -238,8 +309,8 @@ function DataRenderer({ data, colors }) {
     if (arrayKey) {
       return (
         <div>
-          <div className="mb-4 text-[10px] font-orbitron tracking-wider text-white/30 uppercase">
-            {arrayKey} · {data[arrayKey].length} записей
+          <div className="mb-4 text-[11px] font-orbitron tracking-wider uppercase" style={{ color: `${colors.glow}90` }}>
+            {translateKey(arrayKey)} · {data[arrayKey].length} записей
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data[arrayKey].slice(0, 30).map((item, i) => (
@@ -250,31 +321,38 @@ function DataRenderer({ data, colors }) {
       )
     }
 
-    // Показываем ключ-значение
+    // Показываем ключ-значение (финансовый стиль)
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.entries(data)
           .filter(([, v]) => typeof v !== 'object' || v === null)
-          .map(([key, value], i) => (
-            <motion.div
-              key={key}
-              className="p-4 rounded-xl border"
-              style={{
-                borderColor: `${colors.glow}15`,
-                background: `linear-gradient(135deg, ${colors.glow}06, rgba(0,0,0,0.3))`,
-              }}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-            >
-              <div className="text-[9px] font-orbitron tracking-wider uppercase mb-1" style={{ color: `${colors.glow}70` }}>
-                {key}
-              </div>
-              <div className="text-[15px] font-montserrat font-semibold text-white/85">
-                {String(value ?? '—')}
-              </div>
-            </motion.div>
-          ))}
+          .map(([key, value], i) => {
+            const isNeg = isNegativeKey(key)
+            const isPos = ['revenue', 'income', 'total_revenue', 'total_income', 'profit', 'net_profit', 'gross_profit', 'balance', 'total_balance'].includes(key.toLowerCase())
+            const valueColor = isNeg ? '#ff6b6b' : isPos ? '#00c853' : '#E0E0E0'
+            return (
+              <motion.div
+                key={key}
+                className="p-5 rounded-xl border"
+                style={{
+                  borderColor: `${colors.glow}20`,
+                  background: `linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3))`,
+                  boxShadow: `0 2px 12px rgba(0,0,0,0.4)`,
+                }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                whileHover={{ y: -2 }}
+              >
+                <div className="text-[10px] font-orbitron tracking-[0.2em] uppercase mb-2" style={{ color: `${colors.glow}90` }}>
+                  {translateKey(key)}
+                </div>
+                <div className="text-[18px] font-montserrat font-bold" style={{ color: valueColor }}>
+                  {isNeg && value > 0 ? '−' : ''}{formatValue(key, value)}
+                </div>
+              </motion.div>
+            )
+          })}
       </div>
     )
   }
@@ -290,8 +368,8 @@ function DataCard({ item, colors, index }) {
   if (typeof item !== 'object' || item === null) {
     return (
       <motion.div
-        className="p-4 rounded-xl border text-[13px] font-montserrat text-white/70"
-        style={{ borderColor: `${colors.glow}15`, background: `${colors.glow}06` }}
+        className="p-4 rounded-xl border text-[13px] font-montserrat"
+        style={{ borderColor: `${colors.glow}15`, background: 'rgba(0,0,0,0.4)', color: '#E0E0E0' }}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.04 }}
@@ -307,10 +385,10 @@ function DataCard({ item, colors, index }) {
 
   return (
     <motion.div
-      className="p-4 rounded-xl border transition-all hover:border-opacity-40"
+      className="p-4 rounded-xl border transition-all"
       style={{
-        borderColor: `${colors.glow}15`,
-        background: `linear-gradient(135deg, ${colors.glow}06, rgba(0,0,0,0.3))`,
+        borderColor: `${colors.glow}18`,
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3))',
         boxShadow: `0 2px 12px rgba(0,0,0,0.3)`,
       }}
       initial={{ opacity: 0, y: 12 }}
@@ -318,29 +396,34 @@ function DataCard({ item, colors, index }) {
       transition={{ delay: index * 0.04 }}
       whileHover={{ y: -2, boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 20px ${colors.glow}10` }}
     >
-      {/* Заголовок карточки */}
+      {/* Заголовок карточки — #E0E0E0 вместо accent */}
       <div
         className="text-[13px] font-montserrat font-semibold mb-3 truncate"
-        style={{ color: colors.accent }}
+        style={{ color: '#E0E0E0' }}
       >
         {String(primaryValue ?? `#${index + 1}`)}
       </div>
 
-      {/* Поля */}
-      <div className="space-y-1.5">
+      {/* Поля с русификацией */}
+      <div className="space-y-2">
         {entries
           .filter(([k]) => k !== primaryKey)
           .slice(0, 4)
-          .map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-orbitron tracking-wider text-white/30 uppercase truncate">
-                {key}
-              </span>
-              <span className="text-[11px] font-montserrat text-white/60 truncate max-w-[60%] text-right">
-                {value === null || value === undefined ? '—' : String(value).slice(0, 40)}
-              </span>
-            </div>
-          ))}
+          .map(([key, value]) => {
+            const isNeg = isNegativeKey(key)
+            const isPos = ['revenue', 'income', 'total_revenue', 'total_income', 'profit', 'net_profit', 'balance'].includes(key.toLowerCase())
+            const valColor = isNeg ? '#ff6b6b' : isPos ? '#00c853' : '#E0E0E0'
+            return (
+              <div key={key} className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-orbitron tracking-wider uppercase truncate" style={{ color: `${colors.glow}80` }}>
+                  {translateKey(key)}
+                </span>
+                <span className="text-[12px] font-montserrat font-semibold truncate max-w-[60%] text-right" style={{ color: valColor }}>
+                  {formatValue(key, value)}
+                </span>
+              </div>
+            )
+          })}
       </div>
     </motion.div>
   )

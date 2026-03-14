@@ -37,7 +37,7 @@ const TAG_COLORS = {
 const FALLBACK_SIP_CONFIG = {
   wss_url: 'wss://localhost:8089/ws',
   sip_uri: 'sip:miks@localhost',
-  password: 'miks_secret',
+  password: '',
   realm: 'localhost',
 }
 
@@ -258,6 +258,9 @@ export default function MIKSTerminal() {
   const [micMuted, setMicMuted] = useState(false)
   const [speakerMuted, setSpeakerMuted] = useState(false)
   const [uaRegistered, setUaRegistered] = useState(false)
+  // REC-индикатор
+  const [isRecording, setIsRecording] = useState(false)
+  const [callDuration, setCallDuration] = useState(0)
   const uaRef = useRef(null)
   const remoteAudioRef = useRef(null)
 
@@ -345,6 +348,22 @@ export default function MIKSTerminal() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // ── REC-индикатор: таймер при активном звонке ───────────────────────────────
+  useEffect(() => {
+    if (callState === 'active') {
+      setIsRecording(true)
+      setCallDuration(0)
+      const timer = setInterval(() => setCallDuration((d) => d + 1), 1000)
+      return () => {
+        clearInterval(timer)
+        setIsRecording(false)
+      }
+    } else {
+      setIsRecording(false)
+      setCallDuration(0)
+    }
+  }, [callState])
 
   // ── Инициализация JsSIP UA (ИЗМЕНЕНИЕ 3: register: true + fallback config) ──
   useEffect(() => {
@@ -768,6 +787,27 @@ export default function MIKSTerminal() {
                     <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'currentColor' }} />
                     {callState === 'calling' ? 'ВЫЗОВ...' : 'АКТИВЕН'}
                   </div>
+
+                  {/* REC-индикатор — появляется при активном звонке */}
+                  {isRecording && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        background: 'rgba(239,68,68,0.15)',
+                        border: '1px solid rgba(239,68,68,0.4)',
+                        animation: 'rec-pulse 1.5s infinite',
+                      }}
+                    >
+                      <span style={{ color: '#ef4444', fontSize: '10px', lineHeight: 1 }}>●</span>
+                      <span style={{ color: '#ef4444', fontSize: '11px', fontFamily: 'Orbitron, monospace', letterSpacing: '0.05em' }}>
+                        REC {Math.floor(callDuration / 60).toString().padStart(2, '0')}:{(callDuration % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Микрофон */}
                   <button

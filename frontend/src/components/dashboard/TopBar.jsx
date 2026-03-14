@@ -108,7 +108,7 @@ export default function TopBar({ onLogout }) {
             <span
               className="topbar-item topbar-label text-xs font-orbitron"
             >
-              STATUS:
+              СТАТУС:
             </span>
             <div className="flex items-center gap-1.5">
               {/* Пульсирующая зелёная точка */}
@@ -120,7 +120,7 @@ export default function TopBar({ onLogout }) {
                 className="topbar-item text-xs font-orbitron font-bold"
                 style={{ color: '#10b981', letterSpacing: '0.1em' }}
               >
-                ONLINE
+                В СЕТИ
               </span>
             </div>
           </div>
@@ -128,18 +128,18 @@ export default function TopBar({ onLogout }) {
           {/* Разделитель — градиентный, 0.5px */}
           <div className="topbar-divider hidden md:block" />
 
-          {/* GLOBAL THREAT LEVEL: LOW */}
+          {/* УРОВЕНЬ УГРОЗЫ: НИЗКИЙ */}
           <div className="hidden md:flex items-center gap-2">
             <span
               className="topbar-item topbar-label text-xs font-orbitron"
             >
-              GLOBAL THREAT LEVEL:
+              УРОВЕНЬ УГРОЗЫ:
             </span>
             <span
               className="topbar-item text-xs font-orbitron font-bold"
               style={{ color: '#10b981', letterSpacing: '0.1em' }}
             >
-              LOW
+              НИЗКИЙ
             </span>
           </div>
         </div>

@@ -29,6 +29,7 @@ from sqlalchemy import text, select, and_, or_, func
 from app.api.v1 import auth, kazna, fleet, logistics, warehouse, analytics
 from app.api.v1.telephony import webhook_router as telephony_webhook_router, api_router as telephony_api_router
 from app.api.v1.miks import router as miks_router
+from app.api.v1.parks_info import router as parks_info_router
 from app.api.v1.kazna import get_transactions as kazna_transactions_handler
 from app.api.v1.partner import router as partners
 from app.api.v1.cashflow import router as cashflow_router
@@ -457,6 +458,7 @@ app.include_router(telephony_webhook_router, prefix="/api/v1/telephony", tags=["
 # Внутренний API телефонии — с полной авторизацией и модульной защитой
 app.include_router(telephony_api_router, prefix="/api/v1/telephony", tags=["Телефония"], dependencies=[Depends(require_module("telephony"))])
 app.include_router(miks_router, prefix="/api/v1/miks", tags=["MIKS"], dependencies=[Depends(require_module("messenger"))])
+app.include_router(parks_info_router, prefix="/api/v1/fleet", tags=["Parks Info"])
 app.include_router(hr_center_router, prefix="/api/v1/hr", tags=["HR Center: LOGIST-PAY v200.16.6"])
 app.include_router(messenger_ws, tags=["WebSocket Messenger"])  # WebSocket без зависимостей
 
