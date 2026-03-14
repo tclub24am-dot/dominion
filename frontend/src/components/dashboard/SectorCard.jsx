@@ -23,7 +23,7 @@ const SECTOR_ACTIVITY = {
   IT: { load: 95, trend: '0%',  metric: 'v30.6' },
   WH: { load: 45, trend: '-2%', metric: 'Склад OK' },
   AI: { load: 88, trend: '+5%', metric: 'GPT-4o' },
-  FN: { load: 71, trend: '+2%', metric: '₽ Активно' },
+  FN: { load: 71, trend: '+2%', metric: '₽ Активно', burnRate: '-182 000 ₽', fund: '10% от прибыли', lgSplit: '50% ООО С-ГЛОБАЛ / 50% ИП Мкртчян (LG)' },
   GP: { load: 55, trend: '0%',  metric: 'GPS Live' },
   TS: { load: 40, trend: '+1%', metric: 'Задачи' },
   MR: { load: 82, trend: '+4%', metric: 'Рейтинг' },
@@ -253,6 +253,26 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
             </span>
           )}
         </div>
+
+        {/* Казна FN: Базовые расходы Цитадели + LG Split + Фонд */}
+        {code === 'FN' && activity.burnRate && (
+          <div className="flex flex-col mt-1.5 gap-0.5">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[8px] font-montserrat text-white/30 uppercase tracking-wider leading-tight">Базовые расходы Цитадели</span>
+              <span className="text-[9px] font-orbitron font-bold" style={{ color: '#ef4444cc' }}>
+                {activity.burnRate}
+              </span>
+            </div>
+            {activity.lgSplit && (
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[8px] font-montserrat text-white/30 uppercase tracking-wider leading-tight">Доля партнёра LG (50%):</span>
+                <span className="text-[7.5px] font-montserrat leading-tight" style={{ color: `${colors.glow}99` }}>
+                  {activity.lgSplit}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Прогресс-бар активности сектора */}
         <div className="mt-2.5">

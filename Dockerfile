@@ -27,8 +27,9 @@ RUN chmod +x /app/entrypoint.sh
 # Копирование всего проекта
 COPY . .
 
-# Создание директории для хранилища
-RUN mkdir -p /root/dominion/storage/uploads
+# Создание директорий для хранилища
+RUN mkdir -p /root/dominion/storage/uploads && \
+    mkdir -p /app/storage/drivers
 
 # Открываем порт
 EXPOSE 8001

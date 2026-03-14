@@ -118,6 +118,7 @@ services:
       - SIP_GO_001_PASS=${SIP_GO_001_PASS}
       - SIP_PLUS_001_PASS=${SIP_PLUS_001_PASS}
       - SIP_EXPRESS_001_PASS=${SIP_EXPRESS_001_PASS}
+      - EXTERNAL_IP=${EXTERNAL_IP:-}
     ports:
       # SIP-сигнализация (UDP, порт 5060) — ТОЛЬКО внешний IP сервера
       - "5060:5060/udp"
@@ -193,10 +194,12 @@ services:
       - SYNAPSE_REPORT_STATS=no
       - SYNAPSE_CONFIG_DIR=/data
       - SYNAPSE_HTTP_PORT=8008
-    command: >
-      /bin/sh -c "if [ ! -f /data/homeserver.yaml ]; then
-      python -m synapse.app.homeserver --server-name $${SYNAPSE_SERVER_NAME} --config-path /data/homeserver.yaml --data-directory /data --generate-config --report-stats=no;
-      fi && exec python -m synapse.app.homeserver --config-path /data/homeserver.yaml"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ ! -f /data/homeserver.yaml ]; then
+          python -m synapse.app.homeserver --server-name $${SYNAPSE_SERVER_NAME} --config-path /data/homeserver.yaml --data-directory /data --generate-config --report-stats=no;
+        fi && exec python -m synapse.app.homeserver --config-path /data/homeserver.yaml
     ports:
       # SECURITY FIX v200.16.4: Synapse Admin API НЕ должен быть доступен из интернета.
       # Привязка к 127.0.0.1 — доступ только через Docker-сеть и localhost.
@@ -207,7 +210,7 @@ services:
     networks:
       - dominion_net
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8008/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8008/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

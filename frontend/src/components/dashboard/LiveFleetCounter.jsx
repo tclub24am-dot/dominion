@@ -138,10 +138,9 @@ export default function LiveFleetCounter({ parkName = 'PRO', compact = false }) 
         prevActive.current = newActive
       }
     } catch {
-      // Используем mock-данные при недоступности API
-      const mockActive = Math.floor(Math.random() * 5) + 18 // 18-22 машины
-      setStats(prev => ({ ...prev, active: mockActive }))
-      setHistory(prev => [...prev.slice(-7), mockActive])
+      // TODO: подключить к API /api/v1/fleet/active-vehicles
+      // При недоступности API — сохраняем последнее известное значение (не генерируем mock)
+      setHistory(prev => [...prev.slice(-7), prevActive.current])
     } finally {
       setIsLoading(false)
       setLastUpdate(new Date())

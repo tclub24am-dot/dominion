@@ -23,7 +23,8 @@ ssh root@89.169.39.111
 
 ```bash
 # Первый деплой:
-git clone https://github.com/YOUR_REPO/dominion.git /root/dominion
+# © ООО «С-ГЛОБАЛ» — все права защищены
+git clone https://git.s-global.space/dominion.git /root/dominion
 cd /root/dominion
 
 # Обновление (повторный деплой):

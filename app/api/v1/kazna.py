@@ -5,7 +5,6 @@
 import logging
 from typing import List, Optional
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -32,6 +31,29 @@ router = APIRouter(tags=["Казна: Финансовое Ядро"])
 
 # Инициализация шаблонов
 templates = Jinja2Templates(directory="app/templates")
+
+# =================================================================
+# ФИНАНСОВЫЕ КОНСТАНТЫ ИМПЕРИИ S-GLOBAL (VERSHINA v200.17)
+# =================================================================
+
+# BURN RATE — постоянные расходы ООО С-ГЛОБАЛ в месяц (₽)
+# Статьи расходов:
+#   ЦОБ24 (Бухгалтерия):  30 000 ₽
+#   Склад / Бокс:          17 000 ₽
+#   Аренда офиса:         105 000 ₽
+#   Интернет / Связь:      10 000 ₽
+#   Уборка:                10 000 ₽
+#   ИТОГО:                182 000 ₽
+BURN_RATE_MONTHLY = Decimal("182000")
+
+# LG (ВкусВилл) — коэффициент раздела прибыли 50/50
+# 50% → ООО С-ГЛОБАЛ, 50% → ИП Мкртчян (IT-обслуживание)
+LG_SPLIT_RATIO = Decimal("0.5")
+
+# БЛАГОТВОРИТЕЛЬНЫЙ ФОНД — 10% от общей прибыли компании
+# Средства неприкосновенны для операционных нужд.
+# Отображаются отдельной строкой в финансовой сводке.
+CHARITY_FUND_RATE = Decimal("0.10")
 
 # =================================================================
 # YANDEX FALLBACK (Contractor Profiles)
@@ -269,21 +291,42 @@ async def get_summary(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Финансовая сводка за период
-    
+    Финансовая сводка за период (VERSHINA v200.17)
+
     Возвращает:
     - Общая выручка
     - Общие расходы
-    - Чистая прибыль
+    - Чистая прибыль (до Burn Rate)
+    - net_profit_after_burn — чистая прибыль после вычета постоянных расходов (182 000 ₽/мес)
+    - burn_rate_monthly — постоянные расходы ООО С-ГЛОБАЛ
+    - charity_fund — 10% от чистой прибыли (Благотворительный фонд, неприкосновенен)
     - Топ категорий
     """
     try:
         db.expire_all()
         summary = await AnalyticsEngine.get_kazna_summary(db, days=days)
+
+        # Вычисляем Burn Rate и Charity Fund поверх данных AnalyticsEngine
+        _Q2 = Decimal("0.01")
+        raw_net_profit = Decimal(str(summary.get("net_profit", 0)))
+
+        # Чистая прибыль после вычета постоянных расходов (Burn Rate)
+        net_profit_after_burn = (raw_net_profit - BURN_RATE_MONTHLY).quantize(_Q2, rounding=ROUND_HALF_UP)
+
+        # Благотворительный фонд: 10% от чистой прибыли (до вычета Burn Rate)
+        charity_fund = (raw_net_profit * CHARITY_FUND_RATE).quantize(_Q2, rounding=ROUND_HALF_UP)
+
+        # Добавляем поля в ответ
+        summary["burn_rate_monthly"] = float(BURN_RATE_MONTHLY)
+        summary["net_profit_after_burn"] = float(net_profit_after_burn)
+        summary["charity_fund"] = float(charity_fund)
+
         logger.info(
-            "✓ Summary: %s transactions, profit: %s₽",
+            "✓ Summary: %s transactions, profit: %s₽, after_burn: %s₽, charity: %s₽",
             summary.get("transactions_count", 0),
-            f"{summary.get('net_profit', 0):,.2f}",
+            f"{raw_net_profit:,.2f}",
+            f"{net_profit_after_burn:,.2f}",
+            f"{charity_fund:,.2f}",
         )
         return summary
     except Exception as e:
@@ -292,6 +335,9 @@ async def get_summary(
             "status": "error",
             "message": str(e),
             "net_profit": 0,
+            "burn_rate_monthly": float(BURN_RATE_MONTHLY),
+            "net_profit_after_burn": 0,
+            "charity_fund": 0,
             "transactions_count": 0,
         }
 
@@ -556,6 +602,54 @@ LOGISTICS_CATEGORIES = {"VkusVill", "Логистика", "ВкусВилл", "v
 FLEET_CATEGORIES = {"SubRent", "Таксопарк", "fleet", "Аренда", "Субаренда"}
 
 
+def calculate_lg_split(
+    revenue: Decimal,
+    fuel: Decimal,
+    maintenance: Decimal,
+    salary: Decimal
+) -> dict:
+    """
+    Вспомогательная функция: расчёт раздела прибыли сектора LG (ВкусВилл) 50/50.
+
+    Логика:
+        lg_net_profit    = revenue - fuel - maintenance - salary
+        lg_sglobal_share = lg_net_profit * LG_SPLIT_RATIO  (доля ООО С-ГЛОБАЛ)
+        lg_mkrtchan_share= lg_net_profit * LG_SPLIT_RATIO  (доля ИП Мкртчян — IT-обслуживание)
+
+    ВАЖНО: при убытке обе доли = 0. Убыток остаётся на балансе ООО С-ГЛОБАЛ.
+
+    Args:
+        revenue:     Выручка сектора LG (Decimal)
+        fuel:        Расходы на топливо (Decimal)
+        maintenance: Расходы на обслуживание (Decimal)
+        salary:      Расходы на зарплату (Decimal)
+
+    Returns:
+        dict с ключами:
+            net_profit      — чистая прибыль до раздела
+            sglobal_share   — доля ООО С-ГЛОБАЛ (50% при прибыли, 0 при убытке)
+            mkrtchan_share  — доля ИП Мкртчян (50% при прибыли, 0 при убытке)
+            is_profitable   — флаг прибыльности
+    """
+    _Q2 = Decimal("0.01")
+    net_profit = revenue - fuel - maintenance - salary
+
+    if net_profit > Decimal("0"):
+        sglobal_share = (net_profit * LG_SPLIT_RATIO).quantize(_Q2, rounding=ROUND_HALF_UP)
+        mkrtchan_share = (net_profit * LG_SPLIT_RATIO).quantize(_Q2, rounding=ROUND_HALF_UP)
+    else:
+        # При убытке ИП Мкртчян не несёт потерь — убыток остаётся у ООО С-ГЛОБАЛ
+        sglobal_share = Decimal("0.00")
+        mkrtchan_share = Decimal("0.00")
+
+    return {
+        "net_profit": net_profit.quantize(_Q2, rounding=ROUND_HALF_UP),
+        "sglobal_share": sglobal_share,
+        "mkrtchan_share": mkrtchan_share,
+        "is_profitable": net_profit > Decimal("0"),
+    }
+
+
 async def calculate_it_service_fee(
     db: AsyncSession,
     from_date: Optional[datetime] = None,
@@ -682,11 +776,25 @@ async def calculate_it_service_fee(
         total_ooo_profit = logistics_to_ooo + fleet_to_ooo + other_to_ooo
         total_loss = logistics_loss + fleet_loss + other_loss
 
+        # ================================================================
+        # BURN RATE: вычитаем постоянные расходы ООО С-ГЛОБАЛ (182 000 ₽/мес)
+        # Чистая прибыль компании = прибыль секторов − Burn Rate
+        # ================================================================
+        net_company_profit = (total_ooo_profit - BURN_RATE_MONTHLY).quantize(_Q2, rounding=ROUND_HALF_UP)
+
+        # ================================================================
+        # БЛАГОТВОРИТЕЛЬНЫЙ ФОНД: 10% от общей прибыли (до вычета Burn Rate)
+        # Неприкосновенен для операционных нужд — только отдельная строка.
+        # ================================================================
+        charity_fund = (total_ooo_profit * CHARITY_FUND_RATE).quantize(_Q2, rounding=ROUND_HALF_UP)
+
         logger.info(
             f"[Finance 50/50] tenant={tenant_id!r} "
             f"logistics_margin={logistics_margin:.2f} it_fee={it_service_fee:.2f} "
             f"fleet_margin={fleet_margin:.2f} total_ooo={total_ooo_profit:.2f} "
-            f"total_loss={total_loss:.2f} tx_count={tx_count} [SQL-aggregated]"
+            f"burn_rate={BURN_RATE_MONTHLY:.2f} net_company={net_company_profit:.2f} "
+            f"charity_fund={charity_fund:.2f} total_loss={total_loss:.2f} "
+            f"tx_count={tx_count} [SQL-aggregated]"
         )
 
         # FIX v200.16.4: Decimal → float для JSON-сериализации (точность сохранена в расчётах)
@@ -724,10 +832,13 @@ async def calculate_it_service_fee(
                 "is_profitable": other_margin > 0
             },
             "summary": {
-                "total_it_service_fee": _f(it_service_fee),   # ИП Мкртчян
-                "total_ooo_profit": _f(total_ooo_profit),     # ООО С-ГЛОБАЛ
+                "total_it_service_fee": _f(it_service_fee),       # ИП Мкртчян
+                "total_ooo_profit": _f(total_ooo_profit),         # ООО С-ГЛОБАЛ (до Burn Rate)
+                "burn_rate_monthly": _f(BURN_RATE_MONTHLY),       # Постоянные расходы ООО
+                "net_company_profit": _f(net_company_profit),     # Чистая прибыль (после Burn Rate)
+                "charity_fund": _f(charity_fund),                 # 10% от прибыли — Благотворительный фонд
                 "total_margin": _f(total_margin),
-                "total_loss": _f(total_loss),                 # Суммарный убыток (если есть)
+                "total_loss": _f(total_loss),                     # Суммарный убыток (если есть)
                 "transactions_count": tx_count
             },
             "recipients": {
@@ -737,9 +848,14 @@ async def calculate_it_service_fee(
                     "note": "Только при прибыльной логистике. При убытке = 0."
                 },
                 "OOO_S_GLOBAL": {
-                    "type": "General Profit",
-                    "amount": _f(total_ooo_profit),
-                    "note": "100% Fleet + 100% Other + 50% Logistics (при прибыли)"
+                    "type": "General Profit (after Burn Rate)",
+                    "amount": _f(net_company_profit),
+                    "note": "100% Fleet + 100% Other + 50% Logistics − Burn Rate 182 000 ₽/мес"
+                },
+                "CHARITY_FUND": {
+                    "type": "Благотворительный фонд (10% от прибыли)",
+                    "amount": _f(charity_fund),
+                    "note": "Неприкосновенен для операционных нужд. Отдельная строка."
                 }
             },
             "tenant_id": tenant_id
@@ -848,20 +964,20 @@ async def export_profit_distribution(
         writer = csv.writer(output, delimiter=';')
         
         # Заголовок отчёта
-        writer.writerow(['ОТЧЁТ РАСПРЕДЕЛЕНИЯ ПРИБЫЛИ v200.12'])
+        writer.writerow(['ОТЧЁТ РАСПРЕДЕЛЕНИЯ ПРИБЫЛИ v200.17'])
         writer.writerow(['Период', f"{from_date or 'начало'} - {to_date or 'конец'}"])
         writer.writerow(['Tenant ID', tenant_id])
         writer.writerow([])
-        
-        # ЛОГИСТИКА
-        writer.writerow(['ЛОГИСТИКА (ВкусВилл)'])
+
+        # ЛОГИСТИКА (ВкусВилл) — раздел LG 50/50
+        writer.writerow(['ЛОГИСТИКА (ВкусВилл) — LG 50/50'])
         writer.writerow(['Выручка', distribution['logistics'].get('revenue', 0)])
         writer.writerow(['Расходы', distribution['logistics'].get('expenses', 0)])
         writer.writerow(['Маржа', distribution['logistics'].get('margin', 0)])
         writer.writerow(['IT Service Fee (ИП Мкртчян 50%)', distribution['logistics'].get('it_service_fee', 0)])
         writer.writerow(['ООО С-ГЛОБАЛ (50%)', distribution['logistics'].get('to_ooo', 0)])
         writer.writerow([])
-        
+
         # ТАКСОПАРК
         writer.writerow(['ТАКСОПАРК (T-CLUB24)'])
         writer.writerow(['Выручка', distribution['fleet'].get('revenue', 0)])
@@ -869,7 +985,7 @@ async def export_profit_distribution(
         writer.writerow(['Маржа', distribution['fleet'].get('margin', 0)])
         writer.writerow(['ООО С-ГЛОБАЛ (100%)', distribution['fleet'].get('to_ooo', 0)])
         writer.writerow([])
-        
+
         # ПРОЧИЕ
         writer.writerow(['ПРОЧИЕ НАПРАВЛЕНИЯ'])
         writer.writerow(['Выручка', distribution['other'].get('revenue', 0)])
@@ -877,12 +993,29 @@ async def export_profit_distribution(
         writer.writerow(['Маржа', distribution['other'].get('margin', 0)])
         writer.writerow(['ООО С-ГЛОБАЛ (100%)', distribution['other'].get('to_ooo', 0)])
         writer.writerow([])
-        
+
         # ИТОГО
         writer.writerow(['ИТОГО'])
         writer.writerow(['ИП Мкртчян (IT Service Fee)', distribution['summary'].get('total_it_service_fee', 0)])
-        writer.writerow(['ООО С-ГЛОБАЛ', distribution['summary'].get('total_ooo_profit', 0)])
+        writer.writerow(['ООО С-ГЛОБАЛ (до Burn Rate)', distribution['summary'].get('total_ooo_profit', 0)])
         writer.writerow(['Общая маржа', distribution['summary'].get('total_margin', 0)])
+        writer.writerow([])
+
+        # BURN RATE — постоянные расходы ООО С-ГЛОБАЛ
+        writer.writerow(['ПОСТОЯННЫЕ РАСХОДЫ (BURN RATE)'])
+        writer.writerow(['Burn Rate (месяц)', distribution['summary'].get('burn_rate_monthly', float(BURN_RATE_MONTHLY))])
+        writer.writerow(['  ЦОБ24 (Бухгалтерия)', 30000])
+        writer.writerow(['  Склад / Бокс', 17000])
+        writer.writerow(['  Аренда офиса', 105000])
+        writer.writerow(['  Интернет / Связь', 10000])
+        writer.writerow(['  Уборка', 10000])
+        writer.writerow(['Чистая прибыль ООО (после Burn Rate)', distribution['summary'].get('net_company_profit', 0)])
+        writer.writerow([])
+
+        # БЛАГОТВОРИТЕЛЬНЫЙ ФОНД
+        writer.writerow(['БЛАГОТВОРИТЕЛЬНЫЙ ФОНД (10% от прибыли)'])
+        writer.writerow(['Сумма фонда', distribution['summary'].get('charity_fund', 0)])
+        writer.writerow(['Примечание', 'Неприкосновенен для операционных нужд'])
         
         output.seek(0)
         

@@ -1,5 +1,6 @@
 import asyncio
 import os
+from sqlalchemy import text, select
 from app.database import SessionLocal
 from app.models.all_models import User, UserRole
 from app.services.auth import hash_password as get_password_hash
@@ -7,7 +8,7 @@ from app.services.auth import hash_password as get_password_hash
 async def create_master_user():
     async with SessionLocal() as db:
         # Проверяем, существует ли уже пользователь master
-        result = await db.execute("SELECT id FROM users WHERE username = 'master'")
+        result = await db.execute(select(User.id).where(User.username == 'master'))
         existing_user = result.scalar_one_or_none()
         
         if existing_user:
@@ -21,7 +22,6 @@ async def create_master_user():
             return
         user = User(
             username='master',
-            email='master@s-global.space',
             hashed_password=get_password_hash(master_password),
             full_name='Master Spartak',
             role=UserRole.MASTER,
