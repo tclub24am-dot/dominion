@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage'
 import IntroSequence from './components/intro/IntroSequence'
 import Dashboard from './pages/Dashboard'
 import ModulePage from './pages/ModulePage'
+import LogisticsPage from './pages/LogisticsPage'
 import api from './api/client'
 
 /**
@@ -112,7 +113,7 @@ function AppCore() {
 
       {/* 12 секторов империи */}
       <Route path="/fleet"       element={<ModulePage code="FL" title="ТАКСОПАРК T-CLUB24"              apiPath="/api/v1/fleet/vehicles"         onLogout={handleLogout} />} />
-      <Route path="/logistics"   element={<ModulePage code="LG" title="ЛОГИСТИКА И МАРШРУТЫ"            apiPath="/api/v1/logistics/routes"       onLogout={handleLogout} />} />
+      <Route path="/logistics"   element={<LogisticsPage onLogout={handleLogout} />} />
       <Route path="/consulting"  element={<ModulePage code="IT" title="КОНСАЛТИНГ И IT"                 apiPath="/api/v1/consulting/clients"     onLogout={handleLogout} />} />
       <Route path="/warehouse"   element={<ModulePage code="WH" title="АВТОСЕРВИС И СТРАХОВАНИЕ"        apiPath="/api/v1/warehouse/items"        onLogout={handleLogout} />} />
       <Route path="/ai-analyst"  element={<ModulePage code="AI" title="AI АНАЛИТИК"                     apiPath="/api/v1/analytics/overlay"      onLogout={handleLogout} />} />

@@ -22,7 +22,8 @@ from app.models.all_models import User
 
 logger = logging.getLogger("Dominion.Logistics")
 
-router = APIRouter(prefix="/api/v1/logistics", tags=["Логистика ВкусВилл"])
+# Prefix добавляется в main.py: prefix="/api/v1/logistics"
+router = APIRouter(tags=["Логистика ВкусВилл"])
 
 # =================================================================
 # ТАРИФНАЯ СЕТКА ВКУСВИЛЛ v200.17 (Константы Империи)
