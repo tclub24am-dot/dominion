@@ -762,6 +762,76 @@ class YandexSyncLog(Base):
     duration_seconds = Column(Float, nullable=True)
 
 # =================================================================
+# ЛОГИСТИКА ВКУСВИЛЛ — Модели v200.17
+# =================================================================
+
+class LogisticsRoute(Base):
+    """Рейс логистики ВкусВилл"""
+    __tablename__ = "logistics_routes"
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    park_name = Column(String, default="EXPRESS", index=True)  # ЗАКОН: park_name обязателен
+    tenant_id = Column(String, default="s-global", index=True)
+
+    date = Column(Date, nullable=False, index=True)
+    route_code = Column(String, nullable=False)  # напр. "8464ДС_БольшаяЧеремушкинская2"
+    route_type = Column(String, nullable=False)  # darkstore/store/shmel/zhuk
+
+    driver_name = Column(String, nullable=False)  # АЗАТ / ШАХЗОД / ЗАРИФ / ШАВКАТ
+    driver_group = Column(String, nullable=False)  # AZAT / BNYAN
+
+    vehicle_name = Column(String)  # "Mercedes Atego" / "Газель"
+
+    # Финансы
+    revenue = Column(Numeric(12, 2), nullable=False)        # Выручка ВкусВилл
+    driver_payment = Column(Numeric(12, 2), nullable=False)  # Выплата водителю
+    fuel_cost = Column(Numeric(12, 2), default=0)            # ГСМ
+    maintenance_cost = Column(Numeric(12, 2), default=0)     # ТО
+
+    # Рассчитываемые поля (хранятся для истории)
+    margin = Column(Numeric(12, 2))           # Маржа = revenue - driver_payment - fuel - maintenance
+    sglobal_share = Column(Numeric(12, 2))    # Доля С-ГЛОБАЛ (margin/2)
+    mkrtchan_share = Column(Numeric(12, 2))   # Доля Мкртчяна (margin/2)
+
+    # Точки доставки (для Азата: 2000р/точка)
+    delivery_points = Column(Integer, default=0)
+
+    status = Column(String, default="completed")  # planned/active/completed
+    notes = Column(Text)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class LogisticsDriver(Base):
+    """Карточка водителя логистики"""
+    __tablename__ = "logistics_drivers"
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    park_name = Column(String, default="EXPRESS", index=True)
+    tenant_id = Column(String, default="s-global", index=True)
+
+    name = Column(String, nullable=False)           # Полное имя
+    short_name = Column(String, nullable=False)     # АЗАТ / ШАХЗОД / ЗАРИФ / ШАВКАТ
+    group_name = Column(String, nullable=False)     # AZAT / BNYAN
+
+    vehicle_name = Column(String)                   # "Mercedes Atego" / "Газель"
+    vehicle_type = Column(String)                   # atego / gazelle
+
+    # Тарифная система
+    payment_type = Column(String, default="per_point")  # per_point / per_route
+    rate_per_point = Column(Numeric(10, 2))         # Для Азата: 2000р/точка
+
+    is_active = Column(Boolean, default=True)
+    phone = Column(String)
+    notes = Column(Text)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# =================================================================
 # ЭКСПОРТ ВСЕХ МОДЕЛЕЙ
 # =================================================================
 
@@ -777,4 +847,5 @@ __all__ = [
     "Referral", "WarehouseItem", "WarehouseLog", "OwnershipType",
     "Supplier", "ServiceOrder",  # v22.6 ERP
     "YandexSyncLog",  # v31.0 Яндекс.Диспетчерская
+    "LogisticsRoute", "LogisticsDriver",  # v200.17 Логистика ВкусВилл
 ]
