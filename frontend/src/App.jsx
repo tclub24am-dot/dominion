@@ -1,19 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import LoginPage from './pages/LoginPage'
 import IntroSequence from './components/intro/IntroSequence'
 import Dashboard from './pages/Dashboard'
+import ModulePage from './pages/ModulePage'
 import api from './api/client'
 
 /**
- * S-GLOBAL DOMINION — Root Application v3.2
- * VERSHINA v200.29.2 Protocol — ГЕРМЕТИЗАЦИЯ БЕЗОПАСНОСТИ
- * 
+ * S-GLOBAL DOMINION — Root Application v3.3
+ * VERSHINA v200.29.2 Protocol — ЖИВЫЕ МАРШРУТЫ
+ *
  * Строгий поток: Auth → Intro (15s) → Dashboard
  * Стадии: 'loading' | 'auth' | 'intro' | 'dashboard'
  * AUTH: cookie-based (httpOnly) — токен НЕ хранится на клиенте.
+ * ROUTING: react-router-dom v6 — 12 секторов с маршрутами
  */
-export default function App() {
+
+function AppCore() {
   const [stage, setStage] = useState('loading') // 'loading' | 'auth' | 'intro' | 'dashboard' | 'network_error'
 
   // Всегда применяем dark-тему
@@ -22,30 +26,24 @@ export default function App() {
   }, [])
 
   // Восстанавливаем сессию при перезагрузке — всегда проверяем httpOnly cookie через /auth/me
-  // sessionStorage используется только для флага intro (не как условие для запроса)
   useEffect(() => {
     api.get('/api/v1/auth/me')
       .then(() => {
-        // Cookie валиден — восстанавливаем сессию
         const introShown = sessionStorage.getItem('dominion_intro_shown')
         setStage(introShown ? 'dashboard' : 'intro')
       })
       .catch((error) => {
         const status = error?.response?.status
         if (status === 401 || status === 403) {
-          // Токен истёк или невалиден — очищаем и на логин
           sessionStorage.clear()
           setStage('auth')
         } else {
-          // Сетевая ошибка (500, таймаут, нет сети) — НЕ очищаем сессию,
-          // показываем экран ошибки с кнопкой повтора
           setStage('network_error')
         }
       })
   }, [])
 
   const handleLogin = useCallback(() => {
-    // Cookie уже установлен бэкендом при логине, флаг сохранён в LoginPage
     setStage('intro')
   }, [])
 
@@ -55,15 +53,11 @@ export default function App() {
   }, [])
 
   const handleLogout = useCallback(async () => {
-    // Единая точка logout: убиваем httpOnly cookie на сервере, затем чистим клиент
-    // Используем централизованный api-клиент (axios) — перехватчики ошибок работают корректно
     try {
       await api.post('/api/v1/auth/logout')
     } catch (err) {
-      // Игнорируем сетевую ошибку — всё равно очищаем клиентскую сессию
-      // В dev-режиме логируем для диагностики
       if (import.meta.env.DEV) {
-        console.warn('[Logout] Server error (cookie may not be deleted):', err?.response?.status ?? err?.message)
+        console.warn('[Logout] Server error:', err?.response?.status ?? err?.message)
       }
     }
     sessionStorage.clear()
@@ -71,7 +65,7 @@ export default function App() {
     setStage('auth')
   }, [])
 
-  // Стадия -1: Сетевая ошибка — сессия сохранена, предлагаем повтор
+  // Стадия -1: Сетевая ошибка
   if (stage === 'network_error') {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-4" style={{ backgroundColor: '#000000' }}>
@@ -87,7 +81,7 @@ export default function App() {
     )
   }
 
-  // Стадия 0: Проверка сессии — золотой спиннер на чёрном фоне
+  // Стадия 0: Проверка сессии
   if (stage === 'loading') {
     return (
       <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: '#000000' }}>
@@ -105,13 +99,41 @@ export default function App() {
     return <LoginPage onLogin={handleLogin} />
   }
 
-  // Стадия 2: Интро-последовательность (15 секунд)
+  // Стадия 2: Интро-последовательность
   if (stage === 'intro') {
     return <IntroSequence onComplete={handleIntroComplete} />
   }
 
-  // Стадия 3: Дашборд
+  // Стадия 3: Дашборд + маршруты модулей
   return (
-    <Dashboard onLogout={handleLogout} />
+    <Routes>
+      {/* Главный дашборд */}
+      <Route path="/" element={<Dashboard onLogout={handleLogout} />} />
+
+      {/* 12 секторов империи */}
+      <Route path="/fleet"       element={<ModulePage code="FL" title="ТАКСОПАРК T-CLUB24"              apiPath="/api/v1/fleet/vehicles"         onLogout={handleLogout} />} />
+      <Route path="/logistics"   element={<ModulePage code="LG" title="ЛОГИСТИКА И МАРШРУТЫ"            apiPath="/api/v1/logistics/routes"       onLogout={handleLogout} />} />
+      <Route path="/consulting"  element={<ModulePage code="IT" title="КОНСАЛТИНГ И IT"                 apiPath="/api/v1/consulting/clients"     onLogout={handleLogout} />} />
+      <Route path="/warehouse"   element={<ModulePage code="WH" title="АВТОСЕРВИС И СТРАХОВАНИЕ"        apiPath="/api/v1/warehouse/items"        onLogout={handleLogout} />} />
+      <Route path="/ai-analyst"  element={<ModulePage code="AI" title="AI АНАЛИТИК"                     apiPath="/api/v1/analytics/overlay"      onLogout={handleLogout} />} />
+      <Route path="/finance"     element={<ModulePage code="FN" title="ФИНАНСЫ И БУХГАЛТЕРИЯ"           apiPath="/api/v1/kazna/summary"          onLogout={handleLogout} />} />
+      <Route path="/gps"         element={<ModulePage code="GP" title="GPS МОНИТОРИНГ"                  apiPath="/api/v1/gps/live"               onLogout={handleLogout} />} />
+      <Route path="/tasks"       element={<ModulePage code="TS" title="AI ОТЧЁТЫ И ЗАДАЧИ"              apiPath="/api/v1/tasks/list"             onLogout={handleLogout} />} />
+      <Route path="/merit"       element={<ModulePage code="MR" title="ГАРНИЗОН ПОЧЁТА"                 apiPath="/api/v1/merit/leaderboard"      onLogout={handleLogout} />} />
+      <Route path="/investments" element={<ModulePage code="IV" title="ИНВЕСТИЦИИ И БЛАГОТВОРИТЕЛЬНОСТЬ" apiPath="/api/v1/investments/portfolio"  onLogout={handleLogout} />} />
+      <Route path="/partners"    element={<ModulePage code="FP" title="ПАРТНЁРЫ И ВЫПЛАТЫ"              apiPath="/api/v1/partner/list"           onLogout={handleLogout} />} />
+      <Route path="/academy"     element={<ModulePage code="AC" title="S-GLOBAL ACADEMY & LEGAL"        apiPath="/api/v1/academy/courses"        onLogout={handleLogout} />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppCore />
+    </BrowserRouter>
   )
 }

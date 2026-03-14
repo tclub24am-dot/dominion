@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { SECTOR_COLORS } from './sectorColors'
 
 /**
@@ -32,7 +33,7 @@ const SECTOR_ACTIVITY = {
   AC: { load: 25, trend: '0%',  metric: 'Обучение' },
 }
 
-export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, liveCount = null }) {
+export default function SectorCard({ code, title, subtitle, icon: Icon, index = 0, liveCount = null, route = null }) {
   const [isHovered, setIsHovered] = useState(false)
   const [glintTriggered, setGlintTriggered] = useState(false)
   const [loadAnimated, setLoadAnimated] = useState(false)
@@ -59,6 +60,17 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
     return () => clearTimeout(t)
   }, [index])
 
+  const CardWrapper = ({ children }) => {
+    if (route) {
+      return (
+        <Link to={route} className="relative group h-full block" style={{ textDecoration: 'none' }}>
+          {children}
+        </Link>
+      )
+    }
+    return <div className="relative group h-full">{children}</div>
+  }
+
   return (
     <motion.div
       className="relative group h-full"
@@ -80,7 +92,9 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      style={{ cursor: route ? 'pointer' : 'default' }}
     >
+      <CardWrapper>
       {/* === ЭФФЕКТ «АУРЫ» — медленно пульсирующее цветное пятно === */}
       <motion.div
         className="absolute -inset-6 rounded-2xl pointer-events-none"
@@ -356,6 +370,7 @@ export default function SectorCard({ code, title, subtitle, icon: Icon, index = 
           }}
         />
       </div>
+      </CardWrapper>
     </motion.div>
   )
 }

@@ -31,80 +31,92 @@ import LiveFleetCounter from '../components/dashboard/LiveFleetCounter'
 /** Единый источник правды для версии протокола */
 const PROTOCOL_VERSION = 'v200.29.2'
 
-// 12 секторов империи
+// 12 секторов империи с маршрутами
 const SECTORS = [
   {
     code: 'FL',
     title: 'ТАКСОПАРК T-CLUB24',
     subtitle: 'На линии: 0 · ⭐ ПАРКОВЫЙ (41)',
     icon: Car,
+    route: '/fleet',
   },
   {
     code: 'LG',
     title: 'ЛОГИСТИКА И МАРШРУТЫ',
     subtitle: 'ВКУСВИЛЛ: АКТИВНО',
     icon: Truck,
-    liveCount: '--', // Заглушка — подключить к API позже
+    liveCount: '--',
+    route: '/logistics',
   },
   {
     code: 'IT',
     title: 'КОНСАЛТИНГ И IT v30.6',
     subtitle: 'Системы стабильны',
     icon: Monitor,
+    route: '/consulting',
   },
   {
     code: 'WH',
     title: 'АВТОСЕРВИС И СТРАХОВАНИЕ',
     subtitle: 'Склад синхронизирован',
     icon: Wrench,
+    route: '/warehouse',
   },
   {
     code: 'AI',
     title: 'AI АНАЛИТИК',
     subtitle: 'Поток стабилен',
     icon: Brain,
+    route: '/ai-analyst',
   },
   {
     code: 'FN',
     title: 'ФИНАНСЫ И БУХГАЛТЕРИЯ',
     subtitle: 'Банковские шлюзы: АКТИВНО',
     icon: Wallet,
+    route: '/finance',
   },
   {
     code: 'GP',
     title: 'GPS МОНИТОРИНГ',
     subtitle: 'Трекинг активен',
     icon: MapPin,
+    route: '/gps',
   },
   {
     code: 'TS',
     title: 'AI ОТЧЁТЫ И ЗАДАЧИ',
     subtitle: 'Генерация отчётов',
     icon: FileText,
+    route: '/tasks',
   },
   {
     code: 'MR',
     title: 'ГАРНИЗОН ПОЧЁТА',
     subtitle: 'Рейтинг обновлён',
     icon: Award,
+    route: '/merit',
   },
   {
     code: 'IV',
     title: 'ИНВЕСТИЦИИ И БЛАГОТВОРИТЕЛЬНОСТЬ',
     subtitle: 'Портфель стабилен',
     icon: TrendingUp,
+    route: '/investments',
   },
   {
     code: 'FP',
     title: 'ПАРТНЁРЫ И ВЫПЛАТЫ',
     subtitle: 'Расчёты в процессе',
     icon: Users,
+    route: '/partners',
   },
   {
     code: 'AC',
     title: 'S-GLOBAL ACADEMY & LEGAL',
     subtitle: 'Обучение активно',
     icon: GraduationCap,
+    route: '/academy',
   },
 ]
 
@@ -167,6 +179,7 @@ export default function Dashboard({ onLogout }) {
               icon={sector.icon}
               index={index}
               liveCount={sector.liveCount ?? null}
+              route={sector.route}
             />
           ))}
         </div>

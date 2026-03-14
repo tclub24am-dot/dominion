@@ -629,3 +629,30 @@
   background-repeat: repeat;
   background-size: 256px 256px;
 }
+
+/* ============================================================
+   MIKS DOMINION MESSENGER — Custom Scrollbar
+   VERSHINA v200.29.2
+   ============================================================ */
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 168, 67, 0.2) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 168, 67, 0.2);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 168, 67, 0.4);
+}
