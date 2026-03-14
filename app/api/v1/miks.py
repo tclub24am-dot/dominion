@@ -10,9 +10,11 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models.all_models import User
+from app.database import get_db
+from app.models.all_models import User, OracleArchive
 from app.services.security import get_current_user_from_cookie
 from app.services.miks_ai_link import miks_ai_link
 
@@ -184,10 +186,39 @@ OLLAMA_BASE_URL = "http://ollama:11434"  # Docker сервис dominion_ollama
 OLLAMA_DEFAULT_MODEL = "gpt-oss:20b"
 
 
+async def _save_miks_dialog(
+    db: AsyncSession,
+    user: User,
+    question: str,
+    answer: str,
+    provider: str,
+) -> None:
+    """Сохраняет диалог MIKS в OracleArchive (PostgreSQL)."""
+    try:
+        archive = OracleArchive(
+            title=f"MIKS AI-чат [{provider}] — {user.full_name or user.username}",
+            channel="MIKS",
+            content=f"Вопрос: {question[:500]}\n\nОтвет: {answer[:2000]}",
+            severity="info",
+            meta={
+                "user_id": user.id,
+                "username": user.username,
+                "provider": provider,
+                "park": user.park_name,
+                "tenant_id": user.tenant_id,
+            },
+        )
+        db.add(archive)
+        await db.commit()
+    except Exception as e:
+        logger.warning(f"MIKS: не удалось сохранить диалог в OracleArchive: {e}")
+
+
 @router.post("/ai-chat")
 async def miks_ai_chat(
     payload: dict[str, Any],
     current_user: User = Depends(get_current_user_from_cookie),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     AI-чат Mix — эндпоинт для чата с ИИ-помощником Mix.
@@ -238,6 +269,7 @@ async def miks_ai_chat(
                 if resp.status_code == 200:
                     result = resp.json()
                     reply = result["candidates"][0]["content"]["parts"][0]["text"]
+                    await _save_miks_dialog(db, current_user, message, reply, "gemini")
                     return {
                         "status": "ok",
                         "reply": reply,
@@ -266,6 +298,7 @@ async def miks_ai_chat(
                 result = resp.json()
                 reply = result.get("response", "").strip()
                 if reply:
+                    await _save_miks_dialog(db, current_user, message, reply, "ollama")
                     return {
                         "status": "ok",
                         "reply": reply,
@@ -288,6 +321,7 @@ async def miks_ai_chat(
             context={"system_override": system_prompt},
         )
         reply = result.get("message") or "Mix AI не смог сформировать ответ."
+        await _save_miks_dialog(db, current_user, message, reply, "oracle")
         return {
             "status": "ok",
             "reply": reply,
@@ -326,6 +360,7 @@ async def miks_ai_chat(
         logger.error(f"Mix AI fallback failed: {fallback_exc}")
         reply = "⚠️ Mix AI временно недоступен. Попробуйте позже."
 
+    await _save_miks_dialog(db, current_user, message, reply, "fallback")
     return {
         "status": "ok",
         "reply": reply,

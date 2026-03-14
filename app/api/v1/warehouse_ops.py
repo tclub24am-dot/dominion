@@ -706,3 +706,151 @@ async def get_service_schedule(
     except Exception as e:
         logger.error(f"Service schedule error: {e}")
         return {"period_days": days, "total_repairs": 0, "total_cost": 0.0, "daily_stats": []}
+
+
+# =================================================================
+# БАЗОВЫЙ CRUD ИНВЕНТАРЯ (перенесено из warehouse.py — Shadow Clean)
+# =================================================================
+
+import pandas as pd
+import io
+
+from fastapi import UploadFile, File
+from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import joinedload
+
+
+@router.get("/inventory", response_class=HTMLResponse)
+async def get_inventory(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Полный реестр запчастей — HTML для HTMX"""
+    try:
+        result = await db.execute(select(WarehouseItem).order_by(WarehouseItem.category, WarehouseItem.name))
+        items = result.scalars().all()
+        rows = []
+        for item in items:
+            rows.append(
+                f"<tr><td>{item.sku}</td><td>{item.name}</td><td>{item.category}</td>"
+                f"<td>{item.quantity}</td><td>{item.min_threshold}</td><td>{item.price_unit}</td></tr>"
+            )
+        return HTMLResponse("".join(rows) or "<tr><td colspan='6'>Пусто</td></tr>", status_code=200)
+    except Exception as e:
+        logger.error(f"Warehouse inventory error: {e}")
+        return HTMLResponse("<tr><td colspan='8'>Ошибка загрузки</td></tr>", status_code=200)
+
+
+@router.post("/add-item")
+async def add_new_item(
+    name: str, sku: str, category: str, quantity: int,
+    min_threshold: int, price: float,
+    db: AsyncSession = Depends(get_db)
+):
+    """Ручное добавление новой позиции в арсенал"""
+    existing = await db.execute(select(WarehouseItem).where(WarehouseItem.sku == sku))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail=f"Артикул {sku} уже существует в базе")
+    item = WarehouseItem(
+        name=name, sku=sku, category=category,
+        quantity=quantity, min_threshold=min_threshold, price_unit=price
+    )
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return {"status": "success", "item_id": item.id}
+
+
+@router.post("/upload-file")
+async def upload_warehouse_file(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """Массовый импорт склада из CSV/Excel"""
+    contents = await file.read()
+    filename = file.filename.lower()
+    try:
+        if filename.endswith('.csv'):
+            try:
+                df = pd.read_csv(io.BytesIO(contents), sep=None, engine='python', encoding='utf-8')
+            except Exception:
+                df = pd.read_csv(io.BytesIO(contents), sep=None, engine='python', encoding='cp1251')
+        elif filename.endswith(('.xls', '.xlsx')):
+            df = pd.read_excel(io.BytesIO(contents))
+        else:
+            raise HTTPException(status_code=400, detail="Поддерживаются только форматы CSV и Excel")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"FILE READ ERROR: {e}")
+        raise HTTPException(status_code=400, detail=f"Ошибка чтения файла: {str(e)}")
+
+    required_columns = ['name', 'sku', 'category', 'quantity', 'min_threshold', 'price_unit']
+    for col in required_columns:
+        if col not in df.columns:
+            raise HTTPException(status_code=400, detail=f"В файле отсутствует обязательная колонка: {col}")
+
+    imported_count = 0
+    for _, row in df.iterrows():
+        sku_str = str(row['sku']).strip()
+        existing = await db.execute(select(WarehouseItem).where(WarehouseItem.sku == sku_str))
+        if existing.scalar_one_or_none():
+            continue
+        new_item = WarehouseItem(
+            name=str(row['name']), sku=sku_str, category=str(row['category']),
+            quantity=int(row['quantity']), min_threshold=int(row['min_threshold']),
+            price_unit=float(row['price_unit'])
+        )
+        db.add(new_item)
+        imported_count += 1
+
+    await db.commit()
+    logger.info(f"SUCCESS: Склад пополнен на {imported_count} позиций.")
+    return {"status": "success", "imported_count": imported_count}
+
+
+@router.post("/request")
+async def request_part(
+    item_id: int, quantity: int, vehicle_id: int, master_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """ЗАПРОС МАСТЕРА: Резервирование детали для ремонта"""
+    item = await db.get(WarehouseItem, item_id)
+    if not item or item.quantity < quantity:
+        raise HTTPException(status_code=400, detail="Недостаточно ресурса на складе")
+    new_log = WarehouseLog(item_id=item_id, change=-quantity, vehicle_id=vehicle_id, master_id=master_id)
+    db.add(new_log)
+    await db.commit()
+    await db.refresh(new_log)
+    return {"status": "success", "message": "Запрос создан.", "log_id": new_log.id}
+
+
+@router.post("/issue/{log_id}")
+async def issue_part(log_id: int, master_id: int, db: AsyncSession = Depends(get_db)):
+    """ВЫДАЧА КЛАДОВЩИКОМ: Физическое списание со склада"""
+    log = await db.get(WarehouseLog, log_id)
+    if not log:
+        raise HTTPException(status_code=404, detail="Запрос не найден")
+    item = await db.get(WarehouseItem, log.item_id)
+    item.quantity += log.change  # log.change отрицательный
+    log.master_id = master_id
+    try:
+        await db.commit()
+        return {"status": "success", "remaining": item.quantity}
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"ISSUE ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при списании")
+
+
+@router.get("/history")
+async def get_history(limit: int = 50, db: AsyncSession = Depends(get_db)):
+    """Архив всех движений ресурсов"""
+    result = await db.execute(
+        select(WarehouseLog)
+        .options(joinedload(WarehouseLog.item))
+        .order_by(WarehouseLog.timestamp.desc())
+        .limit(limit)
+    )
+    return result.scalars().all()

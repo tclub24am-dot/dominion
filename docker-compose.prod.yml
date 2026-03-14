@@ -282,8 +282,10 @@ services:
       - "443:443"
     volumes:
       - ./nginx/s-global.prod.conf:/etc/nginx/conf.d/default.conf:ro
-      # Let's Encrypt сертификаты (получить через certbot на хосте)
+      # Let's Encrypt сертификаты (получить через certbot: bash scripts/certbot_issue.sh)
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Certbot webroot для ACME challenge (/.well-known/acme-challenge/)
+      - certbot_webroot:/var/www/certbot
       # Статика приложения
       - app_static:/var/www/dominion/app/static:ro
       - dominion_storage:/var/www/dominion/storage:ro
@@ -308,6 +310,7 @@ volumes:
   ollama_data:
   synapse_data:
   app_static:
+  certbot_webroot:
 
 networks:
   dominion_net:

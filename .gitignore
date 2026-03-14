@@ -15,6 +15,9 @@ build/
 *.env.*
 !.env.example
 
+# === SSL CERTS (самоподписанные для локальной разработки) ===
+nginx/certs/
+
 # === LOGS & TEMP ===
 *.log
 *.tmp

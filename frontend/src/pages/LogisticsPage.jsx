@@ -82,35 +82,48 @@ const getStatus = (status) =>
 // ─── KPI Карточка ─────────────────────────────────────────────────────────────
 
 function KpiCard({ icon: Icon, label, value, color, delay = 0 }) {
+  const isGold = color === '#d4a843' || color === '#f0c040'
   return (
     <motion.div
       className="flex-1 min-w-[200px] p-5 rounded-xl border"
       style={{
-        background: 'rgba(255,255,255,0.03)',
-        borderColor: `${color}30`,
-        boxShadow: `0 0 20px ${color}08`,
+        background: isGold
+          ? 'linear-gradient(135deg, rgba(212,168,67,0.08), rgba(212,168,67,0.02))'
+          : 'rgba(255,255,255,0.03)',
+        borderColor: `${color}40`,
+        boxShadow: isGold
+          ? `0 0 30px ${color}20, 0 0 60px ${color}08, inset 0 1px 0 ${color}15`
+          : `0 0 20px ${color}08`,
       }}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
+      whileHover={{ boxShadow: isGold ? `0 0 40px ${color}30, 0 0 80px ${color}12` : undefined }}
     >
       <div className="flex items-center gap-3 mb-3">
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center"
-          style={{ background: `${color}15`, border: `1px solid ${color}30` }}
+          style={{
+            background: `${color}20`,
+            border: `1px solid ${color}40`,
+            boxShadow: isGold ? `0 0 12px ${color}30` : undefined,
+          }}
         >
-          <Icon size={18} style={{ color }} />
+          <Icon size={18} style={{ color, filter: isGold ? `drop-shadow(0 0 4px ${color})` : undefined }} />
         </div>
         <span
           className="text-[10px] font-orbitron tracking-[0.2em] uppercase"
-          style={{ color: `${color}80` }}
+          style={{ color: `${color}90` }}
         >
           {label}
         </span>
       </div>
       <div
         className="text-[22px] font-orbitron font-bold tracking-wider"
-        style={{ color }}
+        style={{
+          color,
+          textShadow: isGold ? `0 0 20px ${color}80, 0 0 40px ${color}40` : undefined,
+        }}
       >
         {value}
       </div>
@@ -711,11 +724,14 @@ export default function LogisticsPage({ onLogout }) {
       className="min-h-screen relative"
       style={{ backgroundColor: '#0D0C0B', color: '#f5f0e8' }}
     >
-      {/* Фоновый градиент LG */}
+      {/* Фоновый градиент LG — Gold Standard */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at top left, rgba(0,255,136,0.04) 0%, transparent 60%)',
+          background: `
+            radial-gradient(ellipse at top left, rgba(0,255,136,0.04) 0%, transparent 60%),
+            radial-gradient(ellipse at bottom right, rgba(212,168,67,0.06) 0%, transparent 50%)
+          `,
           zIndex: 0,
         }}
       />
@@ -746,9 +762,9 @@ export default function LogisticsPage({ onLogout }) {
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
             style={{
-              background: 'linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,255,136,0.05))',
-              border: '1px solid rgba(0,255,136,0.3)',
-              boxShadow: '0 0 20px rgba(0,255,136,0.1)',
+              background: 'linear-gradient(135deg, rgba(212,168,67,0.2), rgba(212,168,67,0.05))',
+              border: '1px solid rgba(212,168,67,0.4)',
+              boxShadow: '0 0 20px rgba(212,168,67,0.25), 0 0 40px rgba(212,168,67,0.1)',
             }}
           >
             🚚
@@ -762,9 +778,17 @@ export default function LogisticsPage({ onLogout }) {
             </div>
             <div
               className="text-[10px] font-montserrat mt-0.5"
-              style={{ color: 'rgba(212,168,67,0.7)' }}
+              style={{
+                color: '#d4a843',
+                textShadow: '0 0 12px rgba(212,168,67,0.6), 0 0 24px rgba(212,168,67,0.3)',
+                letterSpacing: '0.08em',
+              }}
             >
-              ПАРТНЁРСТВО 50/50 · ООО С-ГЛОБАЛ + ИП МКРТЧЯН
+              ПАРТНЁРСТВО 50/50 · ООО <span style={{
+                color: '#f0c040',
+                textShadow: '0 0 16px rgba(240,192,64,0.8), 0 0 32px rgba(240,192,64,0.4)',
+                fontWeight: 700,
+              }}>С-ГЛОБАЛ</span> + ИП МКРТЧЯН
             </div>
           </div>
         </div>

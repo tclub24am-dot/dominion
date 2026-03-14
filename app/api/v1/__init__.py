@@ -7,8 +7,8 @@ from .fleet import router as fleet
 from .kazna import router as kazna
 # Нервная система ВкусВилл:
 from .logistics import router as logistics
-# Арсенал запчастей:
-from .warehouse import router as warehouse
+# Арсенал запчастей (Shadow Clean: warehouse.py → warehouse_ops.py):
+from .warehouse_ops import router as warehouse
 # Око Оракула:
 from .analytics import router as analytics
 from .messenger import router as messenger

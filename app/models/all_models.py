@@ -338,7 +338,7 @@ class FinancialLog(Base):
     driver_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     park_name = Column(String, default="PRO", index=True)
     entry_type = Column(String, default="auto_deduction")
-    amount = Column(Float, default=0.0)
+    amount = Column(Numeric(15, 2), default=0.0)  # Decimal precision: ни одной копейки не потеряем
     note = Column(Text, nullable=True)
     meta = Column(JSONB, default={})
     created_at = Column(DateTime, default=dt.datetime.now, index=True)
@@ -443,7 +443,7 @@ class Transaction(Base):
     contractor = Column(String)            # Контрагент
     description = Column(String)           # Описание
     plate_info = Column(String, nullable=True)  # Гос.номер (если применимо)
-    amount = Column(Float)                 # Сумма транзакции
+    amount = Column(Numeric(15, 2))        # Decimal precision: ни одной копейки не потеряем
     tx_type = Column(String, default="income")  # income, expense, transfer
     date = Column(DateTime, default=dt.datetime.now)  # Дата операции
     responsibility = Column(String, default="park")  # driver, partner, park

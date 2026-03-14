@@ -313,7 +313,7 @@ async def create_route(
     await log_financial_operation(
         db=db,
         park_name=payload.park_name,
-        amount=float(payload.revenue),
+        amount=Decimal(str(payload.revenue)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         note=(
             f"Рейс ВкусВилл: {payload.route_code} | "
             f"Водитель: {payload.driver_name} | "
@@ -405,7 +405,7 @@ async def update_route(
         await log_financial_operation(
             db=db,
             park_name=park_name,
-            amount=float(route.revenue),
+            amount=Decimal(str(route.revenue)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             note=f"Обновление рейса #{route_id}: {route.route_code} | Новая маржа: {financials['margin']} ₽",
             entry_type="logistics_route_updated",
             meta={"route_id": route_id, "margin": str(financials["margin"])},
@@ -438,7 +438,7 @@ async def delete_route(
     await log_financial_operation(
         db=db,
         park_name=park_name,
-        amount=float(route.revenue),
+        amount=Decimal(str(route.revenue)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         note=f"Удаление рейса #{route_id}: {route.route_code} | Водитель: {route.driver_name}",
         entry_type="logistics_route_deleted",
         meta={"route_id": route_id, "route_code": route.route_code},
@@ -1047,7 +1047,7 @@ async def seed_march_10(
     await log_financial_operation(
         db=db,
         park_name=LOGISTICS_PARK,
-        amount=float(total_revenue),
+        amount=Decimal(str(total_revenue)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
         note=(
             f"SEED: Загрузка данных 10 марта 2025 | "
             f"Рейсов: {len(seed_routes)} | "
