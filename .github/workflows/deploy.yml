@@ -3,20 +3,29 @@ on:
   push:
     branches:
       - main
-      - master
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
       - name: Executing remote ssh commands
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: 89.169.39.111
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/armsp/dominion
-            git pull origin main
+            # ПЕРЕХОДИМ В ПРАВИЛЬНУЮ ПАПКУ НА СЕРВЕРЕ
+            cd /root/dominion
+            
+            # СИНХРОНИЗАЦИЯ
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # ОЧИСТКА ПОРТОВ (на всякий случай перед деплоем)
+            fuser -k 80/tcp 443/tcp 2>/dev/null || true
+            
+            # ЗАПУСК ЦИТАДЕЛИ
             docker compose -f docker-compose.prod.yml up -d --build
