@@ -152,14 +152,14 @@ services:
       # КРИТИЧНО для NAT: внешний IP сервера (89.169.39.111)
       - EXTERNAL_IP=${EXTERNAL_IP:-89.169.39.111}
     ports:
-      # SIP-сигнализация — привязка к внешнему IP сервера
-      - "${EXTERNAL_IP:-89.169.39.111}:5060:5060/udp"
-      - "${EXTERNAL_IP:-89.169.39.111}:5061:5061/tcp"
+      # SIP-сигнализация — 0.0.0.0 (Yandex Cloud: внешний IP — это NAT, не локальный интерфейс)
+      - "0.0.0.0:5060:5060/udp"
+      - "0.0.0.0:5061:5061/tcp"
       # WebSocket для WebRTC (браузерные звонки через wss://s-global.space/ws-sip/)
       # Nginx проксирует wss://s-global.space/ws-sip/ → asterisk:8089
       - "8089:8089/tcp"
-      # RTP медиа-поток — привязка к внешнему IP
-      - "${EXTERNAL_IP:-89.169.39.111}:10000-20000:10000-20000/udp"
+      # RTP медиа-поток — 0.0.0.0 (NAT-окружение Yandex Cloud)
+      - "0.0.0.0:10000-20000:10000-20000/udp"
     entrypoint: ["/bin/sh", "-c", "/etc/asterisk/init_asterisk_secrets.sh && exec asterisk -f"]
     volumes:
       - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf
