@@ -1009,13 +1009,15 @@ async def get_vehicles_list_json(
         result = await db.execute(stmt)
         rows = result.all()
         
-        # Счётчики для UI
+        # Счётчики для UI (v200.31: изоляция тенанта)
         total_count = (await db.execute(
-            select(func.count(Vehicle.id)).where(Vehicle.is_active == True)
+            select(func.count(Vehicle.id)).where(
+                and_(Vehicle.is_active == True, Vehicle.tenant_id == tenant_id)
+            )
         )).scalar() or 0
         active_count = (await db.execute(
             select(func.count(Vehicle.id)).where(
-                and_(Vehicle.is_active == True, Vehicle.is_active_dominion == True)
+                and_(Vehicle.is_active == True, Vehicle.is_active_dominion == True, Vehicle.tenant_id == tenant_id)
             )
         )).scalar() or 0
         

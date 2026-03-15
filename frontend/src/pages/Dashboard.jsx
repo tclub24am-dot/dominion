@@ -27,7 +27,7 @@ import LiveFleetCounter from '../components/dashboard/LiveFleetCounter'
  */
 
 /** Единый источник правды для версии протокола */
-const PROTOCOL_VERSION = 'v200.29.2'
+const PROTOCOL_VERSION = 'v200.31'
 
 // 12 секторов империи с маршрутами
 const SECTORS = [

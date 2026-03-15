@@ -214,7 +214,7 @@ function TitleBlock() {
         animate={{ opacity: 1 }}
         transition={{ duration: 1, delay: 1.5 }}
       >
-        VERSHINA v200.11 · EMPIRE PROTOCOL
+        VERSHINA v200.31 · EMPIRE PROTOCOL
       </motion.p>
 
       {/* Золотое свечение-ореол за логотипом */}

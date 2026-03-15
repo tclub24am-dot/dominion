@@ -159,7 +159,7 @@ export default function LoginPage({ onLogin }) {
 
             {/* Подзаголовок */}
             <p className="mt-3 text-[10px] font-orbitron tracking-[0.4em] uppercase text-white/25">
-              VERSHINA v200.11 · SECURE ACCESS
+              VERSHINA v200.31 · SECURE ACCESS
             </p>
           </motion.div>
 

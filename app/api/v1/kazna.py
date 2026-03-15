@@ -375,10 +375,14 @@ async def get_transactions_filtered(
     try:
         db.expire_all()
         
+        # v200.31: Изоляция тенанта — только транзакции текущего тенанта
+        tenant_id = getattr(request.state, "tenant_id", "s-global")
+        
         # Базовый запрос
         stmt = (
             select(Transaction, User.id, User.full_name)
             .outerjoin(User, User.yandex_driver_id == Transaction.yandex_driver_id)
+            .where(Transaction.tenant_id == tenant_id)
             .order_by(desc(Transaction.date))
         )
         

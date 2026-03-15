@@ -13,7 +13,7 @@ import api from './api/client'
 
 /**
  * S-GLOBAL DOMINION — Root Application v3.3
- * VERSHINA v200.29.2 Protocol — ЖИВЫЕ МАРШРУТЫ
+ * VERSHINA v200.31 Protocol — ЖИВЫЕ МАРШРУТЫ
  *
  * Строгий поток: Auth → Intro (15s) → Dashboard
  * Стадии: 'loading' | 'auth' | 'intro' | 'dashboard'
