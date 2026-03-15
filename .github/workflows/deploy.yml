@@ -1,0 +1,22 @@
+name: 🚀 Deploy to s-global.space
+on:
+  push:
+    branches:
+      - main
+      - master
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Executing remote ssh commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: 89.169.39.111
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/armsp/dominion
+            git pull origin main
+            docker compose -f docker-compose.prod.yml up -d --build
