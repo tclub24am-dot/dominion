@@ -16,16 +16,18 @@ jobs:
           host: 89.169.39.111
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 20m # УВЕЛИЧИЛИ ВРЕМЯ ОЖИДАНИЯ
           script: |
-            # ПЕРЕХОДИМ В ПРАВИЛЬНУЮ ПАПКУ НА СЕРВЕРЕ
             cd /root/dominion
+            # РЕШАЕМ ПРОБЛЕМУ С ПРАВАМИ ГИТА
+            git config --global --add safe.directory /root/dominion
             
-            # СИНХРОНИЗАЦИЯ
+            # ЗАБИРАЕМ КОД
             git fetch origin main
             git reset --hard origin/main
             
-            # ОЧИСТКА ПОРТОВ (на всякий случай перед деплоем)
-            fuser -k 80/tcp 443/tcp 2>/dev/null || true
+            # ЧИСТАЯ СБОРКА
+            docker compose -f docker-compose.prod.yml up -d --build --force-recreate
             
-            # ЗАПУСК ЦИТАДЕЛИ
-            docker compose -f docker-compose.prod.yml up -d --build
+            # АВТО-МИГРАЦИИ ПРИ КАЖДОМ ДЕПЛОЕ
+            docker exec dominion_app alembic upgrade head
